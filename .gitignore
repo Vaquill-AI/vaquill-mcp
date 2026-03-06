@@ -1,0 +1,43 @@
+# Byte-compiled
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Type checkers
+.mypy_cache/
+.pytype/
+.pyre/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment
+.env
+.envrc
+
+# Ruff
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
