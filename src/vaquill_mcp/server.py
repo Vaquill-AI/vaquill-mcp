@@ -1,4 +1,4 @@
-"""Vaquill MCP Server - Legal research tools powered by 13M+ court judgments.
+"""Vaquill MCP Server - Legal research tools powered by 20M+ court judgments.
 
 Uses FastMCP with an OpenAPIProvider to auto-generate tools from the Vaquill
 OpenAPI spec, with custom tool names and descriptions optimized for LLM agents.

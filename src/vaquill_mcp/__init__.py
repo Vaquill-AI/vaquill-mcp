@@ -1,8 +1,8 @@
-"""Vaquill MCP Server - Legal research tools powered by 13M+ court judgments."""
+"""Vaquill MCP Server - Legal research tools powered by 20M+ court judgments."""
 
 import logging
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = ["__version__", "create_server"]
 
 # PEP 593: Libraries should add NullHandler to prevent "No handler found"

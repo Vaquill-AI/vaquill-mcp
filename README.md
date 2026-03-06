@@ -1,12 +1,12 @@
 # vaquill-mcp
 
-MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Search 13M+ Indian court judgments, ask AI-powered legal questions, resolve citations, and traverse citation networks — all from your AI tools.
+MCP server for <a href="https://www.vaquill.ai" target="_blank">Vaquill</a> legal research API. Search 20M+ Indian court judgments, ask AI-powered legal questions, resolve citations, and traverse citation networks — all from your AI tools.
 
 ## Quick Start
 
 ### Prerequisites
 
-Get your API key from [vaquill.ai/dashboard/api-keys](https://www.vaquill.ai/dashboard/api-keys)
+Sign up at <a href="https://www.vaquill.ai" target="_blank">vaquill.ai</a> to get your API key.
 
 ### Claude Desktop
 
@@ -122,7 +122,7 @@ Add to `~/.windsurf/settings.json`:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `VAQUILL_API_KEY` | Yes | - | API key (`vq_key_...`) from dashboard |
+| `VAQUILL_API_KEY` | Yes | - | API key (`vq_key_...`) from <a href="https://www.vaquill.ai" target="_blank">vaquill.ai</a> |
 | `VAQUILL_BASE_URL` | No | `https://api.vaquill.ai` | API base URL |
 | `VAQUILL_TIMEOUT` | No | `120` | Request timeout in seconds |
 
@@ -141,7 +141,7 @@ Once configured, you can ask your AI assistant things like:
 
 ```bash
 # Clone and install
-git clone https://github.com/vaquill/vaquill-mcp.git
+git clone https://github.com/Vaquill-AI/vaquill-mcp.git
 cd vaquill-mcp
 uv sync --all-extras
 
@@ -157,13 +157,13 @@ uv run fastmcp dev src/vaquill_mcp/server.py
 
 ## How It Works
 
-This package is a thin MCP wrapper around the [Vaquill Developer API](https://api.vaquill.ai/external/docs). At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using [FastMCP](https://github.com/jlowin/fastmcp). Tool names and descriptions are customized for optimal LLM performance.
+This package is a thin MCP wrapper around the <a href="https://www.vaquill.ai/legal-api" target="_blank">Vaquill Developer API</a>. At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using <a href="https://github.com/jlowin/fastmcp" target="_blank">FastMCP</a>. Tool names and descriptions are customized for optimal LLM performance.
 
 Because the spec is fetched at startup (not bundled), tools automatically reflect any API changes without a package update.
 
 ## Credits & Pricing
 
-API calls consume credits. Check current pricing at [vaquill.ai/pricing](https://www.vaquill.ai/pricing) or use the `get_pricing` tool.
+API calls consume credits. Check current pricing at <a href="https://www.vaquill.ai/#pricing" target="_blank">vaquill.ai</a> or use the `get_pricing` tool.
 
 1 credit = $0.10 USD = 10 INR
 

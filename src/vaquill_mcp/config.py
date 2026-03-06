@@ -1,7 +1,7 @@
 """Configuration for the Vaquill MCP server.
 
 Reads settings from environment variables:
-- VAQUILL_API_KEY (required) - Your API key from https://www.vaquill.ai/dashboard/api-keys
+- VAQUILL_API_KEY (required) - Your API key (sign up at https://www.vaquill.ai)
 - VAQUILL_BASE_URL (optional) - API base URL, defaults to https://api.vaquill.ai
 - VAQUILL_TIMEOUT (optional) - Request timeout in seconds, defaults to 120
 """
@@ -19,7 +19,7 @@ def get_api_key() -> str:
     if not key:
         raise ValueError(
             "VAQUILL_API_KEY environment variable is required.\n"
-            "Get your API key at https://www.vaquill.ai/dashboard/api-keys\n\n"
+            "Sign up at https://www.vaquill.ai to get your API key.\n\n"
             "Set it in your MCP client config:\n"
             '  "env": { "VAQUILL_API_KEY": "vq_key_..." }'
         )

@@ -10,7 +10,7 @@ for an LLM tool description.
 
 TOOL_DESCRIPTIONS: dict[str, str] = {
     "ask_legal_question": (
-        "Ask a legal question and get an AI-generated answer grounded in 13M+ Indian "
+        "Ask a legal question and get an AI-generated answer grounded in 20M+ Indian "
         "court judgments. Use 'standard' mode (fast, 0.5 credits) for factual questions "
         "or 'deep' mode (thorough multi-hop analysis, 2.0 credits) for complex comparisons. "
         "Pass chatHistory for follow-up questions. Returns answer text with numbered source "

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "vaquill-mcp"
 dynamic = ["version"]
-description = "MCP server for Vaquill legal research API - search 13M+ Indian court judgments via AI"
+description = "MCP server for Vaquill legal research API - search 20M+ Indian court judgments via AI"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -34,10 +34,10 @@ vaquill-mcp = "vaquill_mcp.__main__:main"
 
 [project.urls]
 Homepage = "https://www.vaquill.ai"
-Documentation = "https://www.vaquill.ai/docs/api-reference"
-Repository = "https://github.com/vaquill/vaquill-mcp"
-Issues = "https://github.com/vaquill/vaquill-mcp/issues"
-Changelog = "https://github.com/vaquill/vaquill-mcp/blob/main/CHANGELOG.md"
+Documentation = "https://www.vaquill.ai/legal-api"
+Repository = "https://github.com/Vaquill-AI/vaquill-mcp"
+Issues = "https://github.com/Vaquill-AI/vaquill-mcp/issues"
+Changelog = "https://github.com/Vaquill-AI/vaquill-mcp/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
