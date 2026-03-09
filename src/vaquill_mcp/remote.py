@@ -59,7 +59,12 @@ _client: httpx.AsyncClient | None = None
 
 
 def _get_api_key() -> str:
-    """Extract API key from the Streamable HTTP URL path ``/s/{api_key}``."""
+    """Extract API key from Bearer header (preferred) or URL path ``/s/{api_key}``.
+
+    Resolution order:
+        1. ``Authorization: Bearer <key>`` header (secure, spec-compliant)
+        2. URL path parameter ``/s/{api_key}`` (simple paste for Claude.ai)
+    """
     try:
         request = get_http_request()
     except RuntimeError:
@@ -68,10 +73,22 @@ def _get_api_key() -> str:
             "The remote server requires Streamable HTTP transport."
         ) from None
 
+    # 1. Bearer token in Authorization header (preferred)
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.removeprefix("Bearer ").strip()
+        if token:
+            return token
+
+    # 2. URL path parameter (fallback for simple paste)
     api_key: str = request.path_params.get("api_key", "")
-    if not api_key:
-        raise ValueError("Missing API key in URL path. Expected /s/{your_api_key}")
-    return api_key
+    if api_key and api_key != "_":
+        return api_key
+
+    raise ValueError(
+        "Missing API key. Provide via Authorization: Bearer header "
+        "or URL path /s/{your_api_key}"
+    )
 
 
 async def _call_api(method: str, path: str, **kwargs: Any) -> dict[str, Any]:

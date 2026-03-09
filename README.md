@@ -8,6 +8,25 @@ MCP server for <a href="https://www.vaquill.ai" target="_blank">Vaquill</a> lega
 
 Sign up at <a href="https://www.vaquill.ai" target="_blank">vaquill.ai</a> to get your API key.
 
+### Claude.ai (Web)
+
+No installation needed. Add as a remote MCP server in Claude.ai Settings > Integrations:
+
+**Option A — Simple URL (API key in path):**
+
+```
+https://mcp.vaquill.ai/s/vq_key_your_key_here
+```
+
+**Option B — Bearer token (recommended):**
+
+```
+URL:   https://mcp.vaquill.ai/s/_
+Token: vq_key_your_key_here
+```
+
+Available on Claude Pro, Max, Team, and Enterprise plans.
+
 ### Claude Desktop
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
@@ -27,6 +46,14 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```
 
 ### Claude Code
+
+**Remote (no install):**
+
+```bash
+claude mcp add-json vaquill '{"type":"http","url":"https://mcp.vaquill.ai/s/_","headers":{"Authorization":"Bearer vq_key_your_key_here"}}'
+```
+
+**Local (via uvx):**
 
 ```bash
 claude mcp add vaquill -- uvx vaquill-mcp
