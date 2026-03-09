@@ -31,15 +31,19 @@ dependencies = [
 
 [project.scripts]
 vaquill-mcp = "vaquill_mcp.__main__:main"
+vaquill-mcp-remote = "vaquill_mcp.remote_main:main"
 
 [project.urls]
 Homepage = "https://www.vaquill.ai"
-Documentation = "https://www.vaquill.ai/legal-api"
+Documentation = "https://www.vaquill.ai/docs/api-reference/"
 Repository = "https://github.com/Vaquill-AI/vaquill-mcp"
 Issues = "https://github.com/Vaquill-AI/vaquill-mcp/issues"
 Changelog = "https://github.com/Vaquill-AI/vaquill-mcp/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+remote = [
+    "uvicorn>=0.30.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",

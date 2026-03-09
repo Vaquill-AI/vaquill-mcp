@@ -157,7 +157,7 @@ uv run fastmcp dev src/vaquill_mcp/server.py
 
 ## How It Works
 
-This package is a thin MCP wrapper around the <a href="https://www.vaquill.ai/legal-api" target="_blank">Vaquill Developer API</a>. At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using <a href="https://github.com/jlowin/fastmcp" target="_blank">FastMCP</a>. Tool names and descriptions are customized for optimal LLM performance.
+This package is a thin MCP wrapper around the <a href="https://www.vaquill.ai/docs/api-reference/" target="_blank">Vaquill Developer API</a>. At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using <a href="https://github.com/jlowin/fastmcp" target="_blank">FastMCP</a>. Tool names and descriptions are customized for optimal LLM performance.
 
 Because the spec is fetched at startup (not bundled), tools automatically reflect any API changes without a package update.
 
