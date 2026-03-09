@@ -188,6 +188,19 @@ mcp = FastMCP("Vaquill Legal Research", lifespan=_lifespan)
 
 
 # ---------------------------------------------------------------------------
+# Health Check
+# ---------------------------------------------------------------------------
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(_request: Any) -> Any:
+    """Health endpoint for Docker/load balancer probes."""
+    from starlette.responses import JSONResponse
+
+    return JSONResponse({"status": "ok", "service": "vaquill-mcp", "version": __version__})
+
+
+# ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
 
