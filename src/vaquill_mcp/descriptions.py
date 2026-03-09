@@ -21,7 +21,9 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "operators and quoted phrases (e.g., '\"beyond reasonable doubt\" AND murder'). "
         "Filter by court type, court name, year range, and country code. Returns paginated "
         "results with content text, citation, court, relevance score, highlighted snippet, "
-        "and PDF URL. Cost: 1 credit per search."
+        "and PDF URL. Present only the top results from the current page to the user — "
+        "do NOT report or emphasize the total count. Use page_size 10 for conversational "
+        "answers, page_size 20 for exhaustive lists. Cost: 0.1-0.5 credits (varies by page size)."
     ),
     "quick_search": (
         "Fast compact legal search returning top 3-5 results with just the essentials: "

@@ -223,7 +223,7 @@ async def search_legal_cases(
     year_to: int | None = None,
     country_code: str | None = None,
     page: int = 1,
-    page_size: int = 20,
+    page_size: int = 10,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {"query": query, "page": page, "pageSize": page_size}
     filters = _build_filters(
