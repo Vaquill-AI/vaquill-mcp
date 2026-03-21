@@ -62,4 +62,26 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "credit-to-currency conversion rates (1 credit = $0.10 USD = 10 INR). "
         "No authentication required. Use to check costs before making API calls."
     ),
+    "search_legislation": (
+        "Search 23,000+ Indian acts, regulations, and legislation using semantic search. "
+        "Find specific statutory provisions, definitions, penalties, and procedures. "
+        "Filter by category (central, state, regulatory), state, department (SEBI, RBI, "
+        "TRAI, etc.), and year range. Returns relevant act sections with text excerpts, "
+        "section numbers, provision type, and PDF links. Cost: 0.1 credits. "
+        "Use for questions like 'What is the penalty for insider trading under SEBI Act?' "
+        "or 'Definition of goods under GST Act'."
+    ),
+    "get_act_text": (
+        "Get URLs for the full text, PDF, and HTML versions of a specific Indian act. "
+        "Pass the act_id (e.g., 'IND_central_2187' for Indian Contract Act). "
+        "Returns R2 CDN URLs — fetch the text/PDF content directly from those URLs. "
+        "Cost: 0.1 credits."
+    ),
+    "get_amendments": (
+        "Get the complete amendment history for an Indian act. Returns all footnotes "
+        "showing substitutions, insertions, omissions, and notes made by amending acts. "
+        "Filter by section number or amendment type. Each footnote shows the amending "
+        "act name and original text (if available). Use to trace how a statute evolved. "
+        "Cost: 0.1 credits."
+    ),
 }
