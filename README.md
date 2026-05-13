@@ -1,6 +1,6 @@
 # vaquill-mcp
 
-MCP server for <a href="https://www.vaquill.ai" target="_blank">Vaquill</a> legal research API. Search 20M+ Indian court judgments, ask AI-powered legal questions, resolve citations, and traverse citation networks — all from your AI tools.
+MCP server for <a href="https://www.vaquill.ai" target="_blank">Vaquill</a> legal research API. Covers **US federal + 50-state law** (USC, CFR, state legislation, CourtListener case law) and **Indian law** (31M+ judgments, 23K+ acts). Ask AI-powered legal questions, search statutes and case law, resolve citations, and traverse citation networks — all from your AI tools.
 
 ## Quick Start
 
@@ -134,16 +134,40 @@ Add to `~/.windsurf/settings.json`:
 
 ## Available Tools
 
+### Cross-jurisdiction
+
 | Tool | Description | Credits |
 |------|-------------|---------|
-| `ask_legal_question` | AI-powered legal Q&A grounded in court judgments. Standard (fast) or deep (thorough) modes. | 0.5 - 2.0 |
-| `search_legal_cases` | Boolean keyword search with AND/OR/NOT operators. Filter by court, year, country. | 1.0 |
-| `quick_search` | Fast compact search returning top 3-5 results with essentials only. | 0.1 |
-| `resolve_citation` | Resolve any citation format (SCC, AIR, SCR, MANU) to canonical case record. | 0.1 |
-| `search_cases_by_citation` | Search cases by citation text or case name with filters. | 0.1 |
-| `lookup_case` | Full case details with citation treatment stats (followed, overruled, etc.). | 0.1 |
-| `get_citation_network` | Traverse citation graph: which cases cite/are cited by a case. 1-3 hops. | 0.2 |
+| `ask_legal_question` | AI-powered legal Q&A. `countryCode='US'` (default) covers USC + CFR + 50-state law + CourtListener case law. `countryCode='IN'` covers Indian judgments and acts. Standard (fast) or deep (multi-hop) modes. | 5 - 20 |
 | `get_pricing` | Get current API credit pricing (no auth required). | Free |
+
+### US law (USC + CFR)
+
+| Tool | Description | Credits |
+|------|-------------|---------|
+| `search_us_statutes` | Semantic search across the United States Code (USC) and Code of Federal Regulations (CFR). Filter by `corpusType` and `titleNumber`. | 2 |
+| `get_us_statute_section` | Metadata for a specific USC/CFR section by `act_id` (citation, title hierarchy, links). | 1 |
+| `get_us_statute_section_text` | Full HTML + plain text of a USC or CFR section. | 3 |
+
+### Indian case law
+
+| Tool | Description | Credits |
+|------|-------------|---------|
+| `search_legal_cases` | Boolean keyword search of Indian Supreme Court + High Court judgments. AND/OR/NOT operators, court/year filters. | 1 - 3 |
+| `quick_search` | Compact top 3-5 Indian case results with essentials only. | 1 |
+| `resolve_citation` | Resolve any Indian citation format (SCC, AIR, SCR, MANU, SCALE, INSC) to canonical case record. | 1 |
+| `search_cases_by_citation` | Search Indian cases by citation text or case name with filters. | 1 |
+| `lookup_case` | Full Indian case details with citation treatment stats (followed, overruled, etc.). | 1 |
+| `get_citation_network` | Traverse the Indian citation graph: 1-3 hops, inbound/outbound/both. | 2 |
+
+### Indian acts & legislation
+
+| Tool | Description | Credits |
+|------|-------------|---------|
+| `search_legislation` | Semantic search across 23,000+ Indian acts, regulations, state legislation. Filter by category, state, department, year. | 1 |
+| `list_legislation` | Browse Indian acts to discover `act_id` values. Filter by category, state, department, status. | 1 |
+| `get_act_text` | URLs for full text, PDF, and HTML versions of an Indian act. | 1 |
+| `get_amendments` | Complete amendment history for an Indian act (substitutions, insertions, omissions). | 1 |
 
 ## Environment Variables
 
@@ -157,6 +181,13 @@ Add to `~/.windsurf/settings.json`:
 
 Once configured, you can ask your AI assistant things like:
 
+**US law:**
+- "What does 17 CFR 240.10b-5 say about insider trading?"
+- "Find USC sections on equal protection under the Fourteenth Amendment"
+- "Summarize FRCP Rule 12(b)(6) and recent SDNY case law applying it" (uses deep mode)
+- "What are the federal penalties for wire fraud under 18 USC 1343?"
+
+**Indian law:**
 - "Search for Supreme Court cases on Section 302 IPC"
 - "What is the legal test for negligence in Indian tort law?"
 - "Resolve the citation AIR 1978 SC 597"

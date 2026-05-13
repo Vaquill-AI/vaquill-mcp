@@ -1389,6 +1389,9 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "respx" },
 ]
+remote = [
+    { name = "uvicorn" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1397,8 +1400,9 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "respx", marker = "extra == 'dev'", specifier = ">=0.22" },
+    { name = "uvicorn", marker = "extra == 'remote'", specifier = ">=0.30.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "remote"]
 
 [[package]]
 name = "watchfiles"

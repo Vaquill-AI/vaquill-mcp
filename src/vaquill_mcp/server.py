@@ -46,10 +46,15 @@ _MCP_NAMES: dict[str, str] = {
     "lookup_case_api_v1_citations_cases_lookup_get": "lookup_case",
     "get_citation_network_api_v1_citations_cases_network_get": "get_citation_network",
     "get_pricing_api_v1_api_credits_pricing_get": "get_pricing",
-    # Acts & Legislation
+    # Indian Acts & Legislation
     "search_acts_api_v1_acts_search_post": "search_legislation",
+    "list_acts_api_v1_acts_list_get": "list_legislation",
     "get_act_text_api_v1_acts__act_id__text_get": "get_act_text",
     "get_act_amendments_api_v1_acts__act_id__amendments_get": "get_amendments",
+    # US Statutes (USC + CFR + 50 state legislation via /ask)
+    "search_statutes_api_v1_statutes_search_post": "search_us_statutes",
+    "get_section_api_v1_statutes_section__act_id__get": "get_us_statute_section",
+    "get_section_body_api_v1_statutes_section__act_id__body_get": "get_us_statute_section_text",
 }
 
 # ---------------------------------------------------------------------------

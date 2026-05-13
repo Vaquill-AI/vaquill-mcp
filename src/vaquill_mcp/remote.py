@@ -212,7 +212,8 @@ async def ask_legal_question(
     sources: bool = True,
     max_sources: int = 5,
     chat_history: list[dict[str, str]] | None = None,
-    country_code: str | None = None,
+    country_code: Literal["US", "IN"] | None = None,
+    sources_filter: Literal["all", "statutes_only", "cases_only"] | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {
         "question": question,
@@ -224,6 +225,8 @@ async def ask_legal_question(
         body["chatHistory"] = chat_history
     if country_code:
         body["countryCode"] = country_code
+    if sources_filter:
+        body["sourcesFilter"] = sources_filter
     return await _call_api("POST", "/api/v1/ask", json=body)
 
 
@@ -342,3 +345,110 @@ async def get_citation_network(
 @mcp.tool(description=TOOL_DESCRIPTIONS["get_pricing"])
 async def get_pricing() -> dict[str, Any]:
     return await _call_api("GET", "/api/v1/api-credits/pricing")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["search_legislation"])
+async def search_legislation(
+    query: str,
+    category: str | None = None,
+    state: str | None = None,
+    department: str | None = None,
+    year_from: int | None = None,
+    year_to: int | None = None,
+    page_size: int = 10,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {"query": query, "pageSize": page_size}
+    if category:
+        body["category"] = category
+    if state:
+        body["state"] = state
+    if department:
+        body["department"] = department
+    if year_from is not None:
+        body["yearFrom"] = year_from
+    if year_to is not None:
+        body["yearTo"] = year_to
+    return await _call_api("POST", "/api/v1/acts/search", json=body)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_act_text"])
+async def get_act_text(
+    act_id: str,
+) -> dict[str, Any]:
+    return await _call_api("GET", f"/api/v1/acts/{act_id}/text")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_amendments"])
+async def get_amendments(
+    act_id: str,
+    section: str | None = None,
+    footnote_type: str | None = None,
+    page: int = 1,
+    page_size: int = 100,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {"page": page, "pageSize": page_size}
+    if section:
+        params["section"] = section
+    if footnote_type:
+        params["type"] = footnote_type
+    return await _call_api("GET", f"/api/v1/acts/{act_id}/amendments", params=params)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_legislation"])
+async def list_legislation(
+    category: str | None = None,
+    state: str | None = None,
+    department: str | None = None,
+    year_from: int | None = None,
+    year_to: int | None = None,
+    status: str | None = None,
+    search: str | None = None,
+    sort: str = "year_desc",
+    page: int = 1,
+    page_size: int = 50,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {"sort": sort, "page": page, "pageSize": page_size}
+    if category:
+        params["category"] = category
+    if state:
+        params["state"] = state
+    if department:
+        params["department"] = department
+    if year_from is not None:
+        params["yearFrom"] = year_from
+    if year_to is not None:
+        params["yearTo"] = year_to
+    if status:
+        params["status"] = status
+    if search:
+        params["search"] = search
+    return await _call_api("GET", "/api/v1/acts/list", params=params)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["search_us_statutes"])
+async def search_us_statutes(
+    query: str,
+    corpus_type: Literal["USC", "CFR"] | None = None,
+    title_number: int | None = None,
+    limit: int = 10,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {"query": query, "limit": limit}
+    if corpus_type:
+        body["corpusType"] = corpus_type
+    if title_number is not None:
+        body["titleNumber"] = title_number
+    return await _call_api("POST", "/api/v1/statutes/search", json=body)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_us_statute_section"])
+async def get_us_statute_section(
+    act_id: str,
+) -> dict[str, Any]:
+    return await _call_api("GET", f"/api/v1/statutes/section/{act_id}")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_us_statute_section_text"])
+async def get_us_statute_section_text(
+    act_id: str,
+) -> dict[str, Any]:
+    return await _call_api("GET", f"/api/v1/statutes/section/{act_id}/body")

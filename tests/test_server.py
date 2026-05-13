@@ -20,14 +20,25 @@ class TestMCPNames:
 
     def test_all_expected_tools_mapped(self) -> None:
         expected_tools = {
+            # Cross-jurisdiction
             "ask_legal_question",
+            "get_pricing",
+            # Indian case law
             "search_legal_cases",
             "quick_search",
             "resolve_citation",
             "search_cases_by_citation",
             "lookup_case",
             "get_citation_network",
-            "get_pricing",
+            # Indian acts & legislation
+            "search_legislation",
+            "list_legislation",
+            "get_act_text",
+            "get_amendments",
+            # US statutes (USC + CFR)
+            "search_us_statutes",
+            "get_us_statute_section",
+            "get_us_statute_section_text",
         }
         assert set(_MCP_NAMES.values()) == expected_tools
 
@@ -36,8 +47,8 @@ class TestMCPNames:
         for operation_id in _MCP_NAMES:
             assert "stream" not in operation_id
 
-    def test_eight_tools_mapped(self) -> None:
-        assert len(_MCP_NAMES) == 8
+    def test_expected_tool_count(self) -> None:
+        assert len(_MCP_NAMES) == 15
 
     def test_no_duplicate_tool_names(self) -> None:
         """Each tool name should be unique."""
