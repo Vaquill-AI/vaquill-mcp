@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Vaquill-AI/vaquill-mcp",
   "title": "Vaquill",
-  "description": "Legal research MCP covering US Constitution, US Code, CFR, Federal Rules of Procedure, all 50 state statute codes, state constitutions, state court rules, every Executive Order since 2015, plus Indian case law (31M+ judgments) and citation graph traversal. Powered by the Vaquill legal-research API.",
+  "description": "Legal research: US primary law, Indian case law (31M+ judgments), and citation graph traversal.",
   "version": "0.1.1",
   "repository": {
     "url": "https://github.com/Vaquill-AI/vaquill-mcp",
