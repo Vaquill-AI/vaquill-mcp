@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Vaquill-AI/vaquill-mcp",
+  "title": "Vaquill",
+  "description": "Legal research MCP covering US Constitution, US Code, CFR, Federal Rules of Procedure, all 50 state statute codes, state constitutions, state court rules, every Executive Order since 2015, plus Indian case law (31M+ judgments) and citation graph traversal. Powered by the Vaquill legal-research API.",
+  "version": "0.1.1",
+  "repository": {
+    "url": "https://github.com/Vaquill-AI/vaquill-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.vaquill.ai/s/_",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token using a Vaquill API key. Format: 'Bearer vq_key_...'. Get a key at https://www.vaquill.ai/legal-api.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
