@@ -138,16 +138,16 @@ Add to `~/.windsurf/settings.json`:
 
 | Tool | Description | Credits |
 |------|-------------|---------|
-| `ask_legal_question` | AI-powered legal Q&A across USC, CFR, 50-state law, and CourtListener case law. Standard (fast) or deep (multi-hop) modes. | 5 - 20 |
+| `ask_legal_question` | AI-powered legal Q&A across USC, CFR, 50-state law, and CourtListener case law. Standard (fast) or deep (multi-hop) modes. | 15 - 30 |
 | `get_pricing` | Get current API credit pricing (no auth required). | Free |
 
 ### US law (USC + CFR)
 
 | Tool | Description | Credits |
 |------|-------------|---------|
-| `search_us_statutes` | Semantic search across the United States Code (USC) and Code of Federal Regulations (CFR). Filter by `corpusType` and `titleNumber`. | 2 |
-| `get_us_statute_section` | Metadata for a specific USC/CFR section by `act_id` (citation, title hierarchy, links). | 1 |
-| `get_us_statute_section_text` | Full HTML + plain text of a USC or CFR section. | 3 |
+| `search_us_statutes` | Semantic search across the United States Code (USC) and Code of Federal Regulations (CFR). Filter by `corpusType` and `titleNumber`. | 4 |
+| `get_us_statute_section` | Metadata for a specific USC/CFR section by `act_id` (citation, title hierarchy, links). | 2 |
+| `get_us_statute_section_text` | Full HTML + plain text of a USC or CFR section. | 6 |
 
 ## Environment Variables
 
@@ -192,13 +192,11 @@ Because the spec is fetched at startup (not bundled), tools automatically reflec
 
 ## Credits & Pricing
 
-API calls consume credits. Check current pricing at [vaquill.ai](https://www.vaquill.ai/#pricing) or use the `get_pricing` tool.
+API calls consume credits. The credit costs in the tables above are current at
+the time of writing; the `get_pricing` tool and each tool's own description
+always reflect the live price, so treat those as authoritative if they differ.
 
-1 credit = $0.10 USD
-
-## Data Attribution
-
-US case law is sourced from [CourtListener](https://www.courtlistener.com/), maintained by the [Free Law Project](https://free.law/).
+1 credit = $0.01 USD
 
 ## License
 

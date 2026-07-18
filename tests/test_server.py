@@ -9,10 +9,16 @@ from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
 from vaquill_mcp.server import (
     _MCP_NAMES,
     _ROUTE_MAPS,
-    _customize_component,
+    _TOOL_COST_ENDPOINTS,
+    _build_tool_costs,
     _fetch_openapi_spec,
+    _format_cost,
+    _make_customize_component,
     create_server,
 )
+
+# A no-cost customizer for tests that only exercise description/tag rewriting.
+_customize_component = _make_customize_component({})
 
 
 class TestMCPNames:
@@ -155,6 +161,91 @@ class TestCustomizeComponent:
         assert component.tags == {"legal-research", "vaquill"}
 
 
+class TestCostInjection:
+    """Verify credit costs are injected from the live API, never hardcoded."""
+
+    def test_descriptions_have_no_hardcoded_credit_numbers(self) -> None:
+        """No description may state a credit cost; costs are injected at boot.
+
+        A hardcoded 'N credit(s)' string is exactly the drift bug this design
+        removes: the number would go stale the next time backend pricing moves.
+
+        get_pricing is exempt: its description states the fixed conversion peg
+        ('1 credit = $0.01 USD'), which is a definitional rate, not a per-call
+        cost that can drift.
+        """
+        for name, desc in TOOL_DESCRIPTIONS.items():
+            if name == "get_pricing":
+                continue
+            assert not re.search(r"\d+\s*credit", desc, re.IGNORECASE), (
+                f"Description for '{name}' hardcodes a credit cost; costs must "
+                f"be injected from /api-credits/pricing/all, not written here"
+            )
+
+    def test_every_paid_tool_has_a_cost_endpoint(self) -> None:
+        """Every tool except the free get_pricing maps to a pricing endpoint."""
+        paid_tools = set(_MCP_NAMES.values()) - {"get_pricing"}
+        assert paid_tools == set(_TOOL_COST_ENDPOINTS)
+
+    def test_format_cost_single_tier(self) -> None:
+        entries = [{"credits": 4, "operation": "US Statutes Search", "regions": ["US"]}]
+        assert _format_cost(entries) == "Cost: 4 credits."
+
+    def test_format_cost_multi_tier_labelled(self) -> None:
+        entries = [
+            {"credits": 15, "operation": "Ask (Standard)", "regions": ["US", "IN"]},
+            {"credits": 30, "operation": "Ask (Deep)", "regions": ["US", "IN"]},
+        ]
+        assert _format_cost(entries) == (
+            "Cost: 15 credits (standard), 30 credits (deep)."
+        )
+
+    def test_format_cost_empty(self) -> None:
+        assert _format_cost([]) == ""
+
+    def test_build_tool_costs_maps_and_region_filters(self) -> None:
+        """Costs map to the right tool, and region-scoped tools pick their region."""
+        cost_entries = [
+            {"endpoint": "/statutes/search", "operation": "US Statutes Search",
+             "credits": 4, "regions": ["US"]},
+            {"endpoint": "/statutes/section/body", "operation": "US Statute Section (Full Text)",
+             "credits": 6, "regions": ["US"]},
+            # /research/search serves BOTH regions at different prices; the
+            # India-scoped search_legal_cases tool must pick the India tiers.
+            {"endpoint": "/research/search", "operation": "US Case Law Search (1-20 results)",
+             "credits": 2, "regions": ["US"]},
+            {"endpoint": "/research/search", "operation": "Indian Case Law Search (1-20 results)",
+             "credits": 1, "regions": ["IN"]},
+        ]
+        costs = _build_tool_costs(cost_entries)
+        assert costs["search_us_statutes"] == "Cost: 4 credits."
+        assert costs["get_us_statute_section_text"] == "Cost: 6 credits."
+        # Only the India tier (1), never the US tier (2), for this tool.
+        assert costs["search_legal_cases"] == "Cost: 1 credit."
+
+    def test_build_tool_costs_empty_on_no_data(self) -> None:
+        """A failed fetch (empty list) yields no cost lines, not wrong ones."""
+        assert _build_tool_costs([]) == {}
+
+    def test_injection_appends_cost_to_description(self) -> None:
+        customize = _make_customize_component(
+            {"search_us_statutes": "Cost: 4 credits."}
+        )
+
+        class MockComponent:
+            name = "search_us_statutes"
+            description = "orig"
+
+            def __init__(self):
+                self.tags: set[str] = set()
+
+        component = MockComponent()
+        customize(None, component)  # type: ignore[arg-type]
+        assert component.description == (
+            f"{TOOL_DESCRIPTIONS['search_us_statutes']} Cost: 4 credits."
+        )
+
+
 class TestFetchOpenAPISpec:
     """Verify OpenAPI spec fetching with retry logic."""
 
@@ -229,6 +320,9 @@ class TestCreateServer:
 
         respx_mock.get("https://api.vaquill.ai/external/openapi.json").mock(
             return_value=httpx.Response(200, json=sample_openapi_spec)
+        )
+        respx_mock.get("https://api.vaquill.ai/api/v1/api-credits/pricing/all").mock(
+            return_value=httpx.Response(200, json={"costs": []})
         )
 
         server = create_server()

@@ -69,30 +69,175 @@ _ROUTE_MAPS: list[RouteMap] = [
 
 
 # ---------------------------------------------------------------------------
+# Credit-cost injection
+# ---------------------------------------------------------------------------
+# Credit costs are NEVER hardcoded in descriptions.py. Instead they are fetched
+# once at startup from the live API (the same CREDIT_PRICING source of truth the
+# billing system uses) and appended to each tool description. This makes it
+# structurally impossible for the advertised cost to drift from the real charge.
+#
+# Each MCP tool maps to a pricing `endpoint` (as returned by
+# /api/v1/api-credits/pricing/all). Some endpoints serve both US and India at
+# different prices (e.g. /research/search, /citations/network); for those we
+# pin the region the tool is documented against so the injected cost matches
+# what the tool actually does. `None` means the endpoint is single-region.
+_TOOL_COST_ENDPOINTS: dict[str, tuple[str, str | None]] = {
+    "ask_legal_question": ("/ask", None),
+    "search_legal_cases": ("/research/search", "IN"),
+    "quick_search": ("/research/quick", "IN"),
+    "resolve_citation": ("/citations/resolve", "IN"),
+    "search_cases_by_citation": ("/citations/cases/search", "IN"),
+    "lookup_case": ("/citations/cases/lookup", "IN"),
+    "get_citation_network": ("/citations/network", "IN"),
+    "search_legislation": ("/acts/search", None),
+    "get_act_text": ("/acts/{actId}/text", None),
+    "get_amendments": ("/acts/{actId}/amendments", None),
+    "list_legislation": ("/acts/list", None),
+    "search_us_statutes": ("/statutes/search", None),
+    "get_us_statute_section": ("/statutes/section", None),
+    "get_us_statute_section_text": ("/statutes/section/body", None),
+    # get_pricing is free — deliberately absent so no cost line is appended.
+}
+
+
+def _fmt_credits(credits: float) -> str:
+    """Render a credit count without a trailing '.0' for whole numbers."""
+    return str(int(credits)) if float(credits).is_integer() else str(credits)
+
+
+def _credit_noun(credits_str: str) -> str:
+    """'credit' for exactly one, 'credits' otherwise."""
+    return "credit" if credits_str == "1" else "credits"
+
+
+def _short_label(operation: str) -> str:
+    """Extract the disambiguating tier label from a pricing operation name.
+
+    'Ask (Standard)' -> 'standard'; 'US Case Law Search (21-50 results)' ->
+    '21-50 results'; 'US Statutes Search' -> '' (no tier to disambiguate).
+    """
+    start = operation.rfind("(")
+    end = operation.rfind(")")
+    if start != -1 and end > start:
+        return operation[start + 1 : end].strip().lower()
+    return ""
+
+
+def _format_cost(entries: list[dict]) -> str:
+    """Build a 'Cost: ...' sentence from the pricing entries for one tool.
+
+    Single price -> 'Cost: 4 credits.' Multiple tiers -> each tier labelled,
+    e.g. 'Cost: 15 credits (standard), 30 credits (deep).'
+    """
+    tiers: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for entry in entries:
+        credits = _fmt_credits(entry["credits"])
+        label = _short_label(entry.get("operation", ""))
+        key = (credits, label)
+        if key in seen:
+            continue
+        seen.add(key)
+        tiers.append((credits, label))
+
+    if not tiers:
+        return ""
+    if len(tiers) == 1:
+        credits = tiers[0][0]
+        return f"Cost: {credits} {_credit_noun(credits)}."
+    rendered = ", ".join(
+        f"{credits} {_credit_noun(credits)} ({label})"
+        if label
+        else f"{credits} {_credit_noun(credits)}"
+        for credits, label in tiers
+    )
+    return f"Cost: {rendered}."
+
+
+def _build_tool_costs(cost_entries: list[dict]) -> dict[str, str]:
+    """Map each MCP tool name to its injected 'Cost: ...' sentence.
+
+    ``cost_entries`` is the ``costs`` array from /api/v1/api-credits/pricing/all.
+    Tools with no matching endpoint (or when the fetch failed) are simply
+    omitted, so no cost line is appended rather than a wrong one.
+    """
+    tool_costs: dict[str, str] = {}
+    for tool_name, (endpoint, region) in _TOOL_COST_ENDPOINTS.items():
+        matches = [
+            e
+            for e in cost_entries
+            if e.get("endpoint") == endpoint
+            and (region is None or region in e.get("regions", []))
+        ]
+        line = _format_cost(matches)
+        if line:
+            tool_costs[tool_name] = line
+    return tool_costs
+
+
+def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
+    """Fetch the full per-endpoint credit-cost matrix from the live API.
+
+    Uses the authenticated /pricing/all endpoint (research:read scope) so the
+    hidden ask/research/citations/acts prices are included. Best-effort: any
+    failure returns an empty list, and tools then carry no cost line rather
+    than a stale one.
+    """
+    url = f"{base_url}/api/v1/api-credits/pricing/all"
+    try:
+        response = httpx.get(
+            url,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        return response.json().get("costs", [])
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning(
+            "Could not fetch credit pricing from %s; tool descriptions will "
+            "omit cost lines this session: %s",
+            url,
+            exc,
+        )
+        return []
+
+
+# ---------------------------------------------------------------------------
 # Component customization
 # ---------------------------------------------------------------------------
 
 
-def _customize_component(
-    route: HTTPRoute,
-    component: OpenAPITool | OpenAPIResource | OpenAPIResourceTemplate,
-) -> None:
-    """Rewrite auto-generated descriptions to be concise and LLM-friendly.
+def _make_customize_component(tool_costs: dict[str, str]):
+    """Build the FastMCP ``mcp_component_fn`` bound to a live cost map."""
 
-    The OpenAPI spec descriptions are multi-paragraph markdown with tables,
-    code examples, and SSE documentation -- far too verbose for an LLM tool
-    description. We replace them with focused 50-100 word descriptions that
-    tell the LLM WHEN to use the tool and WHAT it returns.
+    def _customize_component(
+        route: HTTPRoute,
+        component: OpenAPITool | OpenAPIResource | OpenAPIResourceTemplate,
+    ) -> None:
+        """Rewrite auto-generated descriptions to be concise and LLM-friendly,
+        and append the live per-call credit cost.
 
-    Note: This callback mutates ``component`` in-place as required by
-    FastMCP's ``mcp_component_fn`` contract.
-    """
-    if component.name in TOOL_DESCRIPTIONS:
-        component.description = TOOL_DESCRIPTIONS[component.name]
+        The OpenAPI spec descriptions are multi-paragraph markdown with tables,
+        code examples, and SSE documentation -- far too verbose for an LLM tool
+        description. We replace them with focused 50-100 word descriptions that
+        tell the LLM WHEN to use the tool and WHAT it returns, then append the
+        credit cost fetched from the live API at startup.
 
-    # Tag all components for discoverability
-    component.tags.add("legal-research")
-    component.tags.add("vaquill")
+        Note: This callback mutates ``component`` in-place as required by
+        FastMCP's ``mcp_component_fn`` contract.
+        """
+        if component.name in TOOL_DESCRIPTIONS:
+            description = TOOL_DESCRIPTIONS[component.name]
+            cost_line = tool_costs.get(component.name)
+            if cost_line:
+                description = f"{description} {cost_line}"
+            component.description = description
+
+        # Tag all components for discoverability
+        component.tags.add("legal-research")
+        component.tags.add("vaquill")
+
+    return _customize_component
 
 
 # ---------------------------------------------------------------------------
@@ -173,6 +318,10 @@ def create_server() -> FastMCP:
     # Fetch OpenAPI spec from the live API
     openapi_spec = _fetch_openapi_spec(base_url)
 
+    # Fetch the live credit-cost matrix so each tool description carries an
+    # accurate, never-drifting cost line (best-effort; empty on failure).
+    tool_costs = _build_tool_costs(_fetch_full_costs(base_url, api_key))
+
     # Create authenticated HTTP client.
     # The auth header is set on the client so ALL requests carry it.
     # The pricing endpoint ignores the extra header (it's unauthenticated).
@@ -203,7 +352,7 @@ def create_server() -> FastMCP:
         client=client,
         mcp_names=_MCP_NAMES,
         route_maps=_ROUTE_MAPS,
-        mcp_component_fn=_customize_component,
+        mcp_component_fn=_make_customize_component(tool_costs),
         # Disable output validation — the live API is the source of truth.
         # Some fields (e.g., citation network treatmentType) can be null in
         # practice even though the OpenAPI enum doesn't declare it nullable.
