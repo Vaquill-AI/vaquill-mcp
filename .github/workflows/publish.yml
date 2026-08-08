@@ -37,3 +37,7 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Skip files already on PyPI so re-runs (or a re-published release)
+          # are idempotent instead of failing on "file already exists".
+          skip-existing: true
