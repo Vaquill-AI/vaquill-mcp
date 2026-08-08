@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Vaquill-AI/vaquill-mcp",
   "title": "Vaquill",
-  "description": "Legal research: US primary law, Indian case law (31M+ judgments), and citation graph traversal.",
-  "version": "0.1.2",
+  "description": "Legal research: search US federal and 50-state primary law (statutes, regulations, constitutions, court rules) and resolve statutory citations.",
+  "version": "0.2.0",
   "repository": {
     "url": "https://github.com/Vaquill-AI/vaquill-mcp",
     "source": "github"

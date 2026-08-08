@@ -1,6 +1,6 @@
 # vaquill-mcp
 
-MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Covers US federal and 50-state law (USC, CFR, state legislation, CourtListener case law). Ask AI-powered legal questions, search statutes, and ground answers in primary sources, all from your AI tools.
+MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Covers US federal and 50-state primary law: USC, CFR, state statutes and regulations, state and US constitutions, court rules, the Federal Register, executive orders, and agency guidance. Search primary law, resolve statutory citations, browse the hierarchy, and ground answers in official sources, all from your AI tools.
 
 ## Quick Start
 
@@ -134,20 +134,30 @@ Add to `~/.windsurf/settings.json`:
 
 ## Available Tools
 
-### General
+Tools are generated from the live Vaquill API's OpenAPI spec at startup, so the
+set always matches the current API. For the **authoritative, up-to-date list and
+per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
+client's tool list. The main groups (representative tools shown):
 
-| Tool | Description | Credits |
-|------|-------------|---------|
-| `ask_legal_question` | AI-powered legal Q&A across USC, CFR, 50-state law, and CourtListener case law. Standard (fast) or deep (multi-hop) modes. | 15 - 30 |
-| `get_pricing` | Get current API credit pricing (no auth required). | Free |
+### US statutes & regulations
 
-### US law (USC + CFR)
+USC, CFR, all 50 state codes, constitutions, state court rules, the Federal
+Register, and agency guidance.
 
-| Tool | Description | Credits |
-|------|-------------|---------|
-| `search_us_statutes` | Semantic search across the United States Code (USC) and Code of Federal Regulations (CFR). Filter by `corpusType` and `titleNumber`. | 4 |
-| `get_us_statute_section` | Metadata for a specific USC/CFR section by `act_id` (citation, title hierarchy, links). | 2 |
-| `get_us_statute_section_text` | Full HTML + plain text of a USC or CFR section. | 6 |
+| Tool | Description |
+|------|-------------|
+| `search_us_statutes` | Hybrid semantic + keyword search; filter by `corpusType`, `state`, `titleNumber`, `chapter`, year, and more. |
+| `get_us_statute_section` | Section metadata by `actId` (citation, hierarchy, official-source links). |
+| `get_us_statute_section_text` | Full HTML + plain text of a section. |
+| `resolve_statute_citation` | Resolve a Bluebook citation (e.g. `42 U.S.C. § 1983`) straight to its section. |
+| `list_statute_divisions` | Browse the statutory hierarchy one level at a time. |
+| `list_statutes_coverage` | Self-describing coverage matrix: which corpora exist in which jurisdiction. |
+
+### Utility
+
+| Tool | Description |
+|------|-------------|
+| `get_pricing` | Live API credit pricing (free, no auth). |
 
 ## Environment Variables
 
@@ -162,9 +172,9 @@ Add to `~/.windsurf/settings.json`:
 Once configured, you can ask your AI assistant things like:
 
 - "What does 17 CFR 240.10b-5 say about insider trading?"
-- "Find USC sections on equal protection under the Fourteenth Amendment"
-- "Summarize FRCP Rule 12(b)(6) and recent SDNY case law applying it" (uses deep mode)
-- "What are the federal penalties for wire fraud under 18 USC 1343?"
+- "Resolve 42 U.S.C. § 1983 to its section and show the full text"
+- "Find California statutes on tenant repair obligations"
+- "Browse the Texas statutory codes, then drill into the Penal Code"
 
 ## Development
 
@@ -186,7 +196,7 @@ uv run fastmcp dev src/vaquill_mcp/server.py
 
 ## How It Works
 
-This package is a thin MCP wrapper around the [Vaquill Developer API](https://www.vaquill.ai/docs/api-reference/). At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using [FastMCP](https://github.com/jlowin/fastmcp). Tool names and descriptions are customized for optimal LLM performance.
+This package is a thin MCP wrapper around the [Vaquill Developer API](https://www.vaquill.ai/docs/api-reference/). At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using [FastMCP](https://github.com/jlowin/fastmcp). Tool names are derived automatically from each endpoint's OpenAPI operation id, so new API endpoints show up as clean, ready-to-use tools with no package update; key descriptions are refined for optimal LLM performance.
 
 Because the spec is fetched at startup (not bundled), tools automatically reflect any API changes without a package update.
 

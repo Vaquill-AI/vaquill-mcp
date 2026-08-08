@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "vaquill-mcp"
 dynamic = ["version"]
-description = "MCP server for Vaquill legal research API - search 20M+ Indian court judgments via AI"
+description = "MCP server for the Vaquill legal research API - search US federal and 50-state statutes, regulations, constitutions, and court rules via AI"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
     { name = "Vaquill", email = "dev@vaquill.ai" },
 ]
-keywords = ["mcp", "legal", "research", "vaquill", "ai", "rag", "law", "india"]
+keywords = ["mcp", "legal", "research", "vaquill", "ai", "rag", "law", "statutes", "regulations", "us"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
