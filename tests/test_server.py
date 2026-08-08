@@ -7,59 +7,100 @@ import pytest
 
 from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
 from vaquill_mcp.server import (
-    _MCP_NAMES,
+    _FUNC_OVERRIDES,
     _ROUTE_MAPS,
     _TOOL_COST_ENDPOINTS,
     _build_tool_costs,
+    _derive_mcp_names,
     _fetch_openapi_spec,
     _format_cost,
     _make_customize_component,
     create_server,
 )
 
+# A synthetic OpenAPI spec exercising the real operationId shapes: FastAPI's
+# verbose auto id, an explicit hand-set id, a cross-router collision, and the
+# /us country-prefix migration.
+_SAMPLE_SPEC = {
+    "paths": {
+        "/api/v1/us/statutes/coverage": {
+            "get": {"operationId": "list_statutes_coverage_api_v1_us_statutes_coverage_get"}
+        },
+        "/api/v1/us/statutes/search": {
+            "post": {"operationId": "search_statutes_api_v1_us_statutes_search_post"}
+        },
+        "/api/v1/us/statutes/resolve": {
+            "get": {"operationId": "resolve_statute_citation"}  # explicit id, collision fix
+        },
+        "/api/v1/citations/resolve": {
+            "get": {"operationId": "resolve_citation_api_v1_citations_resolve_get"}
+        },
+        "/api/v1/research/search": {
+            "post": {"operationId": "external_search_api_v1_research_search_post"}
+        },
+    }
+}
+
 # A no-cost customizer for tests that only exercise description/tag rewriting.
 _customize_component = _make_customize_component({})
 
 
 class TestMCPNames:
-    """Verify the operationId -> tool name mapping is complete and correct."""
+    """Tool names are AUTO-DERIVED from the live OpenAPI, not hand-maintained."""
 
-    def test_all_expected_tools_mapped(self) -> None:
-        expected_tools = {
-            # Cross-jurisdiction
-            "ask_legal_question",
-            "get_pricing",
-            # Indian case law
-            "search_legal_cases",
-            "quick_search",
-            "resolve_citation",
-            "search_cases_by_citation",
-            "lookup_case",
-            "get_citation_network",
-            # Indian acts & legislation
-            "search_legislation",
-            "list_legislation",
-            "get_act_text",
-            "get_amendments",
-            # US statutes (USC + CFR)
-            "search_us_statutes",
-            "get_us_statute_section",
-            "get_us_statute_section_text",
-        }
-        assert set(_MCP_NAMES.values()) == expected_tools
+    def test_verbose_operationid_reduced_to_function_name(self) -> None:
+        names = _derive_mcp_names(_SAMPLE_SPEC)
+        assert (
+            names["list_statutes_coverage_api_v1_us_statutes_coverage_get"]
+            == "list_statutes_coverage"
+        )
 
-    def test_streaming_endpoint_not_in_names(self) -> None:
-        """The streaming endpoint should be excluded via RouteMap, not named."""
-        for operation_id in _MCP_NAMES:
-            assert "stream" not in operation_id
+    def test_no_verbose_suffix_leaks_into_names(self) -> None:
+        for name in _derive_mcp_names(_SAMPLE_SPEC).values():
+            assert "_api_v1_" not in name
 
-    def test_expected_tool_count(self) -> None:
-        assert len(_MCP_NAMES) == 15
+    def test_semantic_override_applied(self) -> None:
+        names = _derive_mcp_names(_SAMPLE_SPEC)
+        assert names["search_statutes_api_v1_us_statutes_search_post"] == "search_us_statutes"
+        assert names["external_search_api_v1_research_search_post"] == "search_legal_cases"
 
-    def test_no_duplicate_tool_names(self) -> None:
-        """Each tool name should be unique."""
-        names = list(_MCP_NAMES.values())
-        assert len(names) == len(set(names))
+    def test_override_is_path_independent(self) -> None:
+        """The /us country-prefix migration must not change tool names."""
+        old = _derive_mcp_names(
+            {
+                "paths": {
+                    "/api/v1/statutes/search": {
+                        "post": {"operationId": "search_statutes_api_v1_statutes_search_post"}
+                    }
+                }
+            }
+        )
+        new = _derive_mcp_names(
+            {
+                "paths": {
+                    "/api/v1/us/statutes/search": {
+                        "post": {"operationId": "search_statutes_api_v1_us_statutes_search_post"}
+                    }
+                }
+            }
+        )
+        assert list(old.values()) == list(new.values()) == ["search_us_statutes"]
+
+    def test_explicit_operation_id_is_left_verbatim(self) -> None:
+        """A hand-set operation_id (no _api_v1_) is not remapped; FastMCP uses it."""
+        names = _derive_mcp_names(_SAMPLE_SPEC)
+        assert "resolve_statute_citation" not in names
+        # the collision partner keeps its clean name because the statute side
+        # was disambiguated via the explicit operation_id above
+        assert names["resolve_citation_api_v1_citations_resolve_get"] == "resolve_citation"
+
+    def test_no_duplicate_names(self) -> None:
+        names = _derive_mcp_names(_SAMPLE_SPEC)
+        assert len(set(names.values())) == len(names)
+
+    def test_semantic_overrides_are_clean(self) -> None:
+        for func, name in _FUNC_OVERRIDES.items():
+            assert func and name and "_api_v1_" not in name
 
 
 class TestRouteExclusion:
@@ -85,7 +126,7 @@ class TestDescriptions:
     """Verify all mapped tools have custom descriptions."""
 
     def test_all_tools_have_descriptions(self) -> None:
-        for tool_name in _MCP_NAMES.values():
+        for tool_name in _FUNC_OVERRIDES.values():
             assert tool_name in TOOL_DESCRIPTIONS, (
                 f"Tool '{tool_name}' is missing a description in descriptions.py"
             )
@@ -102,11 +143,10 @@ class TestDescriptions:
             assert len(desc) > 20, f"Description for '{name}' is too short"
 
     def test_no_orphan_descriptions(self) -> None:
-        """Every description should map to a real tool name."""
-        tool_names = set(_MCP_NAMES.values())
+        """Every custom description keys a clean tool name (no verbose suffix)."""
         for desc_name in TOOL_DESCRIPTIONS:
-            assert desc_name in tool_names, (
-                f"Description for '{desc_name}' has no matching tool"
+            assert desc_name and "_api_v1_" not in desc_name, (
+                f"Description key '{desc_name}' is not a clean tool name"
             )
 
 
@@ -182,10 +222,13 @@ class TestCostInjection:
                 f"be injected from /api-credits/pricing/all, not written here"
             )
 
-    def test_every_paid_tool_has_a_cost_endpoint(self) -> None:
-        """Every tool except the free get_pricing maps to a pricing endpoint."""
-        paid_tools = set(_MCP_NAMES.values()) - {"get_pricing"}
-        assert paid_tools == set(_TOOL_COST_ENDPOINTS)
+    def test_cost_endpoint_map_is_well_formed(self) -> None:
+        """Every cost mapping keys a clean tool name to a (path, region)."""
+        for tool_name, entry in _TOOL_COST_ENDPOINTS.items():
+            assert tool_name and "_api_v1_" not in tool_name
+            path, region = entry
+            assert path.startswith("/")
+            assert region is None or region in {"US", "IN"}
 
     def test_format_cost_single_tier(self) -> None:
         entries = [{"credits": 4, "operation": "US Statutes Search", "regions": ["US"]}]

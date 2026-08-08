@@ -10,6 +10,7 @@ reflect any API changes without a package update.
 import contextlib
 import logging
 import time
+from collections import Counter
 from collections.abc import AsyncIterator
 
 import httpx
@@ -37,25 +38,57 @@ logger = logging.getLogger(__name__)
 # These map the auto-generated operationIds from FastAPI (which include the
 # full path) to clean, LLM-friendly tool names.
 
-_MCP_NAMES: dict[str, str] = {
-    "ask_legal_question_api_v1_ask_post": "ask_legal_question",
-    "external_search_api_v1_research_search_post": "search_legal_cases",
-    "bot_search_api_v1_research_quick_post": "quick_search",
-    "resolve_citation_api_v1_citations_resolve_get": "resolve_citation",
-    "search_cases_api_v1_citations_cases_search_get": "search_cases_by_citation",
-    "lookup_case_api_v1_citations_cases_lookup_get": "lookup_case",
-    "get_citation_network_api_v1_citations_cases_network_get": "get_citation_network",
-    "get_pricing_api_v1_api_credits_pricing_get": "get_pricing",
-    # Indian Acts & Legislation
-    "search_acts_api_v1_acts_search_post": "search_legislation",
-    "list_acts_api_v1_acts_list_get": "list_legislation",
-    "get_act_text_api_v1_acts__act_id__text_get": "get_act_text",
-    "get_act_amendments_api_v1_acts__act_id__amendments_get": "get_amendments",
-    # US Statutes (USC + CFR + 50 state legislation via /ask)
-    "search_statutes_api_v1_statutes_search_post": "search_us_statutes",
-    "get_section_api_v1_statutes_section__act_id__get": "get_us_statute_section",
-    "get_section_body_api_v1_statutes_section__act_id__body_get": "get_us_statute_section_text",
+# Tool names are AUTO-DERIVED from the live OpenAPI (see _derive_mcp_names), so
+# new/renamed/re-prefixed endpoints need no change here. This map is only the
+# handful of SEMANTIC renames where the raw handler-function name is not the
+# clearest tool name. Keyed on the FUNCTION NAME (the part of FastAPI's
+# operationId before `_api_v1_`) so it survives path/prefix changes such as the
+# `/us` country-prefix migration.
+_FUNC_OVERRIDES: dict[str, str] = {
+    "external_search": "search_legal_cases",
+    "bot_search": "quick_search",
+    "search_cases": "search_cases_by_citation",
+    "search_acts": "search_legislation",
+    "list_acts": "list_legislation",
+    "get_act_amendments": "get_amendments",
+    "search_statutes": "search_us_statutes",
+    "get_section": "get_us_statute_section",
+    "get_section_body": "get_us_statute_section_text",
 }
+
+
+def _derive_mcp_names(spec: dict) -> dict[str, str]:
+    """Map each operationId to a clean tool name, derived from the OpenAPI.
+
+    FastAPI auto-generates operationIds as ``{func}_api_v1_{path}_{method}``, so
+    the text before ``_api_v1_`` is the clean handler-function name -- that is
+    the default tool name for every endpoint (turning the ugly
+    ``list_statutes_coverage_api_v1_statutes_coverage_get`` into
+    ``list_statutes_coverage``). ``_FUNC_OVERRIDES`` refines a few, and genuine
+    cross-router name collisions (e.g. ``resolve_citation`` under both
+    ``/citations`` and ``/statutes``) are disambiguated by the resource segment.
+    """
+    entries: list[tuple[str, str, str]] = []  # (operation_id, resource, base_name)
+    for path, item in (spec.get("paths") or {}).items():
+        if not isinstance(item, dict):
+            continue
+        segs = [s for s in path.strip("/").split("/") if s not in ("api", "v1", "us") and "{" not in s]
+        resource = segs[0] if segs else ""
+        for op in item.values():
+            if not isinstance(op, dict):
+                continue
+            op_id = op.get("operationId")
+            if not op_id or "_api_v1_" not in op_id:
+                continue
+            func = op_id.split("_api_v1_", 1)[0]
+            entries.append((op_id, resource, _FUNC_OVERRIDES.get(func, func)))
+    counts = Counter(base for _, _, base in entries)
+    names: dict[str, str] = {}
+    for op_id, resource, base in entries:
+        if counts[base] > 1 and resource and not base.startswith(f"{resource}_"):
+            base = f"{resource}_{base}"
+        names[op_id] = base
+    return names
 
 # ---------------------------------------------------------------------------
 # Route exclusions
@@ -350,7 +383,7 @@ def create_server() -> FastMCP:
     provider = OpenAPIProvider(
         openapi_spec=openapi_spec,
         client=client,
-        mcp_names=_MCP_NAMES,
+        mcp_names=_derive_mcp_names(openapi_spec),
         route_maps=_ROUTE_MAPS,
         mcp_component_fn=_make_customize_component(tool_costs),
         # Disable output validation — the live API is the source of truth.
