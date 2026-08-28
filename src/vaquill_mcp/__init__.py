@@ -2,7 +2,7 @@
 
 import logging
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = ["__version__", "create_server"]
 
 # PEP 593: Libraries should add NullHandler to prevent "No handler found"

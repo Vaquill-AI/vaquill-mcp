@@ -3,7 +3,7 @@
   "name": "io.github.Vaquill-AI/vaquill-mcp",
   "title": "Vaquill",
   "description": "Search US federal and 50-state statutes, regulations, constitutions, and court rules.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
     "url": "https://github.com/Vaquill-AI/vaquill-mcp",
     "source": "github"

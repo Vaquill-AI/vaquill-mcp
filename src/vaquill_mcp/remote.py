@@ -53,6 +53,34 @@ _TIMEOUT = float(os.environ.get("VAQUILL_TIMEOUT", "120"))
 _client: httpx.AsyncClient | None = None
 
 
+# The public corpusType vocabulary, mirroring `PublicCorpusType` in
+# app/services/us_corpus/us_statutes_corpus_types.py on the API side. The five
+# STATE_SCOPED ones pair with `state`.
+#
+# This was `Literal["USC", "CFR"]` until 2026-08-28, which schema-rejected every
+# state corpus through the hosted server: the 50-state statutes, regulations,
+# constitutions and court rules were unreachable here while the tool
+# description promised them. The stdio server never had the bug because it
+# derives its schema from the OpenAPI document.
+_CorpusType = Literal[
+    "USC",
+    "CFR",
+    "STATE",
+    "CONSTITUTION",
+    "FEDERAL_RULES",
+    "STATE_CONSTITUTION",
+    "STATE_RULES",
+    "EXECUTIVE_ACTION",
+    "REGULATION",
+    "FEDERAL_REGISTER",
+    "AGENCY_GUIDANCE",
+    "SENTENCING_GUIDELINES",
+    "US_TAX_TREATY",
+    "STATE_AGENCY_GUIDANCE",
+    "SESSION_LAW",
+]
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -113,7 +141,9 @@ async def _call_api(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         response.raise_for_status()
         try:
             return response.json()
-        except (ValueError, Exception):
+        except Exception:
+            # Was `except (ValueError, Exception)`, in which the second arm makes
+            # the first dead. Same behaviour, but the intent is now readable.
             return {"error": "API returned a non-JSON response. Please retry."}
     except httpx.HTTPStatusError as exc:
         status = exc.response.status_code
@@ -124,7 +154,9 @@ async def _call_api(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
             msg = str(exc)
 
         if status == 401:
-            return {"error": "Invalid API key. Check your key at https://www.vaquill.ai/settings"}
+            return {
+                "error": "Invalid API key. Check your key at https://www.vaquill.ai/settings"
+            }
         if status == 402:
             return {"error": f"Insufficient credits. {msg}"}
         if status == 429:
@@ -133,7 +165,9 @@ async def _call_api(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
     except httpx.TimeoutException:
         return {"error": "Request timed out. Try 'standard' mode or a simpler query."}
     except httpx.ConnectError:
-        return {"error": "Cannot reach Vaquill API. The service may be temporarily unavailable."}
+        return {
+            "error": "Cannot reach Vaquill API. The service may be temporarily unavailable."
+        }
     except (httpx.DecodingError, httpx.ReadError):
         return {"error": "Received an invalid response from the API. Please retry."}
     except httpx.HTTPError as exc:
@@ -197,37 +231,14 @@ async def health_check(_request: Any) -> Any:
     """Health endpoint for Docker/load balancer probes."""
     from starlette.responses import JSONResponse
 
-    return JSONResponse({"status": "ok", "service": "vaquill-mcp", "version": __version__})
+    return JSONResponse(
+        {"status": "ok", "service": "vaquill-mcp", "version": __version__}
+    )
 
 
 # ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
-
-
-@mcp.tool(description=TOOL_DESCRIPTIONS["ask_legal_question"])
-async def ask_legal_question(
-    question: str,
-    mode: Literal["standard", "deep"] = "standard",
-    sources: bool = True,
-    max_sources: int = 5,
-    chat_history: list[dict[str, str]] | None = None,
-    country_code: Literal["US", "IN"] | None = None,
-    sources_filter: Literal["all", "statutes_only", "cases_only"] | None = None,
-) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "question": question,
-        "mode": mode,
-        "sources": sources,
-        "maxSources": max_sources,
-    }
-    if chat_history:
-        body["chatHistory"] = chat_history
-    if country_code:
-        body["countryCode"] = country_code
-    if sources_filter:
-        body["sourcesFilter"] = sources_filter
-    return await _call_api("POST", "/api/v1/ask", json=body)
 
 
 @mcp.tool(description=TOOL_DESCRIPTIONS["search_legal_cases"])
@@ -288,30 +299,6 @@ async def resolve_citation(
     return await _call_api("GET", "/api/v1/citations/resolve", params=params)
 
 
-@mcp.tool(description=TOOL_DESCRIPTIONS["search_cases_by_citation"])
-async def search_cases_by_citation(
-    query: str,
-    limit: int = 10,
-    court_code: str | None = None,
-    year_start: int | None = None,
-    year_end: int | None = None,
-    validity_status: str | None = None,
-    country_code: str | None = None,
-) -> dict[str, Any]:
-    params: dict[str, Any] = {"q": query, "limit": limit}
-    if court_code:
-        params["court_code"] = court_code
-    if year_start is not None:
-        params["year_start"] = year_start
-    if year_end is not None:
-        params["year_end"] = year_end
-    if validity_status:
-        params["validity_status"] = validity_status
-    if country_code:
-        params["country_code"] = country_code
-    return await _call_api("GET", "/api/v1/citations/cases/search", params=params)
-
-
 @mcp.tool(description=TOOL_DESCRIPTIONS["lookup_case"])
 async def lookup_case(
     citation: str,
@@ -347,108 +334,239 @@ async def get_pricing() -> dict[str, Any]:
     return await _call_api("GET", "/api/v1/api-credits/pricing")
 
 
-@mcp.tool(description=TOOL_DESCRIPTIONS["search_legislation"])
-async def search_legislation(
-    query: str,
-    category: str | None = None,
-    state: str | None = None,
-    department: str | None = None,
-    year_from: int | None = None,
-    year_to: int | None = None,
-    page_size: int = 10,
-) -> dict[str, Any]:
-    body: dict[str, Any] = {"query": query, "pageSize": page_size}
-    if category:
-        body["category"] = category
-    if state:
-        body["state"] = state
-    if department:
-        body["department"] = department
-    if year_from is not None:
-        body["yearFrom"] = year_from
-    if year_to is not None:
-        body["yearTo"] = year_to
-    return await _call_api("POST", "/api/v1/acts/search", json=body)
-
-
-@mcp.tool(description=TOOL_DESCRIPTIONS["get_act_text"])
-async def get_act_text(
-    act_id: str,
-) -> dict[str, Any]:
-    return await _call_api("GET", f"/api/v1/acts/{act_id}/text")
-
-
-@mcp.tool(description=TOOL_DESCRIPTIONS["get_amendments"])
-async def get_amendments(
-    act_id: str,
-    section: str | None = None,
-    footnote_type: str | None = None,
-    page: int = 1,
-    page_size: int = 100,
-) -> dict[str, Any]:
-    params: dict[str, Any] = {"page": page, "pageSize": page_size}
-    if section:
-        params["section"] = section
-    if footnote_type:
-        params["type"] = footnote_type
-    return await _call_api("GET", f"/api/v1/acts/{act_id}/amendments", params=params)
-
-
-@mcp.tool(description=TOOL_DESCRIPTIONS["list_legislation"])
-async def list_legislation(
-    category: str | None = None,
-    state: str | None = None,
-    department: str | None = None,
-    year_from: int | None = None,
-    year_to: int | None = None,
-    status: str | None = None,
-    search: str | None = None,
-    sort: str = "year_desc",
-    page: int = 1,
-    page_size: int = 50,
-) -> dict[str, Any]:
-    params: dict[str, Any] = {"sort": sort, "page": page, "pageSize": page_size}
-    if category:
-        params["category"] = category
-    if state:
-        params["state"] = state
-    if department:
-        params["department"] = department
-    if year_from is not None:
-        params["yearFrom"] = year_from
-    if year_to is not None:
-        params["yearTo"] = year_to
-    if status:
-        params["status"] = status
-    if search:
-        params["search"] = search
-    return await _call_api("GET", "/api/v1/acts/list", params=params)
-
-
 @mcp.tool(description=TOOL_DESCRIPTIONS["search_us_statutes"])
 async def search_us_statutes(
     query: str,
-    corpus_type: Literal["USC", "CFR"] | None = None,
+    corpus_type: _CorpusType | None = None,
+    state: str | None = None,
+    code: str | None = None,
     title_number: int | None = None,
     limit: int = 10,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {"query": query, "limit": limit}
     if corpus_type:
         body["corpusType"] = corpus_type
+    if state:
+        body["state"] = state
+    if code:
+        body["code"] = code
     if title_number is not None:
         body["titleNumber"] = title_number
-    return await _call_api("POST", "/api/v1/statutes/search", json=body)
+    return await _call_api("POST", "/api/v1/us/statutes/search", json=body)
 
 
 @mcp.tool(description=TOOL_DESCRIPTIONS["get_us_statute_section"])
 async def get_us_statute_section(
     act_id: str,
 ) -> dict[str, Any]:
-    return await _call_api("GET", f"/api/v1/statutes/section/{act_id}")
+    return await _call_api("GET", f"/api/v1/us/statutes/section/{act_id}")
 
 
 @mcp.tool(description=TOOL_DESCRIPTIONS["get_us_statute_section_text"])
 async def get_us_statute_section_text(
     act_id: str,
 ) -> dict[str, Any]:
-    return await _call_api("GET", f"/api/v1/statutes/section/{act_id}/body")
+    return await _call_api("GET", f"/api/v1/us/statutes/section/{act_id}/body")
+
+
+# ---------------------------------------------------------------------------
+# Section intelligence
+#
+# These nineteen tools existed in `descriptions.py` and on the stdio server but
+# were never declared here, so the hosted server published 9 of 28. The stdio
+# server derives its catalogue from the OpenAPI document and so cannot drift;
+# this module declares tools by hand and did. `test_remote_publishes_every_tool`
+# is what stops the two diverging again.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_sections_batch"])
+async def get_sections_batch(act_ids: list[str]) -> dict[str, Any]:
+    return await _call_api(
+        "POST", "/api/v1/us/statutes/sections", json={"actIds": act_ids}
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_section_neighbors"])
+async def get_section_neighbors(act_id: str, limit: int = 5) -> dict[str, Any]:
+    return await _call_api(
+        "GET", f"/api/v1/us/statutes/section/{act_id}/related", params={"limit": limit}
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_section_cited_by"])
+async def get_section_cited_by(act_id: str, limit: int = 20) -> dict[str, Any]:
+    return await _call_api(
+        "GET", f"/api/v1/us/statutes/section/{act_id}/cited-by", params={"limit": limit}
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_section_definitions"])
+async def get_section_definitions(act_id: str) -> dict[str, Any]:
+    return await _call_api("GET", f"/api/v1/us/statutes/section/{act_id}/definitions")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_section_cross_state"])
+async def get_section_cross_state(act_id: str, limit: int = 10) -> dict[str, Any]:
+    return await _call_api(
+        "GET",
+        f"/api/v1/us/statutes/section/{act_id}/cross-state",
+        params={"limit": limit},
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_section_changes"])
+async def get_section_changes(act_id: str) -> dict[str, Any]:
+    return await _call_api("GET", f"/api/v1/us/statutes/section/{act_id}/changes")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["resolve_statute_citation"])
+async def resolve_statute_citation(citation: str) -> dict[str, Any]:
+    return await _call_api(
+        "GET", "/api/v1/us/statutes/resolve", params={"citation": citation}
+    )
+
+
+# ---------------------------------------------------------------------------
+# Corpus discovery (free: authenticated and rate-limited, but no credits)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_statute_divisions"])
+async def list_statute_divisions(
+    corpus_type: _CorpusType | None = None,
+    state: str | None = None,
+    code: str | None = None,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+    if corpus_type:
+        params["corpusType"] = corpus_type
+    if state:
+        params["state"] = state
+    if code:
+        params["code"] = code
+    return await _call_api("GET", "/api/v1/us/statutes/divisions", params=params)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_statutes_coverage"])
+async def list_statutes_coverage() -> dict[str, Any]:
+    return await _call_api("GET", "/api/v1/us/statutes/coverage")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_statutes_laws"])
+async def list_statutes_laws(
+    state: str | None = None,
+    corpus_type: _CorpusType | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {"limit": limit, "offset": offset}
+    if state:
+        params["state"] = state
+    if corpus_type:
+        params["corpusType"] = corpus_type
+    return await _call_api("GET", "/api/v1/us/statutes/laws", params=params)
+
+
+# ---------------------------------------------------------------------------
+# Law Change Alerts (boards and watches)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_boards"])
+async def list_boards(
+    corpus_type: str | None = None,
+    state: str | None = None,
+    limit: int = 500,
+    offset: int = 0,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {"limit": limit, "offset": offset}
+    if corpus_type:
+        params["corpusType"] = corpus_type
+    if state:
+        params["state"] = state
+    return await _call_api("GET", "/api/v1/boards", params=params)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["create_watch"])
+async def create_watch(
+    corpus_type: str,
+    channel: Literal["webhook", "email", "both"],
+    state: str | None = None,
+    webhook_url: str | None = None,
+    email_address: str | None = None,
+    act_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {"corpusType": corpus_type, "channel": channel}
+    if state:
+        body["state"] = state
+    if webhook_url:
+        body["webhookUrl"] = webhook_url
+    if email_address:
+        body["emailAddress"] = email_address
+    if act_ids:
+        body["actIds"] = act_ids
+    return await _call_api("POST", "/api/v1/watches", json=body)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_watches"])
+async def list_watches(limit: int = 100, offset: int = 0) -> dict[str, Any]:
+    return await _call_api(
+        "GET", "/api/v1/watches", params={"limit": limit, "offset": offset}
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["update_watch"])
+async def update_watch(
+    watch_id: str,
+    is_active: bool | None = None,
+    webhook_url: str | None = None,
+    email_address: str | None = None,
+) -> dict[str, Any]:
+    body: dict[str, Any] = {}
+    if is_active is not None:
+        body["isActive"] = is_active
+    if webhook_url:
+        body["webhookUrl"] = webhook_url
+    if email_address:
+        body["emailAddress"] = email_address
+    return await _call_api("PATCH", f"/api/v1/watches/{watch_id}", json=body)
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["delete_watch"])
+async def delete_watch(watch_id: str) -> dict[str, Any]:
+    return await _call_api("DELETE", f"/api/v1/watches/{watch_id}")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["test_watch"])
+async def test_watch(watch_id: str) -> dict[str, Any]:
+    return await _call_api("POST", f"/api/v1/watches/{watch_id}/test")
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_watch_changes"])
+async def list_watch_changes(
+    watch_id: str, limit: int = 50, offset: int = 0
+) -> dict[str, Any]:
+    return await _call_api(
+        "GET",
+        f"/api/v1/watches/{watch_id}/changes",
+        params={"limit": limit, "offset": offset},
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["get_watch_change_diff"])
+async def get_watch_change_diff(watch_id: str, change_id: str) -> dict[str, Any]:
+    return await _call_api(
+        "GET", f"/api/v1/watches/{watch_id}/changes/{change_id}/diff"
+    )
+
+
+@mcp.tool(description=TOOL_DESCRIPTIONS["list_watch_deliveries"])
+async def list_watch_deliveries(
+    watch_id: str, limit: int = 50, offset: int = 0
+) -> dict[str, Any]:
+    return await _call_api(
+        "GET",
+        f"/api/v1/watches/{watch_id}/deliveries",
+        params={"limit": limit, "offset": offset},
+    )

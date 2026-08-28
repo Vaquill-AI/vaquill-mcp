@@ -9,12 +9,12 @@ from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
 from vaquill_mcp.server import (
     _FUNC_OVERRIDES,
     _ROUTE_MAPS,
-    _TOOL_COST_ENDPOINTS,
     _build_tool_costs,
     _derive_mcp_names,
     _fetch_openapi_spec,
     _format_cost,
     _make_customize_component,
+    _pricing_endpoint_for_route,
     create_server,
 )
 
@@ -45,6 +45,117 @@ _SAMPLE_SPEC = {
 _customize_component = _make_customize_component({})
 
 
+# The production external surface, as operationId -> path. Mirrors
+# GET https://api.vaquill.ai/external/openapi.json; refresh it when the API
+# gains or loses an endpoint (the drift guards below will tell you).
+_PROD_OPERATIONS: dict[str, str] = {
+    "get_pricing_api_v1_api_credits_pricing_get": "/api/v1/api-credits/pricing",
+    "list_boards_api_v1_boards_get": "/api/v1/boards",
+    "list_statutes_coverage_api_v1_us_statutes_coverage_get": "/api/v1/us/statutes/coverage",
+    "list_statute_divisions_api_v1_us_statutes_divisions_get": "/api/v1/us/statutes/divisions",
+    "list_statutes_laws_api_v1_us_statutes_laws_get": "/api/v1/us/statutes/laws",
+    "resolve_statute_citation": "/api/v1/us/statutes/resolve",
+    "search_statutes_api_v1_us_statutes_search_post": "/api/v1/us/statutes/search",
+    "get_section_api_v1_us_statutes_section__act_id__get": "/api/v1/us/statutes/section/{act_id}",
+    "get_section_body_api_v1_us_statutes_section__act_id__body_get": (
+        "/api/v1/us/statutes/section/{act_id}/body"
+    ),
+    "get_section_changes_api_v1_us_statutes_section__act_id__changes_get": (
+        "/api/v1/us/statutes/section/{act_id}/changes"
+    ),
+    "get_section_cited_by_api_v1_us_statutes_section__act_id__cited_by_get": (
+        "/api/v1/us/statutes/section/{act_id}/cited-by"
+    ),
+    "get_section_cross_state_api_v1_us_statutes_section__act_id__cross_state_get": (
+        "/api/v1/us/statutes/section/{act_id}/cross-state"
+    ),
+    "get_section_definitions_api_v1_us_statutes_section__act_id__definitions_get": (
+        "/api/v1/us/statutes/section/{act_id}/definitions"
+    ),
+    "get_section_neighbors_api_v1_us_statutes_section__act_id__related_get": (
+        "/api/v1/us/statutes/section/{act_id}/related"
+    ),
+    "get_sections_batch_api_v1_us_statutes_sections_post": "/api/v1/us/statutes/sections",
+    "list_watches_api_v1_watches_get": "/api/v1/watches",
+    "create_watch_api_v1_watches_post": "/api/v1/watches",
+    "update_watch_api_v1_watches__watch_id__patch": "/api/v1/watches/{watch_id}",
+    "delete_watch_api_v1_watches__watch_id__delete": "/api/v1/watches/{watch_id}",
+    "list_watch_changes_api_v1_watches__watch_id__changes_get": (
+        "/api/v1/watches/{watch_id}/changes"
+    ),
+    "get_watch_change_diff_api_v1_watches__watch_id__changes__change_id__diff_get": (
+        "/api/v1/watches/{watch_id}/changes/{change_id}/diff"
+    ),
+    "list_watch_deliveries_api_v1_watches__watch_id__deliveries_get": (
+        "/api/v1/watches/{watch_id}/deliveries"
+    ),
+    "test_watch_api_v1_watches__watch_id__test_post": "/api/v1/watches/{watch_id}/test",
+}
+
+# Methods matter only for building a spec-shaped dict; one op per (path, method).
+_METHOD_BY_OP = {
+    "create_watch_api_v1_watches_post": "post",
+    "update_watch_api_v1_watches__watch_id__patch": "patch",
+    "delete_watch_api_v1_watches__watch_id__delete": "delete",
+    "search_statutes_api_v1_us_statutes_search_post": "post",
+    "get_sections_batch_api_v1_us_statutes_sections_post": "post",
+    "test_watch_api_v1_watches__watch_id__test_post": "post",
+}
+
+
+def _prod_spec() -> dict:
+    paths: dict[str, dict] = {}
+    for op_id, path in _PROD_OPERATIONS.items():
+        paths.setdefault(path, {})[_METHOD_BY_OP.get(op_id, "get")] = {"operationId": op_id}
+    return {"paths": paths}
+
+
+def _production_tool_names() -> set[str]:
+    """Tool names FastMCP will publish for the production spec."""
+    spec = _prod_spec()
+    names = _derive_mcp_names(spec)
+    # An explicit operation_id has no `_api_v1_` marker, so it is absent from
+    # the derived map and FastMCP uses the raw id as the tool name.
+    return {names.get(op_id, op_id) for op_id in _PROD_OPERATIONS}
+
+
+def _remote_tool_names() -> set[str]:
+    """Tool names the hosted remote server declares by hand in remote.py."""
+    import pathlib
+
+    source = (
+        pathlib.Path(__file__).parent.parent / "src" / "vaquill_mcp" / "remote.py"
+    ).read_text()
+    return set(re.findall(r'@mcp\.tool\(description=TOOL_DESCRIPTIONS\["([^"]+)"\]\)', source))
+
+
+# The production pricing matrix, as endpoint -> credits. Mirrors
+# GET /api/v1/api-credits/pricing/all. Only the endpoint strings are
+# load-bearing here; the numbers are illustrative and are NOT asserted against
+# the backend (they are fetched live at runtime, which is the whole design).
+_PROD_PRICING_ENDPOINTS = {
+    "/us/statutes/search",
+    "/us/statutes/section",
+    "/us/statutes/sections",
+    "/us/statutes/section/related",
+    "/us/statutes/section/body",
+    "/us/statutes/section/cited-by",
+    "/us/statutes/section/definitions",
+    "/us/statutes/section/cross-state",
+    "/us/statutes/section/changes",
+    "/us/statutes/resolve",
+    "/us/statutes/divisions",
+    "/us/statutes/coverage",
+    "/us/statutes/laws",
+    "/boards",
+    "/watches",
+    "/watches/test",
+    "/watches/changes",
+    "/watches/deliveries",
+    "/watches/changes/diff",
+}
+
+
 class TestMCPNames:
     """Tool names are AUTO-DERIVED from the live OpenAPI, not hand-maintained."""
 
@@ -69,7 +180,7 @@ class TestMCPNames:
         old = _derive_mcp_names(
             {
                 "paths": {
-                    "/api/v1/statutes/search": {
+                    "/api/v1/us/statutes/search": {
                         "post": {"operationId": "search_statutes_api_v1_statutes_search_post"}
                     }
                 }
@@ -131,6 +242,42 @@ class TestDescriptions:
                 f"Tool '{tool_name}' is missing a description in descriptions.py"
             )
 
+    def test_every_production_tool_has_a_description(self) -> None:
+        """The real surface, not just the handful of semantic renames.
+
+        The old version of this test walked ``_FUNC_OVERRIDES.values()``, which
+        is five entries, so fifteen real tools could ship with the raw
+        multi-paragraph OpenAPI description and nothing failed.
+        """
+        for name in sorted(_production_tool_names()):
+            assert name in TOOL_DESCRIPTIONS, (
+                f"Tool '{name}' exists in the API but has no description in "
+                f"descriptions.py, so it ships the verbose OpenAPI prose"
+            )
+
+    def test_no_description_is_for_a_retired_tool(self) -> None:
+        """A description for a route that no longer exists is dead weight.
+
+        Every key must be reachable either from the OpenAPI surface (the stdio
+        server) or from a hand-declared tool in remote.py (the hosted server).
+        """
+        known = _production_tool_names() | _remote_tool_names()
+        orphans = sorted(set(TOOL_DESCRIPTIONS) - known)
+        assert not orphans, (
+            f"descriptions.py describes tools that no longer exist: {orphans}"
+        )
+
+    def test_descriptions_do_not_claim_india_coverage(self) -> None:
+        """The India corpus was retired; /research and /citations are US-only.
+
+        Descriptions said "Indian corpus" and "Indian citation" for months
+        after those endpoints started rejecting countryCode=IN with a 400.
+        """
+        for name, desc in TOOL_DESCRIPTIONS.items():
+            assert "india" not in desc.lower(), (
+                f"Description for '{name}' still claims India coverage"
+            )
+
     def test_descriptions_are_concise(self) -> None:
         """Descriptions should be under 500 characters for efficient LLM context."""
         for name, desc in TOOL_DESCRIPTIONS.items():
@@ -157,7 +304,7 @@ class TestCustomizeComponent:
         """Component description should be replaced with our custom one."""
 
         class MockComponent:
-            name = "ask_legal_question"
+            name = "search_us_statutes"
             description = "Original very long OpenAPI description..."
 
             def __init__(self):
@@ -166,7 +313,7 @@ class TestCustomizeComponent:
         component = MockComponent()
         _customize_component(None, component)  # type: ignore[arg-type]
 
-        assert component.description == TOOL_DESCRIPTIONS["ask_legal_question"]
+        assert component.description == TOOL_DESCRIPTIONS["search_us_statutes"]
         assert "legal-research" in component.tags
         assert "vaquill" in component.tags
 
@@ -222,13 +369,92 @@ class TestCostInjection:
                 f"be injected from /api-credits/pricing/all, not written here"
             )
 
-    def test_cost_endpoint_map_is_well_formed(self) -> None:
-        """Every cost mapping keys a clean tool name to a (path, region)."""
-        for tool_name, entry in _TOOL_COST_ENDPOINTS.items():
-            assert tool_name and "_api_v1_" not in tool_name
-            path, region = entry
-            assert path.startswith("/")
-            assert region is None or region in {"US", "IN"}
+    def test_pricing_endpoint_derived_from_path(self) -> None:
+        """The version prefix and every path parameter come off.
+
+        These are the exact pairs the live API serves. Getting this wrong is
+        silent: the cost line just never appears.
+        """
+        cases = {
+            "/api/v1/us/statutes/search": "/us/statutes/search",
+            "/api/v1/us/statutes/section/{act_id}": "/us/statutes/section",
+            "/api/v1/us/statutes/section/{act_id}/body": "/us/statutes/section/body",
+            "/api/v1/us/statutes/section/{act_id}/cited-by": "/us/statutes/section/cited-by",
+            "/api/v1/watches": "/watches",
+            "/api/v1/watches/{watch_id}/test": "/watches/test",
+            "/api/v1/watches/{watch_id}/changes": "/watches/changes",
+            "/api/v1/watches/{watch_id}/changes/{change_id}/diff": "/watches/changes/diff",
+        }
+        for path, expected in cases.items():
+            assert _pricing_endpoint_for_route(path) == expected
+
+    def test_every_priced_production_route_gets_a_cost_line(self) -> None:
+        """The guard that would have caught the /us country-prefix break.
+
+        For months every tool shipped with NO cost line: the hand-keyed map
+        still said `/statutes/search` after pricing moved to
+        `/us/statutes/search`, and a miss is silent by design. Deriving the
+        endpoint from the path makes that impossible, and this asserts it.
+        """
+        spec = _prod_spec()
+        entries = [
+            {"endpoint": e, "operation": "X", "credits": 4, "regions": ["US"]}
+            for e in _PROD_PRICING_ENDPOINTS
+        ]
+        costs = _build_tool_costs(spec, entries)
+
+        priced_tools = {
+            name
+            for op_id, path in _PROD_OPERATIONS.items()
+            if _pricing_endpoint_for_route(path) in _PROD_PRICING_ENDPOINTS
+            for name in [_derive_mcp_names(spec).get(op_id, op_id)]
+        }
+        missing = sorted(priced_tools - set(costs))
+        assert not missing, f"priced routes with no injected cost line: {missing}"
+
+    def test_the_metered_alerts_route_is_priced_and_the_rest_are_free(self) -> None:
+        """Law-change alerts are free except the diff, which serves section text."""
+        spec = _prod_spec()
+        entries = [
+            {"endpoint": "/boards", "operation": "Boards", "credits": 0, "regions": ["US"]},
+            {"endpoint": "/watches", "operation": "Watches", "credits": 0, "regions": ["US"]},
+            {
+                "endpoint": "/watches/changes",
+                "operation": "Change List",
+                "credits": 0,
+                "regions": ["US"],
+            },
+            {
+                "endpoint": "/watches/changes/diff",
+                "operation": "Change Diff",
+                "credits": 4,
+                "regions": ["US"],
+            },
+        ]
+        costs = _build_tool_costs(spec, entries)
+        assert costs["get_watch_change_diff"] == "Cost: 4 credits."
+        assert costs["list_watch_changes"] == "Free."
+        assert costs["list_boards"] == "Free."
+        assert costs["create_watch"] == "Free."
+
+    def test_explicit_operation_id_route_still_gets_its_cost(self) -> None:
+        """`resolve_statute_citation` has a hand-set operation_id.
+
+        It is therefore absent from the derived-name map, and a cost builder
+        that only walked that map would skip it.
+        """
+        costs = _build_tool_costs(
+            _prod_spec(),
+            [
+                {
+                    "endpoint": "/us/statutes/resolve",
+                    "operation": "Resolver",
+                    "credits": 2,
+                    "regions": ["US"],
+                }
+            ],
+        )
+        assert costs["resolve_statute_citation"] == "Cost: 2 credits."
 
     def test_format_cost_single_tier(self) -> None:
         entries = [{"credits": 4, "operation": "US Statutes Search", "regions": ["US"]}]
@@ -246,29 +472,48 @@ class TestCostInjection:
     def test_format_cost_empty(self) -> None:
         assert _format_cost([]) == ""
 
-    def test_build_tool_costs_maps_and_region_filters(self) -> None:
-        """Costs map to the right tool, and region-scoped tools pick their region."""
-        cost_entries = [
-            {"endpoint": "/statutes/search", "operation": "US Statutes Search",
-             "credits": 4, "regions": ["US"]},
-            {"endpoint": "/statutes/section/body", "operation": "US Statute Section (Full Text)",
-             "credits": 6, "regions": ["US"]},
-            # /research/search serves BOTH regions at different prices; the
-            # India-scoped search_legal_cases tool must pick the India tiers.
-            {"endpoint": "/research/search", "operation": "US Case Law Search (1-20 results)",
-             "credits": 2, "regions": ["US"]},
-            {"endpoint": "/research/search", "operation": "Indian Case Law Search (1-20 results)",
-             "credits": 1, "regions": ["IN"]},
-        ]
-        costs = _build_tool_costs(cost_entries)
+    def test_build_tool_costs_maps_the_real_spellings(self) -> None:
+        costs = _build_tool_costs(
+            _prod_spec(),
+            [
+                {
+                    "endpoint": "/us/statutes/search",
+                    "operation": "US Statutes Search",
+                    "credits": 4,
+                    "regions": ["US"],
+                },
+                {
+                    "endpoint": "/us/statutes/section/body",
+                    "operation": "US Statute Section (Full Text)",
+                    "credits": 6,
+                    "regions": ["US"],
+                },
+            ],
+        )
         assert costs["search_us_statutes"] == "Cost: 4 credits."
         assert costs["get_us_statute_section_text"] == "Cost: 6 credits."
-        # Only the India tier (1), never the US tier (2), for this tool.
-        assert costs["search_legal_cases"] == "Cost: 1 credit."
+
+    def test_build_tool_costs_ignores_a_stale_pricing_spelling(self) -> None:
+        """The pre-/us spellings must resolve to nothing, not to a wrong tool."""
+        costs = _build_tool_costs(
+            _prod_spec(),
+            [
+                {
+                    "endpoint": "/statutes/search",
+                    "operation": "Old",
+                    "credits": 99,
+                    "regions": ["US"],
+                }
+            ],
+        )
+        assert costs == {}
 
     def test_build_tool_costs_empty_on_no_data(self) -> None:
         """A failed fetch (empty list) yields no cost lines, not wrong ones."""
-        assert _build_tool_costs([]) == {}
+        assert _build_tool_costs(_prod_spec(), []) == {}
+
+    def test_free_endpoint_renders_as_free(self) -> None:
+        assert _format_cost([{"credits": 0, "operation": "Coverage", "regions": ["US"]}]) == "Free."
 
     def test_injection_appends_cost_to_description(self) -> None:
         customize = _make_customize_component(

@@ -9,6 +9,7 @@ reflect any API changes without a package update.
 
 import contextlib
 import logging
+import re
 import time
 from collections import Counter
 from collections.abc import AsyncIterator
@@ -44,13 +45,14 @@ logger = logging.getLogger(__name__)
 # clearest tool name. Keyed on the FUNCTION NAME (the part of FastAPI's
 # operationId before `_api_v1_`) so it survives path/prefix changes such as the
 # `/us` country-prefix migration.
+#
+# Entries for retired surfaces were removed on 2026-08-20: `/acts/*` went with
+# the India-market exit (router unmounted) and `/citations/cases/search` no
+# longer exists. An override for a route the spec no longer carries is inert
+# but misleading, and it makes the description drift-guard pass vacuously.
 _FUNC_OVERRIDES: dict[str, str] = {
     "external_search": "search_legal_cases",
     "bot_search": "quick_search",
-    "search_cases": "search_cases_by_citation",
-    "search_acts": "search_legislation",
-    "list_acts": "list_legislation",
-    "get_act_amendments": "get_amendments",
     "search_statutes": "search_us_statutes",
     "get_section": "get_us_statute_section",
     "get_section_body": "get_us_statute_section_text",
@@ -109,28 +111,37 @@ _ROUTE_MAPS: list[RouteMap] = [
 # billing system uses) and appended to each tool description. This makes it
 # structurally impossible for the advertised cost to drift from the real charge.
 #
-# Each MCP tool maps to a pricing `endpoint` (as returned by
-# /api/v1/api-credits/pricing/all). Some endpoints serve both US and India at
-# different prices (e.g. /research/search, /citations/network); for those we
-# pin the region the tool is documented against so the injected cost matches
-# what the tool actually does. `None` means the endpoint is single-region.
-_TOOL_COST_ENDPOINTS: dict[str, tuple[str, str | None]] = {
-    "ask_legal_question": ("/ask", None),
-    "search_legal_cases": ("/research/search", "IN"),
-    "quick_search": ("/research/quick", "IN"),
-    "resolve_citation": ("/citations/resolve", "IN"),
-    "search_cases_by_citation": ("/citations/cases/search", "IN"),
-    "lookup_case": ("/citations/cases/lookup", "IN"),
-    "get_citation_network": ("/citations/network", "IN"),
-    "search_legislation": ("/acts/search", None),
-    "get_act_text": ("/acts/{actId}/text", None),
-    "get_amendments": ("/acts/{actId}/amendments", None),
-    "list_legislation": ("/acts/list", None),
-    "search_us_statutes": ("/statutes/search", None),
-    "get_us_statute_section": ("/statutes/section", None),
-    "get_us_statute_section_text": ("/statutes/section/body", None),
-    # get_pricing is free — deliberately absent so no cost line is appended.
-}
+# The tool -> pricing-endpoint link is DERIVED from the OpenAPI path, never
+# hand-maintained. The pricing matrix names an endpoint as the routable path
+# with the version prefix and every path parameter removed, so the mapping is a
+# pure function of the spec (`_pricing_endpoint_for_route`) and a tool cannot
+# drift away from its price by being renamed, re-prefixed or moved.
+#
+# It used to be a hand-keyed dict, and that is exactly how this broke: the
+# 2026-08 `/us` country-prefix migration moved every statutes price from
+# `/statutes/search` to `/us/statutes/search`, the dict still said the old
+# spelling, and `_build_tool_costs` silently matched nothing. Combined with the
+# India-market exit retiring the ask/acts/research/citations tools the dict was
+# mostly built around, the result was that EVERY tool shipped with no cost line
+# at all -- a "cannot drift" mechanism that had quietly stopped running.
+#
+# `descriptions.py` still may not state a credit number; see the drift guard in
+# tests/test_server.py.
+
+_PATH_PARAM_RE = re.compile(r"/\{[^}]+\}")
+_VERSION_PREFIX_RE = re.compile(r"^/api/v\d+")
+
+
+def _pricing_endpoint_for_route(path: str) -> str:
+    """The pricing-matrix `endpoint` string for an OpenAPI path.
+
+    `/api/v1/us/statutes/section/{act_id}/body` -> `/us/statutes/section/body`.
+
+    This mirrors, deliberately, the same normalization the web console applies
+    in `frontend/src/lib/playground/cost-endpoint.ts`. Both sides join prices to
+    routes this way; keep them in step.
+    """
+    return _PATH_PARAM_RE.sub("", _VERSION_PREFIX_RE.sub("", path)).rstrip("/")
 
 
 def _fmt_credits(credits: float) -> str:
@@ -160,7 +171,12 @@ def _format_cost(entries: list[dict]) -> str:
     """Build a 'Cost: ...' sentence from the pricing entries for one tool.
 
     Single price -> 'Cost: 4 credits.' Multiple tiers -> each tier labelled,
-    e.g. 'Cost: 15 credits (standard), 30 credits (deep).'
+    e.g. 'Cost: 2 credits (1-20 results), 4 credits (21-50 results).'
+
+    A priced-at-zero endpoint renders 'Free.' rather than 'Cost: 0 credits.'
+    Several endpoints are deliberately free (coverage discovery, and every
+    law-change alert route except the diff), and an agent choosing between
+    tools benefits more from knowing one is free than from parsing a zero.
     """
     tiers: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
@@ -177,6 +193,8 @@ def _format_cost(entries: list[dict]) -> str:
         return ""
     if len(tiers) == 1:
         credits = tiers[0][0]
+        if credits == "0":
+            return "Free."
         return f"Cost: {credits} {_credit_noun(credits)}."
     rendered = ", ".join(
         f"{credits} {_credit_noun(credits)} ({label})"
@@ -187,24 +205,43 @@ def _format_cost(entries: list[dict]) -> str:
     return f"Cost: {rendered}."
 
 
-def _build_tool_costs(cost_entries: list[dict]) -> dict[str, str]:
+def _build_tool_costs(spec: dict, cost_entries: list[dict]) -> dict[str, str]:
     """Map each MCP tool name to its injected 'Cost: ...' sentence.
 
     ``cost_entries`` is the ``costs`` array from /api/v1/api-credits/pricing/all.
-    Tools with no matching endpoint (or when the fetch failed) are simply
-    omitted, so no cost line is appended rather than a wrong one.
+    Both the tool name and the pricing endpoint are derived from the same
+    OpenAPI operation, so they cannot fall out of step with each other.
+
+    A tool whose route has no pricing row (``get_pricing``) or whose fetch
+    failed is omitted, so it carries no cost line rather than a wrong one.
     """
+    by_endpoint: dict[str, list[dict]] = {}
+    for entry in cost_entries:
+        endpoint = entry.get("endpoint")
+        if endpoint:
+            by_endpoint.setdefault(endpoint, []).append(entry)
+
+    names = _derive_mcp_names(spec)
     tool_costs: dict[str, str] = {}
-    for tool_name, (endpoint, region) in _TOOL_COST_ENDPOINTS.items():
-        matches = [
-            e
-            for e in cost_entries
-            if e.get("endpoint") == endpoint
-            and (region is None or region in e.get("regions", []))
-        ]
+    for path, item in (spec.get("paths") or {}).items():
+        if not isinstance(item, dict):
+            continue
+        endpoint = _pricing_endpoint_for_route(path)
+        matches = by_endpoint.get(endpoint)
+        if not matches:
+            continue
         line = _format_cost(matches)
-        if line:
-            tool_costs[tool_name] = line
+        if not line:
+            continue
+        for op in item.values():
+            if not isinstance(op, dict):
+                continue
+            op_id = op.get("operationId")
+            if not op_id:
+                continue
+            # An explicit hand-set operation_id is not in `names` (it has no
+            # `_api_v1_` marker); FastMCP uses it verbatim as the tool name.
+            tool_costs[names.get(op_id, op_id)] = line
     return tool_costs
 
 
@@ -353,7 +390,7 @@ def create_server() -> FastMCP:
 
     # Fetch the live credit-cost matrix so each tool description carries an
     # accurate, never-drifting cost line (best-effort; empty on failure).
-    tool_costs = _build_tool_costs(_fetch_full_costs(base_url, api_key))
+    tool_costs = _build_tool_costs(openapi_spec, _fetch_full_costs(base_url, api_key))
 
     # Create authenticated HTTP client.
     # The auth header is set on the client so ALL requests carry it.
