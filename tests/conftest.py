@@ -3,12 +3,31 @@
 import pytest
 
 
+@pytest.fixture
+def respx_mock(httpx2_mock):
+    """Override respx's own `respx_mock` fixture to intercept httpx2.
+
+    THIS IS THE ONE THAT BITES. respx patches `httpcore`; the package moved to
+    httpx2 with fastmcp 4, and httpx2 sits on `httpcore2`. Stock respx therefore
+    matches NOTHING against our clients, and because an unmatched route falls
+    through rather than failing, the suite would keep passing while making REAL
+    network calls to api.vaquill.ai -- the exact opposite of what this fixture
+    exists to guarantee.
+
+    `httpx2_mock` (from pytest-httpx2) is respx configured with
+    `using="httpcore2"`. Shadowing the well-known fixture NAME rather than
+    renaming it at ~20 call sites means every existing test keeps its signature
+    and silently gets the correct target.
+    """
+    return httpx2_mock
+
+
 @pytest.fixture(autouse=True)
 def _block_real_http(respx_mock):
     """Ensure no test accidentally makes real HTTP requests.
 
-    The respx_mock fixture intercepts all httpx requests. Unmocked routes
-    will raise an error instead of hitting the network.
+    Autouse, so a test that forgets to mock something raises instead of
+    reaching the network. Depends on the override above, not on stock respx.
     """
 
 

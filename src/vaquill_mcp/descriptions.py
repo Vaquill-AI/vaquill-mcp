@@ -95,12 +95,6 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "actually cover that state and that body of law, so you can say so instead of "
         "searching a corpus that does not exist."
     ),
-    "list_statutes_laws": (
-        "Catalog of the distinct bodies of law available (a state's statutes, a state's "
-        "regulations, the US Code, the US Constitution, federal court rules, and so on), each "
-        "with its corpusType and section count. Use to discover the corpusType values that "
-        "filter search_us_statutes."
-    ),
     # ------------------------------------------------------------------
     # Law-change alerts (boards and watches)
     # ------------------------------------------------------------------
@@ -162,36 +156,6 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     # US case law (CourtListener-backed). Hidden from the public docs, still
     # live, and used by the hosted remote server in remote.py.
     # ------------------------------------------------------------------
-    "search_legal_cases": (
-        "Boolean keyword search across 8M+ US federal and state court opinions. Supports AND, "
-        "OR, NOT and quoted phrases; filter by court and year range. Returns paginated results "
-        "with citation, court, date, relevance score and a snippet. Present the top results "
-        "only and do not emphasize the total count. Use pageSize 10 for a conversational "
-        "answer, 20+ for an exhaustive list."
-    ),
-    "quick_search": (
-        "Fast, compact US case law search returning the top few results with just the "
-        "essentials: title, citation, court, year and a short excerpt. Same boolean syntax as "
-        "search_legal_cases but flatter and cheaper. Best when you need a quick orientation "
-        "rather than full results."
-    ),
-    "resolve_citation": (
-        "Resolve a US case citation ('603 U.S. 369', '410 U.S. 113') to its canonical record, "
-        "returning the case details and cluster id. Returns found=false rather than an error "
-        "when the citation cannot be resolved. Use before lookup_case or get_citation_network, "
-        "both of which want the resolved id."
-    ),
-    "lookup_case": (
-        "Full details for one US case: opinion text, the panel of judges, its citation list "
-        "and disposition. Use after resolve_citation when you need to read or quote the "
-        "opinion itself rather than just confirm it exists."
-    ),
-    "get_citation_network": (
-        "Citation graph around a US case: both who cites it and what it relies on, with "
-        "per-node citation counts and treatment hints. Depth 1 is the direct neighbourhood; "
-        "depth 2 reaches citing-of-citing and costs substantially more. Use to judge whether a "
-        "case is still good law and how influential it has been."
-    ),
     # ------------------------------------------------------------------
     # Meta
     # ------------------------------------------------------------------
@@ -199,5 +163,274 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "Current API credit pricing: per-endpoint credit costs and the credit-to-currency "
         "conversion rate (1 credit = $0.01 USD). Free, and no authentication required. Use to "
         "check what a call will cost before making it."
+    ),
+    # --- India: Acts & Legislation (VAQUILL_JURISDICTION=IN) -----------------
+    # Published only by the India OpenAPI document, so a US deployment never
+    # sees them. Kept in this shared file because descriptions.py is the
+    # vocabulary BOTH jurisdictions key on, and splitting it per jurisdiction
+    # would give the drift it exists to prevent somewhere new to hide.
+    "search_acts": (
+        "Search Indian legislation down to the individual section: Central and State "
+        "Acts plus the instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, "
+        "TRAI, DGFT). Use for any 'what does Indian law say' question. Supports boolean "
+        "and phrase queries; filters by category, state, year and status. Returns "
+        "sections with title, chapter and a sourceUrl pointing at the publisher's own "
+        "document. The returned actId (e.g. 'IND_central_2065') feeds every acts tool."
+    ),
+    "list_acts": (
+        "Browse and filter enactments rather than searching their text: by jurisdiction "
+        "(central or a state), issuing regulator, year and status. Use when the user "
+        "wants to know WHAT exists in an area before asking what it says, or to confirm "
+        "an Act's exact title before citing it."
+    ),
+    "list_act_filters": (
+        "Self-describing filter vocabulary: every category, state, department and status "
+        "the acts corpus actually holds, with counts. Call this before filtering, so a "
+        "query uses a value that exists instead of returning empty because the spelling "
+        "was wrong."
+    ),
+    "get_act_text": (
+        "Source links for one enactment: the plain-text, PDF and HTML renderings, plus "
+        "how many sections it holds. Use when the user wants to read or cite the Act "
+        "itself rather than a matched section."
+    ),
+    "get_corresponding_provisions": (
+        "Map a repealed Indian criminal code to the 2023 code that replaced it, section "
+        "by section: IPC to BNS and CrPC to BNSS, in force from 1 July 2024. Pass either "
+        "side ('ipc' or 'bns' both work). Use whenever a source, a pleading or the user "
+        "cites an old section number, so you answer under the provision actually in force "
+        "rather than the repealed one. 'iea'/'bsa' return 404 until that mapping lands."
+    ),
+    "get_act_amendments": (
+        "The amendment history recorded against one enactment: substitutions, insertions "
+        "and omissions, each with the amending Act and its effective date "
+        "(e.g. 'Subs. by Act 22 of 2023, s. 44 (w.e.f. 13-11-2025)'). Use to check "
+        "whether a provision still reads as enacted before relying on its text. An empty "
+        "list means no amendment was recorded, NOT that the Act was never amended."
+    ),
+    # --- US: batch citation resolution ---------------------------------------
+    "resolve_statute_citations_batch": (
+        "Resolve up to 50 Bluebook citations in one call, returning the same confirmed "
+        "section, official source link and act_id as the single-citation tool. Use when "
+        "a document or answer cites several provisions: one call is far cheaper in both "
+        "credits and latency than looping the single-citation tool."
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
+# Per-PARAMETER descriptions
+# ---------------------------------------------------------------------------
+# Same job as TOOL_DESCRIPTIONS one level down, and a much bigger lever than it.
+# Measured on the published documents 2026-09-02: the US catalogue is 51,854
+# bytes of tool definition, of which tool descriptions are 12.8% and INPUT
+# SCHEMAS are 86.0%. Two thirds of that schema mass is parameter prose inherited
+# verbatim from the OpenAPI, where it exists to generate the public API
+# reference and is right to be long. A tool definition is resident in the
+# model's working memory on every turn, so the MCP layer is the wrong place to
+# pay for it.
+#
+# WHAT A REWRITE MUST KEEP. Everything a caller needs to get the call right and
+# to read the answer right:
+#   - the operative meaning of the parameter,
+#   - any constraint that turns into a 4xx (pairings, mutual exclusions),
+#   - any caveat where the obvious reading is WRONG. `excludeRepealed` not
+#     promising the remainder is good law, and `changedSince` being observation
+#     rather than effect, both stay: this is a legal API and those two are the
+#     difference between a correct answer and a confidently wrong one.
+#
+# WHAT IT DROPS. Prose the machine-readable schema already carries (a gloss of
+# every `enum` value), API-design rationale, and worked paging examples.
+#
+# Only `search_us_statutes.source` had 3,529 characters spent restating 46 enum
+# values that sit in the schema three lines below it.
+#
+# The mechanism, and why this is hand-written rather than truncated
+# mechanically, is in schema_slim.py. Both directions are guarded in
+# tests/test_schema_slim.py: an entry naming a parameter no document publishes
+# fails, and an uncurated parameter over the budget fails.
+
+# Keyed by (tool_name, parameter_name). Preferred, because the same name means
+# different things on different tools: `corpusType` is a 15-value corpus filter
+# on search, a board selector on create_watch, and a resolution constraint on
+# resolve_statute_citation, and one shared entry would be wrong on two of them.
+PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
+    # --- search_us_statutes: 19,242 bytes, 38% of the whole US catalogue -----
+    ("search_us_statutes", "source"): (
+        "The named body of law within a `corpusType` that folds several together: "
+        "`FEDERAL_RULES` into `frcp`/`fre`/`sct`, `CFR` into `far`/`dfars`, "
+        "`AGENCY_GUIDANCE` into ~34 agency sources. Every result carries its own "
+        "`source`, so a hit's value can be passed straight back."
+    ),
+    ("search_us_statutes", "corpusType"): (
+        "Restrict to one corpus, or several as a list. Federal: `USC`, `CFR`, "
+        "`CONSTITUTION`, `FEDERAL_RULES`, `FEDERAL_REGISTER`, `EXECUTIVE_ACTION`, "
+        "`SENTENCING_GUIDELINES`, `US_TAX_TREATY`, `SESSION_LAW` (Statutes at Large, "
+        "as enacted). Pair with `state`: `STATE`, `REGULATION`, `STATE_RULES`, "
+        "`STATE_CONSTITUTION`, `STATE_AGENCY_GUIDANCE`. Omit for all."
+    ),
+    ("search_us_statutes", "changedSince"): (
+        "Only sections we OBSERVED changing on or after this date (`YYYY-MM-DD`). "
+        "Observed, not effective: the date we saw it, an upper bound on when it took "
+        "effect. Capture began long after the corpus did and events sweep at 24 "
+        "months, so empty means no captured change, never that nothing was amended."
+    ),
+    ("search_us_statutes", "excludeRepealed"): (
+        "Drop sections whose own status says they are not operative (repealed, "
+        "renumbered, transferred, expired, superseded, omitted, and the rest). "
+        "Removes what we KNOW is dead; it does not promise the remainder is good "
+        "law. Read `goodLawStatus` per result to tell them apart: `good_law` is "
+        "checked, `unknown` is unchecked."
+    ),
+    ("search_us_statutes", "actStatus"): (
+        "Positively scope to raw publisher statuses: `repealed` for dead law only, "
+        "`in_force` for sections affirmatively marked current. The inverse of "
+        "`excludeRepealed`, and what a compliance diff asking what was LOST needs. "
+        "Combining a dead status with `excludeRepealed: true` is rejected 422."
+    ),
+    ("search_us_statutes", "state"): (
+        "Jurisdiction. A 2-letter code for one of the 52 supported US jurisdictions "
+        "(50 states + DC + PR), or `federal` for USC / CFR / Constitution / federal "
+        "rules. Pass a list to search several at once. Case-insensitive. Omit to "
+        "search every jurisdiction."
+    ),
+    ("search_us_statutes", "matchType"): (
+        "`any` (default) is hybrid semantic + keyword ranking, for natural-language "
+        "questions. `all` requires every query term; `phrase` matches an exact "
+        "phrase, for a defined term. To pull up one section, pass its citation as "
+        "the query and it resolves to that section at rank 1."
+    ),
+    ("search_us_statutes", "code"): (
+        "Restrict to specific state statutory codes, e.g. `tx_pe` for the Texas Penal "
+        "Code. Values are the `actId`s from list_statute_divisions. List allowed, "
+        "across states. The only way to scope below a whole jurisdiction: `state=tx` "
+        "alone searches all ~15 Texas codes."
+    ),
+    ("search_us_statutes", "fields"): (
+        "Return only these result fields, e.g. `[\"title\", \"excerpt\"]`. A result "
+        "carries 40+ fields, most null on any given row. `actId` and `citation` are "
+        "always included. Unknown names are rejected 422. Omit for the full object."
+    ),
+    ("search_us_statutes", "yearFrom"): (
+        "Only sections last amended in or after this year; pair with `yearTo` for a "
+        "window. Tracks the publisher's own amendment credit, not when we rebuilt "
+        "the corpus. About a fifth of sections carry no credit and are excluded once "
+        "either bound is set."
+    ),
+    ("search_us_statutes", "yearTo"): (
+        "Only sections last amended in or before this year. This filters the LAST "
+        "amendment, so a section amended in 2025 is excluded by `yearTo=2024` even "
+        "though it existed in 2024. A currency filter, not point-in-time retrieval."
+    ),
+    ("search_us_statutes", "chapter"): (
+        "One or more chapters within a title or code, e.g. `21` for USC Title 42 "
+        "Chapter 21. Pass a hit's `parent.chapter` back to search its neighbors. "
+        "Chapter numbers repeat across titles, so pair with `titleNumber` (USC) or "
+        "`code` (state); an unpaired chapter is rejected."
+    ),
+    ("search_us_statutes", "part"): (
+        "One or more parts within a title, e.g. `240` for 17 C.F.R. Part 240. The CFR "
+        "counterpart to `chapter`: pass a hit's `parent.part` back. Pair with "
+        "`titleNumber`; an unpaired part is rejected."
+    ),
+    ("search_us_statutes", "offset"): (
+        "How many results to skip, for paging. Every page of a query is cut from one "
+        "ranking, so results never repeat or go missing between pages. The deepest "
+        "reachable result is `offset` + `limit`; check `hasMore`."
+    ),
+    # --- batch inputs --------------------------------------------------------
+    ("get_sections_batch", "actIds"): (
+        "Section identifiers from a prior search, up to 50 per call. Duplicates are "
+        "collapsed and order is preserved. DO NOT BUILD THESE FROM A CITATION: the "
+        "chapter/article segments exist only in the data, so assembled ids miss. To "
+        "start from a citation, use resolve_statute_citation."
+    ),
+    ("resolve_statute_citations_batch", "citations"): (
+        "Bluebook citation strings, up to 50 per call. Duplicates are collapsed and "
+        "order preserved, so `results` lines up with the de-duplicated input. Priced "
+        "PER CITATION at the single-resolve rate: batching is a round-trip and "
+        "latency win, not a discount."
+    ),
+    # --- resolve: constraints, not hints -------------------------------------
+    ("resolve_statute_citation", "state"): (
+        "Optional 2-letter jurisdiction to resolve WITHIN, e.g. `tx`. Some citation "
+        "forms are shared: `8 CCR 1206-2` is Colorado and `22 CCR 76227` is "
+        "California. A constraint, not a hint: a citation naming a different "
+        "jurisdiction returns `resolved: false` rather than being forced into this one."
+    ),
+    ("resolve_statute_citation", "corpusType"): (
+        "Optional corpus to resolve WITHIN: `STATE`, `REGULATION`, `STATE_RULES`, "
+        "`CONSTITUTION`, `STATE_CONSTITUTION`. Narrows a citation whose form several "
+        "corpora share; like `state`, a citation belonging to another corpus resolves "
+        "to nothing instead."
+    ),
+    # --- law-change alerts ---------------------------------------------------
+    # `scope` runs past the budget on purpose. Three mutually exclusive forms,
+    # and the wrong one creates a watch that can never fire. See
+    # `schema_slim.uncurated_overruns`.
+    ("create_watch", "scope"): (
+        "Narrow the alert to one citation instead of a whole source. Three mutually "
+        "exclusive forms. Hierarchy prefix: `{\"title\": \"21\", \"part\": \"314\"}`, where "
+        "every level set must match and `title` is required whenever a narrower level "
+        "is set. Exact section: `{\"actId\": \"CFR_T21_P314_S314_50\"}`, validated at "
+        "create time and the only form EVERY source accepts, including flat ones. "
+        "Named source: `{\"source\": \"fdic_fil\"}`, accepted on `agency_guidance`, "
+        "`agency_manuals` and `cfr` only. Omit to watch the whole source."
+    ),
+    ("create_watch", "corpusType"): (
+        "Board's corpus_type (e.g. `state`, `state_regulation`, `federal_register`, "
+        "`agency_guidance`), matched case-insensitively so `USC` / `CFR` work too. "
+        "Call list_boards for the authoritative list: this is a growing set, not a "
+        "fixed enum, and not every corpus is a watchable board."
+    ),
+    ("create_watch", "state"): (
+        "Board's state, 2-letter and case-insensitive. For a federal board (USC, "
+        "eCFR, the Federal Register) pass `federal` or omit entirely; the two are "
+        "equivalent. Must otherwise match the `state` list_boards returned for this "
+        "corpusType."
+    ),
+    ("create_watch", "webhookSecret"): (
+        "Optional signing secret, stored encrypted and never returned. Every delivery "
+        "then carries `X-Vaquill-Signature: sha256=<hex>`, an HMAC-SHA256 of the raw "
+        "request body bytes keyed with this secret. Verify over the raw body before "
+        "parsing JSON, constant-time."
+    ),
+    # The published document gives `scope` the SAME text on create and update,
+    # and that text ends "omit entirely to watch the whole source". True of the
+    # POST; false of the PATCH, where omitting a field leaves it unchanged.
+    # Curating them separately fixes an inaccuracy rather than just shortening
+    # one, which is why this is not a single shared entry.
+    ("update_watch", "scope"): (
+        "Replace the alert's narrowing. Three mutually exclusive forms. Hierarchy "
+        "prefix: `{\"title\": \"21\", \"part\": \"314\"}`, where every level set must "
+        "match and `title` is required whenever a narrower level is set. Exact "
+        "section: `{\"actId\": \"CFR_T21_P314_S314_50\"}`, the only form EVERY source "
+        "accepts. Named source: `{\"source\": \"fdic_fil\"}`, on `agency_guidance`, "
+        "`agency_manuals` and `cfr` only. Omitting the field leaves the current "
+        "scope unchanged."
+    ),
+    ("update_watch", "webhookAuth"): (
+        "Replace the outbound credential config, sent as a WHOLE object rather than "
+        "field by field: a scheme without a credential is not a partial edit, it is a "
+        "broken config. `{\"scheme\": \"none\"}` removes auth. Keeping the scheme and "
+        "omitting `secret` retains the stored credential."
+    ),
+    ("list_watch_changes", "beforeId"): (
+        "Return only changes with an `id` below this: the cursor for walking BACK "
+        "through history, where `sinceId` walks forward into new ones. Pass the "
+        "smallest `id` on your last page."
+    ),
+}
+
+# Keyed by parameter name alone, applying wherever that name appears. Reserved
+# for parameters that are genuinely THE SAME everywhere: `act_id` carries one
+# identical 340-character description on seven tools, so a single entry collapses
+# all seven and cannot drift between them. A tool-scoped entry above wins.
+PARAM_DESCRIPTIONS: dict[str, str] = {
+    "act_id": (
+        "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section "
+        "1983, written 42 U.S.C. 1983). Take it from a search result rather than "
+        "assembling it: the title and section are derivable from a citation but the "
+        "CHAPTER is not, so hand-built ids usually 404."
     ),
 }

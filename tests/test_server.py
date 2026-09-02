@@ -1,8 +1,10 @@
 """Tests for vaquill_mcp.server module."""
 
+import pathlib
 import re
 
-import httpx
+import httpx  # respx builds mock RESPONSES from the old httpx types
+import httpx2  # ...but the code under test raises and catches httpx2 ones
 import pytest
 
 from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
@@ -48,49 +50,33 @@ _customize_component = _make_customize_component({})
 # The production external surface, as operationId -> path. Mirrors
 # GET https://api.vaquill.ai/external/openapi.json; refresh it when the API
 # gains or loses an endpoint (the drift guards below will tell you).
-_PROD_OPERATIONS: dict[str, str] = {
-    "get_pricing_api_v1_api_credits_pricing_get": "/api/v1/api-credits/pricing",
-    "list_boards_api_v1_boards_get": "/api/v1/boards",
-    "list_statutes_coverage_api_v1_us_statutes_coverage_get": "/api/v1/us/statutes/coverage",
-    "list_statute_divisions_api_v1_us_statutes_divisions_get": "/api/v1/us/statutes/divisions",
-    "list_statutes_laws_api_v1_us_statutes_laws_get": "/api/v1/us/statutes/laws",
-    "resolve_statute_citation": "/api/v1/us/statutes/resolve",
-    "search_statutes_api_v1_us_statutes_search_post": "/api/v1/us/statutes/search",
-    "get_section_api_v1_us_statutes_section__act_id__get": "/api/v1/us/statutes/section/{act_id}",
-    "get_section_body_api_v1_us_statutes_section__act_id__body_get": (
-        "/api/v1/us/statutes/section/{act_id}/body"
-    ),
-    "get_section_changes_api_v1_us_statutes_section__act_id__changes_get": (
-        "/api/v1/us/statutes/section/{act_id}/changes"
-    ),
-    "get_section_cited_by_api_v1_us_statutes_section__act_id__cited_by_get": (
-        "/api/v1/us/statutes/section/{act_id}/cited-by"
-    ),
-    "get_section_cross_state_api_v1_us_statutes_section__act_id__cross_state_get": (
-        "/api/v1/us/statutes/section/{act_id}/cross-state"
-    ),
-    "get_section_definitions_api_v1_us_statutes_section__act_id__definitions_get": (
-        "/api/v1/us/statutes/section/{act_id}/definitions"
-    ),
-    "get_section_neighbors_api_v1_us_statutes_section__act_id__related_get": (
-        "/api/v1/us/statutes/section/{act_id}/related"
-    ),
-    "get_sections_batch_api_v1_us_statutes_sections_post": "/api/v1/us/statutes/sections",
-    "list_watches_api_v1_watches_get": "/api/v1/watches",
-    "create_watch_api_v1_watches_post": "/api/v1/watches",
-    "update_watch_api_v1_watches__watch_id__patch": "/api/v1/watches/{watch_id}",
-    "delete_watch_api_v1_watches__watch_id__delete": "/api/v1/watches/{watch_id}",
-    "list_watch_changes_api_v1_watches__watch_id__changes_get": (
-        "/api/v1/watches/{watch_id}/changes"
-    ),
-    "get_watch_change_diff_api_v1_watches__watch_id__changes__change_id__diff_get": (
-        "/api/v1/watches/{watch_id}/changes/{change_id}/diff"
-    ),
-    "list_watch_deliveries_api_v1_watches__watch_id__deliveries_get": (
-        "/api/v1/watches/{watch_id}/deliveries"
-    ),
-    "test_watch_api_v1_watches__watch_id__test_post": "/api/v1/watches/{watch_id}/test",
-}
+def _load_prod_operations() -> dict[str, str]:
+    """operationId -> path, READ FROM THE PUBLISHED DOCUMENT.
+
+    This was a hand-written dict and it drifted, in both directions at once:
+    it still listed `list_statutes_laws` (whose route is `include_in_schema=
+    False` and so is not published) and had never gained
+    `resolve_statute_citations_batch`. Both slipped through because the list
+    was the thing every other check in this file measured against, so a
+    mistake in it defined its own correctness.
+
+    Regenerate `fixtures/openapi_us.json` from the backend when the published
+    surface changes; see `test_derived_catalogue.py` for the command.
+    """
+    import json
+
+    spec = json.loads(
+        (pathlib.Path(__file__).parent / "fixtures" / "openapi_us.json").read_text()
+    )
+    out: dict[str, str] = {}
+    for path, item in spec["paths"].items():
+        for op in item.values():
+            if isinstance(op, dict) and (oid := op.get("operationId")):
+                out[oid] = path
+    return out
+
+
+_PROD_OPERATIONS: dict[str, str] = _load_prod_operations()
 
 # Methods matter only for building a spec-shaped dict; one op per (path, method).
 _METHOD_BY_OP = {
@@ -104,10 +90,21 @@ _METHOD_BY_OP = {
 
 
 def _prod_spec() -> dict:
-    paths: dict[str, dict] = {}
-    for op_id, path in _PROD_OPERATIONS.items():
-        paths.setdefault(path, {})[_METHOD_BY_OP.get(op_id, "get")] = {"operationId": op_id}
-    return {"paths": paths}
+    """The published US document itself, not a reconstruction of it.
+
+    This used to rebuild a synthetic spec from `_PROD_OPERATIONS` plus a
+    hand-kept `_METHOD_BY_OP`, and the reconstruction lost information: two
+    operations share `/us/statutes/resolve` (GET resolve_statute_citation and
+    POST resolve_statute_citations_batch), an operation missing from the method
+    map defaulted to "get", and the second one silently overwrote the first.
+    Reading the real document removes both the second hand-kept list and the
+    class of bug where the fixture disagrees with production.
+    """
+    import json
+
+    return json.loads(
+        (pathlib.Path(__file__).parent / "fixtures" / "openapi_us.json").read_text()
+    )
 
 
 def _production_tool_names() -> set[str]:
@@ -119,14 +116,28 @@ def _production_tool_names() -> set[str]:
     return {names.get(op_id, op_id) for op_id in _PROD_OPERATIONS}
 
 
-def _remote_tool_names() -> set[str]:
-    """Tool names the hosted remote server declares by hand in remote.py."""
+def _india_tool_names() -> set[str]:
+    """Tool names the India document publishes.
+
+    Was `_remote_tool_names()`, which scraped `@mcp.tool` decorators out of
+    remote.py. remote.py stopped declaring tools on 2026-09-01 and now derives
+    them, so that regex matched nothing and every check built on it passed
+    vacuously. The descriptions it was guarding are still real; they just come
+    from the other jurisdiction's document now.
+    """
+    import json
     import pathlib
 
-    source = (
-        pathlib.Path(__file__).parent.parent / "src" / "vaquill_mcp" / "remote.py"
-    ).read_text()
-    return set(re.findall(r'@mcp\.tool\(description=TOOL_DESCRIPTIONS\["([^"]+)"\]\)', source))
+    spec = json.loads(
+        (pathlib.Path(__file__).parent / "fixtures" / "openapi_in.json").read_text()
+    )
+    names = _derive_mcp_names(spec)
+    out: set[str] = set()
+    for item in spec["paths"].values():
+        for op in item.values():
+            if isinstance(op, dict) and (oid := op.get("operationId")):
+                out.add(names.get(oid, oid))
+    return out
 
 
 # The production pricing matrix, as endpoint -> credits. Mirrors
@@ -173,7 +184,9 @@ class TestMCPNames:
     def test_semantic_override_applied(self) -> None:
         names = _derive_mcp_names(_SAMPLE_SPEC)
         assert names["search_statutes_api_v1_us_statutes_search_post"] == "search_us_statutes"
-        assert names["external_search_api_v1_research_search_post"] == "search_legal_cases"
+        # The `external_search` override went with the /research retirement, so
+        # the operation now derives its name rather than being renamed.
+        assert "search_legal_cases" not in names.values()
 
     def test_override_is_path_independent(self) -> None:
         """The /us country-prefix migration must not change tool names."""
@@ -261,22 +274,28 @@ class TestDescriptions:
         Every key must be reachable either from the OpenAPI surface (the stdio
         server) or from a hand-declared tool in remote.py (the hosted server).
         """
-        known = _production_tool_names() | _remote_tool_names()
+        known = _production_tool_names() | _india_tool_names()
         orphans = sorted(set(TOOL_DESCRIPTIONS) - known)
         assert not orphans, (
             f"descriptions.py describes tools that no longer exist: {orphans}"
         )
 
-    def test_descriptions_do_not_claim_india_coverage(self) -> None:
-        """The India corpus was retired; /research and /citations are US-only.
+    def test_only_india_tools_claim_india_coverage(self) -> None:
+        """A description may mention India only if it describes an India tool.
 
-        Descriptions said "Indian corpus" and "Indian citation" for months
-        after those endpoints started rejecting countryCode=IN with a 400.
+        This used to forbid the word outright, which was right while the India
+        corpus was retired and every mention was a stale claim. India came back
+        on 2026-09-01 with its own document, so the rule inverts rather than
+        disappears: the failure worth catching now is a US tool advertising a
+        corpus its jurisdiction cannot reach.
         """
+        india_tools = _india_tool_names()
         for name, desc in TOOL_DESCRIPTIONS.items():
-            assert "india" not in desc.lower(), (
-                f"Description for '{name}' still claims India coverage"
-            )
+            if "india" in desc.lower():
+                assert name in india_tools, (
+                    f"Description for '{name}' claims India coverage, but it is "
+                    "not a tool the India document publishes"
+                )
 
     def test_descriptions_are_concise(self) -> None:
         """Descriptions should be under 500 characters for efficient LLM context."""
@@ -553,25 +572,25 @@ class TestFetchOpenAPISpec:
             return_value=httpx.Response(500, text="Internal Server Error")
         )
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             _fetch_openapi_spec("https://api.vaquill.ai")
 
     def test_raises_on_connect_error_after_retries(self, respx_mock) -> None:
         """Should retry on ConnectError and raise after all attempts fail."""
         respx_mock.get("https://api.vaquill.ai/external/openapi.json").mock(
-            side_effect=httpx.ConnectError("Connection refused")
+            side_effect=httpx2.ConnectError("Connection refused")
         )
 
-        with pytest.raises(httpx.ConnectError):
+        with pytest.raises(httpx2.ConnectError):
             _fetch_openapi_spec("https://api.vaquill.ai")
 
     def test_raises_on_timeout_after_retries(self, respx_mock) -> None:
         """Should retry on TimeoutException and raise after all attempts fail."""
         respx_mock.get("https://api.vaquill.ai/external/openapi.json").mock(
-            side_effect=httpx.ReadTimeout("Read timed out")
+            side_effect=httpx2.ReadTimeout("Read timed out")
         )
 
-        with pytest.raises(httpx.TimeoutException):
+        with pytest.raises(httpx2.TimeoutException):
             _fetch_openapi_spec("https://api.vaquill.ai")
 
     def test_raises_on_invalid_json(self, respx_mock) -> None:
@@ -588,7 +607,7 @@ class TestFetchOpenAPISpec:
         spec = {"openapi": "3.1.0", "info": {"title": "Test"}, "paths": {}}
         route = respx_mock.get("https://api.vaquill.ai/external/openapi.json")
         route.side_effect = [
-            httpx.ConnectError("Connection refused"),
+            httpx2.ConnectError("Connection refused"),
             httpx.Response(200, json=spec),
         ]
 

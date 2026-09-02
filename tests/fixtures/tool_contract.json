@@ -1,0 +1,2052 @@
+{
+  "IN": {
+    "get_act_amendments": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageSize": {
+            "default": 100,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/amendments"
+    },
+    "get_act_text": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/text"
+    },
+    "get_corresponding_provisions": {
+      "inputSchema": {
+        "properties": {
+          "act_code": {
+            "pattern": "^(?i:ipc|crpc|iea|bns|bnss|bsa)$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_code"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/corresponding-provisions/{act_code}"
+    },
+    "list_act_filters": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/filters"
+    },
+    "list_acts": {
+      "inputSchema": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageSize": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sort": {
+            "default": "year_desc",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "yearFrom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "yearTo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/list"
+    },
+    "search_acts": {
+      "inputSchema": {
+        "properties": {
+          "actTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageSize": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 10000,
+            "minLength": 2,
+            "type": "string"
+          },
+          "sectionNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "yearFrom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "yearTo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/in/acts/search"
+    }
+  },
+  "US": {
+    "create_watch": {
+      "inputSchema": {
+        "$defs": {
+          "WebhookAuthRequest": {
+            "properties": {
+              "headerName": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "X-Api-Key"
+                ]
+              },
+              "scheme": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "bearer",
+                  "basic",
+                  "header"
+                ],
+                "type": "string"
+              },
+              "secret": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "properties": {
+          "channel": {
+            "default": "webhook",
+            "enum": [
+              "webhook",
+              "email",
+              "both"
+            ],
+            "type": "string"
+          },
+          "corpusType": {
+            "examples": [
+              "state"
+            ],
+            "type": "string"
+          },
+          "emailAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              {
+                "part": "314"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "federal",
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
+            ],
+            "examples": [
+              "wa"
+            ]
+          },
+          "webhookAuth": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WebhookAuthRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhookSecret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhookUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "corpusType"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/watches"
+    },
+    "delete_watch": {
+      "inputSchema": {
+        "properties": {
+          "watch_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "watch_id"
+        ],
+        "type": "object"
+      },
+      "method": "DELETE",
+      "path": "/api/v1/watches/{watch_id}"
+    },
+    "get_pricing": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/api-credits/pricing"
+    },
+    "get_section_changes": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "CFR_T21_P314_S314_50"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "beforeId": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changeKind": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "added",
+                    "amended",
+                    "removed"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "default": 50,
+            "examples": [
+              50
+            ],
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "order": {
+            "default": "desc",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "type": "string"
+          },
+          "sinceId": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/changes"
+    },
+    "get_section_cited_by": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "USC_T42_C21_S1983"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "limit": {
+            "default": 25,
+            "examples": [
+              25
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/cited-by"
+    },
+    "get_section_cross_state": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "USC_T42_C21_S1983"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "limit": {
+            "default": 5,
+            "examples": [
+              5
+            ],
+            "maximum": 25.0,
+            "minimum": 1.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/cross-state"
+    },
+    "get_section_definitions": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "USC_T42_C21_S1983"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/definitions"
+    },
+    "get_section_neighbors": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "USC_T42_C21_S1983"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "limit": {
+            "default": 3,
+            "examples": [
+              3
+            ],
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/related"
+    },
+    "get_sections_batch": {
+      "inputSchema": {
+        "properties": {
+          "actIds": {
+            "examples": [
+              [
+                "USC_T42_C21_S1983",
+                "CFR_T17_P240_S240_10b5_1"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "actIds"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/statutes/sections"
+    },
+    "get_us_statute_section": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "USC_T42_C21_S1983"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}"
+    },
+    "get_us_statute_section_text": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "CFR_T17_P240_S240_10b5_1"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "format": {
+            "default": "both",
+            "enum": [
+              "both",
+              "html",
+              "plain"
+            ],
+            "examples": [
+              "plain"
+            ],
+            "type": "string"
+          },
+          "structured": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/body"
+    },
+    "get_watch_change_diff": {
+      "inputSchema": {
+        "properties": {
+          "change_id": {
+            "type": "integer"
+          },
+          "watch_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "watch_id",
+          "change_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/watches/{watch_id}/changes/{change_id}/diff"
+    },
+    "list_boards": {
+      "inputSchema": {
+        "properties": {
+          "corpusType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "state_regulation"
+            ]
+          },
+          "limit": {
+            "default": 500,
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "federal",
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
+            ],
+            "examples": [
+              "tx"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/boards"
+    },
+    "list_statute_divisions": {
+      "inputSchema": {
+        "properties": {
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "21"
+            ]
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "tx_pe"
+            ]
+          },
+          "corpusType": {
+            "enum": [
+              "USC",
+              "CFR",
+              "STATE",
+              "REGULATION"
+            ],
+            "examples": [
+              "USC"
+            ],
+            "type": "string"
+          },
+          "part": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "240"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
+            ],
+            "examples": [
+              "tx"
+            ]
+          },
+          "titleNumber": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              42
+            ]
+          }
+        },
+        "required": [
+          "corpusType"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/divisions"
+    },
+    "list_statutes_coverage": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/coverage"
+    },
+    "list_watch_changes": {
+      "inputSchema": {
+        "properties": {
+          "beforeId": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "changeKind": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "added",
+                    "amended",
+                    "removed"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "order": {
+            "default": "desc",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "type": "string"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-08-07T04:10:00Z"
+            ]
+          },
+          "sinceId": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "watch_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "watch_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/watches/{watch_id}/changes"
+    },
+    "list_watch_deliveries": {
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "default": 50,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "watch_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "watch_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/watches/{watch_id}/deliveries"
+    },
+    "list_watches": {
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "default": 100,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/watches"
+    },
+    "resolve_statute_citation": {
+      "inputSchema": {
+        "properties": {
+          "cite": {
+            "examples": [
+              "42 U.S.C. 1983"
+            ],
+            "maxLength": 200,
+            "minLength": 2,
+            "type": "string"
+          },
+          "corpusType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "REGULATION"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "tx"
+            ]
+          }
+        },
+        "required": [
+          "cite"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/resolve"
+    },
+    "resolve_statute_citations_batch": {
+      "inputSchema": {
+        "properties": {
+          "citations": {
+            "examples": [
+              [
+                "42 U.S.C. 1983",
+                "16 C.F.R. 444.1",
+                "Cal. Civ. Code 1950.5"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array"
+          },
+          "corpusType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "REGULATION"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "ca"
+            ]
+          }
+        },
+        "required": [
+          "citations"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/statutes/resolve"
+    },
+    "search_us_statutes": {
+      "inputSchema": {
+        "properties": {
+          "actStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "abolished",
+              "deleted",
+              "expired",
+              "in_force",
+              "inactive",
+              "not_funded",
+              "not_yet_effective",
+              "omitted",
+              "proposed",
+              "recodified",
+              "recompiled",
+              "rejected",
+              "relocated",
+              "removed",
+              "renumbered",
+              "repealed",
+              "rescinded",
+              "reserved",
+              "revoked",
+              "superseded",
+              "terminated",
+              "transferred",
+              "unconstitutional",
+              "vacant",
+              "vetoed",
+              "withdrawn"
+            ],
+            "examples": [
+              "repealed"
+            ]
+          },
+          "agency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "environmental-protection-agency"
+            ]
+          },
+          "changedSince": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-08-01"
+            ]
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "21"
+            ]
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "tx_pe"
+            ]
+          },
+          "corpusType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "USC",
+                  "CFR",
+                  "STATE",
+                  "CONSTITUTION",
+                  "FEDERAL_RULES",
+                  "STATE_CONSTITUTION",
+                  "STATE_RULES",
+                  "EXECUTIVE_ACTION",
+                  "REGULATION",
+                  "FEDERAL_REGISTER",
+                  "AGENCY_GUIDANCE",
+                  "SENTENCING_GUIDELINES",
+                  "US_TAX_TREATY",
+                  "STATE_AGENCY_GUIDANCE",
+                  "SESSION_LAW"
+                ],
+                "type": "string"
+              },
+              {
+                "items": {
+                  "enum": [
+                    "USC",
+                    "CFR",
+                    "STATE",
+                    "CONSTITUTION",
+                    "FEDERAL_RULES",
+                    "STATE_CONSTITUTION",
+                    "STATE_RULES",
+                    "EXECUTIVE_ACTION",
+                    "REGULATION",
+                    "FEDERAL_REGISTER",
+                    "AGENCY_GUIDANCE",
+                    "SENTENCING_GUIDELINES",
+                    "US_TAX_TREATY",
+                    "STATE_AGENCY_GUIDANCE",
+                    "SESSION_LAW"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "CFR"
+            ]
+          },
+          "documentType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "final",
+                  "proposed",
+                  "presidential"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "final"
+            ]
+          },
+          "excerptChars": {
+            "default": 500,
+            "maximum": 4000.0,
+            "minimum": 100.0,
+            "type": "integer"
+          },
+          "excludeRepealed": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array",
+                "uniqueItems": true
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "abstract",
+              "actId",
+              "actStatus",
+              "action",
+              "adoptingCitations",
+              "agencies",
+              "agencySlugs",
+              "alternateCitations",
+              "amendmentHistory",
+              "amendmentNote",
+              "amendmentYears",
+              "amendmentsCount",
+              "articleName",
+              "articleNumber",
+              "audience",
+              "breadcrumb",
+              "caseName",
+              "chapter",
+              "chapterName",
+              "citation",
+              "citationShort",
+              "committeeNote",
+              "corpusType",
+              "crossReferencesCfr",
+              "crossReferencesUsc",
+              "currencyNote",
+              "currencyYear",
+              "currentThrough",
+              "datesText",
+              "displayLabel",
+              "displayPath",
+              "documentNumber",
+              "documentSubtype",
+              "documentTypeLabel",
+              "docxUrl",
+              "edition",
+              "effectiveDate",
+              "excerpt",
+              "expirationDate",
+              "externalUrl",
+              "federalRegisterCitations",
+              "frCommentsCloseOn",
+              "frCorrectionOf",
+              "frCorrections",
+              "frDocketIds",
+              "frEffectiveOn",
+              "frEndPage",
+              "frRegulationIdNumbers",
+              "frRegulationsDotGovUrl",
+              "frRelatedDocuments",
+              "frSignificant",
+              "frStartPage",
+              "frVolume",
+              "goodLawStatus",
+              "govInfoHtmlUrl",
+              "govInfoPdfUrl",
+              "granuleId",
+              "history",
+              "htmlUrl",
+              "implementingRegulations",
+              "issueDate",
+              "issuingAgency",
+              "languageCode",
+              "lastAmendedDate",
+              "lastAmendedYear",
+              "lawImplemented",
+              "licenseNote",
+              "originalEnactmentDate",
+              "packageId",
+              "parent",
+              "part",
+              "partName",
+              "pdfUrl",
+              "popularName",
+              "president",
+              "priorEffectiveDates",
+              "program",
+              "publicLawCites",
+              "publicLaws",
+              "publicationDate",
+              "publisherKey",
+              "referencedShortTitles",
+              "relatedCitations",
+              "releaseDate",
+              "relevanceScore",
+              "renumberedTo",
+              "requesters",
+              "rescindedOn",
+              "reviewDate",
+              "ruleSet",
+              "ruleSetCode",
+              "sectionNumber",
+              "sectionTitle",
+              "settlementAmount",
+              "signingDate",
+              "source",
+              "sourceCharEnd",
+              "sourceCharStart",
+              "sourceCredit",
+              "sourceNote",
+              "sourcePageEnd",
+              "sourcePageStart",
+              "state",
+              "stateHtmlUrl",
+              "statutoryAuthority",
+              "subchapter",
+              "subchapterName",
+              "subject",
+              "subjectNumber",
+              "subpart",
+              "subpartName",
+              "subtitle",
+              "subtitleName",
+              "supersededBy",
+              "supersedes",
+              "supersessionActions",
+              "textUrl",
+              "title",
+              "titleName",
+              "titleNumber",
+              "topLevelTitle",
+              "topics",
+              "transferredTo",
+              "versionId",
+              "volume",
+              "wordCount",
+              "xmlUrl",
+              "year"
+            ],
+            "examples": [
+              [
+                "title",
+                "excerpt",
+                "state"
+              ]
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "matchType": {
+            "default": "any",
+            "enum": [
+              "any",
+              "all",
+              "phrase"
+            ],
+            "examples": [
+              "phrase"
+            ],
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "maximum": 70.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "part": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "240"
+            ]
+          },
+          "publishedFrom": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-01-01"
+            ]
+          },
+          "publishedTo": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-12-31"
+            ]
+          },
+          "query": {
+            "examples": [
+              "insider trading penalties"
+            ],
+            "maxLength": 500,
+            "minLength": 2,
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "administrative_guidance",
+              "agency_guidance",
+              "bis_advisory_opinion",
+              "cftc_staff_letter",
+              "copyright_circular",
+              "cpsc_advisory_opinion",
+              "cpsc_secg",
+              "ddtc_commodity_jurisdiction",
+              "ddtc_guidance",
+              "dfars",
+              "dfars_pgi",
+              "doe_appliance_guidance",
+              "doj_justice_manual",
+              "doj_leniency",
+              "far",
+              "fcc_declaratory_ruling",
+              "fdic_fil",
+              "ferc_policy_statement",
+              "fincen_guidance",
+              "fincen_ruling",
+              "frap",
+              "frb_sr_letter",
+              "frbp",
+              "frcp",
+              "frcrp",
+              "fre",
+              "hhs_ocr_hipaa_faq",
+              "hhs_ocr_hipaa_guidance",
+              "hhs_ocr_resolution_agreement",
+              "irs_announcement",
+              "irs_notice",
+              "irs_rev_proc",
+              "irs_rev_rul",
+              "merger_guidelines",
+              "mpep",
+              "nlrb_advice_memo",
+              "nlrb_gc_memo",
+              "occ_bulletin",
+              "occ_interpretive_letter",
+              "sct",
+              "ssa_ruling",
+              "state_insurance_bulletin",
+              "tmep",
+              "us_tax_treaty",
+              "us_tax_treaty_technical_explanation",
+              "uscis_policy_manual"
+            ],
+            "examples": [
+              "sct"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "federal",
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
+            ],
+            "examples": [
+              "ca"
+            ]
+          },
+          "titleNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              17
+            ]
+          },
+          "yearFrom": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1700.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              2020
+            ]
+          },
+          "yearTo": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1700.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              2026
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/statutes/search"
+    },
+    "test_watch": {
+      "inputSchema": {
+        "properties": {
+          "watch_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "watch_id"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/watches/{watch_id}/test"
+    },
+    "update_watch": {
+      "inputSchema": {
+        "$defs": {
+          "WebhookAuthRequest": {
+            "properties": {
+              "headerName": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "X-Api-Key"
+                ]
+              },
+              "scheme": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "bearer",
+                  "basic",
+                  "header"
+                ],
+                "type": "string"
+              },
+              "secret": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "properties": {
+          "emailAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "isActive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              {
+                "part": "314"
+              }
+            ]
+          },
+          "watch_id": {
+            "type": "string"
+          },
+          "webhookAuth": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WebhookAuthRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhookSecret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhookUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "watch_id"
+        ],
+        "type": "object"
+      },
+      "method": "PATCH",
+      "path": "/api/v1/watches/{watch_id}"
+    }
+  }
+}

@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Vaquill-AI/vaquill-mcp",
   "title": "Vaquill",
-  "description": "Search US federal and 50-state statutes, regulations, constitutions, and court rules.",
+  "description": "Search US and Indian statutes, regulations, constitutions, and court rules.",
   "version": "0.3.0",
   "repository": {
     "url": "https://github.com/Vaquill-AI/vaquill-mcp",
@@ -12,6 +12,19 @@
     {
       "type": "streamable-http",
       "url": "https://mcp.vaquill.ai/s/_",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token using a Vaquill API key. Format: 'Bearer vq_key_...'. Get a key at https://www.vaquill.ai/legal-api.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    },
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.vaquill.ai/in/s/_",
       "headers": [
         {
           "name": "Authorization",

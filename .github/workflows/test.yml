@@ -1,0 +1,103 @@
+name: Test
+
+# There was no test job at all until 2026-09-02, and its absence had a concrete
+# cost: `pyproject.toml` declared `fastmcp>=3.0.0` with no ceiling, so every
+# fresh install resolved to 4.x while the lockfile and the only place tests ever
+# ran sat on 3.1.0. fastmcp 4 removed `fastmcp.tools.tool`, so the suite was
+# green locally and the built wheel would not import on a clean machine. Nothing
+# reported it, because nothing ran.
+#
+# Hence the two jobs below. They are NOT redundant: `test` pins the developer's
+# resolution, `wheel` reproduces the customer's.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The full declared support range. `requires-python = ">=3.10"`, and a
+        # floor nobody exercises is a claim rather than a fact.
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Sync the locked environment
+        run: uv sync --extra dev --extra remote --python ${{ matrix.python }}
+
+      - name: Run tests
+        # Deprecations are errors here on purpose. The httpx -> httpx2 migration
+        # was driven by a deprecation warning that had been printing, unread,
+        # in local runs for as long as anyone had been on fastmcp 4.
+        run: uv run --python ${{ matrix.python }} pytest -q -W error::DeprecationWarning
+
+  wheel:
+    name: wheel installs on a FRESH resolution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Build the wheel
+        run: uv build --wheel --out-dir dist
+
+      - name: Install it WITHOUT the lockfile
+        # The load-bearing step. `uv.lock` does not constrain anyone installing
+        # the published wheel, so this resolves the dependency RANGES in
+        # pyproject.toml exactly as `uvx vaquill-mcp` does for a customer. A
+        # dependency that ships a breaking major lands here first.
+        run: |
+          uv venv /tmp/fresh --python 3.12
+          uv pip install --python /tmp/fresh/bin/python dist/*.whl
+          uv pip install --python /tmp/fresh/bin/python \
+            pytest pytest-asyncio respx pytest-httpx2
+
+      - name: Report the resolved versions
+        # Printed unconditionally: when this job goes red, the FIRST question is
+        # always "what did it resolve to that the lockfile did not?"
+        run: |
+          /tmp/fresh/bin/python - <<'PY'
+          import importlib.metadata as md
+          for name in ("vaquill-mcp", "fastmcp", "mcp", "httpx2", "starlette"):
+              try:
+                  print(f"{name:<14} {md.version(name)}")
+              except md.PackageNotFoundError:
+                  print(f"{name:<14} NOT INSTALLED")
+          PY
+
+      - name: Import every module
+        # Cheap, and precisely what caught the fastmcp 4 break: the package
+        # failed at import time on a clean machine while the repo suite passed.
+        run: |
+          /tmp/fresh/bin/python -c "
+          import vaquill_mcp, vaquill_mcp.server, vaquill_mcp.remote, vaquill_mcp.remote_main
+          import vaquill_mcp.aliases, vaquill_mcp.ordering, vaquill_mcp.schema_slim
+          import vaquill_mcp.resources, vaquill_mcp.prompts, vaquill_mcp.descriptions
+          print('import OK', vaquill_mcp.__version__)
+          "
+
+      - name: Both console scripts start
+        run: |
+          /tmp/fresh/bin/vaquill-mcp --help > /dev/null
+          /tmp/fresh/bin/python -c "from vaquill_mcp.remote_main import main; print('remote entry point OK')"
+
+      - name: Run the suite against the fresh resolution
+        # The repo's own tests, against the dependency set a CUSTOMER gets
+        # rather than the one the lockfile pins.
+        run: /tmp/fresh/bin/python -m pytest -q -p no:cacheprovider

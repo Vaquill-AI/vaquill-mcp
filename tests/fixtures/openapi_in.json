@@ -1,0 +1,1455 @@
+{
+  "components": {
+    "schemas": {
+      "ActAmendmentsResponse": {
+        "properties": {
+          "actId": {
+            "title": "Actid",
+            "type": "string"
+          },
+          "footnotes": {
+            "items": {
+              "$ref": "#/components/schemas/FootnoteItem"
+            },
+            "title": "Footnotes",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "totalFootnotes": {
+            "title": "Totalfootnotes",
+            "type": "integer"
+          },
+          "typeCounts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Typecounts",
+            "type": "object"
+          }
+        },
+        "required": [
+          "actId",
+          "title",
+          "totalFootnotes",
+          "footnotes",
+          "typeCounts"
+        ],
+        "title": "ActAmendmentsResponse",
+        "type": "object"
+      },
+      "ActFilterValue": {
+        "properties": {
+          "count": {
+            "description": "Sections in the corpus carrying this value",
+            "title": "Count",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "count"
+        ],
+        "title": "ActFilterValue",
+        "type": "object"
+      },
+      "ActFiltersData": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/ActFilterValue"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "departments": {
+            "items": {
+              "$ref": "#/components/schemas/ActFilterValue"
+            },
+            "title": "Departments",
+            "type": "array"
+          },
+          "states": {
+            "items": {
+              "$ref": "#/components/schemas/ActFilterValue"
+            },
+            "title": "States",
+            "type": "array"
+          }
+        },
+        "required": [
+          "categories",
+          "states",
+          "departments"
+        ],
+        "title": "ActFiltersData",
+        "type": "object"
+      },
+      "ActFiltersResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ActFiltersData"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ActFiltersResponse",
+        "type": "object"
+      },
+      "ActListItem": {
+        "description": "Lightweight act summary for browsing and discovery.",
+        "properties": {
+          "actId": {
+            "title": "Actid",
+            "type": "string"
+          },
+          "actNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actnumber"
+          },
+          "actStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actstatus"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "enactmentDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enactmentdate"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "actId",
+          "title"
+        ],
+        "title": "ActListItem",
+        "type": "object"
+      },
+      "ActListResponse": {
+        "properties": {
+          "hasMore": {
+            "title": "Hasmore",
+            "type": "boolean"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ActListItem"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "results",
+          "total",
+          "page",
+          "pageSize",
+          "hasMore"
+        ],
+        "title": "ActListResponse",
+        "type": "object"
+      },
+      "ActSearchData": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ActSearchResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "totalReturned": {
+            "title": "Totalreturned",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "results",
+          "totalReturned"
+        ],
+        "title": "ActSearchData",
+        "type": "object"
+      },
+      "ActSearchMeta": {
+        "properties": {
+          "creditsConsumed": {
+            "title": "Creditsconsumed",
+            "type": "number"
+          },
+          "creditsRemaining": {
+            "title": "Creditsremaining",
+            "type": "number"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "processingTimeMs": {
+            "title": "Processingtimems",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Passages in the corpus matching the filters. This is the size of the haystack, not the number of results you can page through: a single section spans several passages, and relevance gating plus act+section dedup run after retrieval. Treat it as an upper bound and a signal to narrow your filters, not as a result count.",
+            "title": "Total",
+            "type": "integer"
+          },
+          "totalPages": {
+            "description": "Pages actually reachable, derived from the result window rather than from `total`.",
+            "title": "Totalpages",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "processingTimeMs",
+          "creditsConsumed",
+          "creditsRemaining",
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ],
+        "title": "ActSearchMeta",
+        "type": "object"
+      },
+      "ActSearchRequest": {
+        "description": "Search Indian legislation by semantic query.",
+        "properties": {
+          "actTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Filter by act title substring (e.g. 'Indian Penal Code', 'BNSS')",
+            "title": "Acttitle"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Filter: central, state, regulatory, repealed, spent",
+            "title": "Category"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Filter by regulatory body (e.g. 'sebi', 'rbi')",
+            "title": "Department"
+          },
+          "page": {
+            "default": 1,
+            "description": "1-based page number. `page * pageSize` may not exceed 100; narrow the query with filters to reach deeper matches.",
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "default": 10,
+            "description": "Results per page (1-50)",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "query": {
+            "description": "Search query",
+            "maxLength": 10000,
+            "minLength": 2,
+            "title": "Query",
+            "type": "string"
+          },
+          "sectionNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Filter by exact section number (e.g. '23', '302', '498A')",
+            "title": "Sectionnumber"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Filter by state slug (e.g. 'maharashtra', 'delhi')",
+            "title": "State"
+          },
+          "yearFrom": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Minimum year (inclusive)",
+            "title": "Yearfrom"
+          },
+          "yearTo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Maximum year (inclusive)",
+            "title": "Yearto"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "ActSearchRequest",
+        "type": "object"
+      },
+      "ActSearchResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ActSearchData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ActSearchMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "ActSearchResponse",
+        "type": "object"
+      },
+      "ActSearchResult": {
+        "description": "A single legislation search result with full metadata.",
+        "properties": {
+          "actId": {
+            "title": "Actid",
+            "type": "string"
+          },
+          "actStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actstatus"
+          },
+          "actsReferenced": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actsreferenced"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter"
+          },
+          "chapterTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chaptertitle"
+          },
+          "content": {
+            "description": "Relevant text excerpt",
+            "title": "Content",
+            "type": "string"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "enactmentDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enactmentdate"
+          },
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jurisdiction"
+          },
+          "legalSubject": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legalsubject"
+          },
+          "longTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longtitle"
+          },
+          "pdfUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdfurl"
+          },
+          "provisionType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provisiontype"
+          },
+          "sectionNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sectionnumber"
+          },
+          "sectionTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sectiontitle"
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceurl"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "textUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Texturl"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "actId",
+          "title",
+          "content"
+        ],
+        "title": "ActSearchResult",
+        "type": "object"
+      },
+      "ActTextResponse": {
+        "properties": {
+          "actId": {
+            "title": "Actid",
+            "type": "string"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "chunksCount": {
+            "default": 0,
+            "title": "Chunkscount",
+            "type": "integer"
+          },
+          "htmlUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Htmlurl"
+          },
+          "pdfUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdfurl"
+          },
+          "textUrl": {
+            "title": "Texturl",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "actId",
+          "title",
+          "textUrl"
+        ],
+        "title": "ActTextResponse",
+        "type": "object"
+      },
+      "CorrespondingProvisionItem": {
+        "properties": {
+          "effectiveDate": {
+            "title": "Effectivedate",
+            "type": "string"
+          },
+          "newAct": {
+            "title": "Newact",
+            "type": "string"
+          },
+          "newSection": {
+            "title": "Newsection",
+            "type": "string"
+          },
+          "oldAct": {
+            "title": "Oldact",
+            "type": "string"
+          },
+          "oldSection": {
+            "title": "Oldsection",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "oldAct",
+          "oldSection",
+          "newAct",
+          "newSection",
+          "subject",
+          "effectiveDate"
+        ],
+        "title": "CorrespondingProvisionItem",
+        "type": "object"
+      },
+      "CorrespondingProvisionsResponse": {
+        "properties": {
+          "effectiveDate": {
+            "title": "Effectivedate",
+            "type": "string"
+          },
+          "newAct": {
+            "title": "Newact",
+            "type": "string"
+          },
+          "oldAct": {
+            "title": "Oldact",
+            "type": "string"
+          },
+          "provisions": {
+            "items": {
+              "$ref": "#/components/schemas/CorrespondingProvisionItem"
+            },
+            "title": "Provisions",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "oldAct",
+          "newAct",
+          "effectiveDate",
+          "provisions",
+          "total"
+        ],
+        "title": "CorrespondingProvisionsResponse",
+        "type": "object"
+      },
+      "FootnoteItem": {
+        "properties": {
+          "byAct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Byact"
+          },
+          "effectiveDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date the amendment took effect (e.g. '24-10-2019')",
+            "title": "Effectivedate"
+          },
+          "footnoteId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Footnoteid"
+          },
+          "footnoteText": {
+            "title": "Footnotetext",
+            "type": "string"
+          },
+          "footnoteType": {
+            "description": "substitution, insertion, omission, note, renumbering",
+            "title": "Footnotetype",
+            "type": "string"
+          },
+          "originalText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Originaltext"
+          },
+          "sectionNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sectionnumber"
+          },
+          "sectionTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sectiontitle"
+          }
+        },
+        "required": [
+          "footnoteText",
+          "footnoteType"
+        ],
+        "title": "FootnoteItem",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "bearerFormat": "vq_key_*",
+        "description": "API key issued from the developer dashboard. Pass as `Authorization: Bearer vq_key_...`",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "support@vaquill.ai",
+      "name": "Vaquill API Support",
+      "url": "https://www.vaquill.ai"
+    },
+    "description": "Public API for Indian primary law: Central and State Acts, the instruments of the principal regulators, and their individual sections.\n\n**Authentication**: Pass your API key via the `Authorization: Bearer vq_key_...` header. The same key works against the US API; the two share one credit balance.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Coverage\n\n| Layer | Volume |\n|---|---|\n| Enactments (Central, State and UT) | 22,265 |\n| Individually addressable provisions | 1,098,577 |\n| Regulator instruments | roughly half the corpus |\n\nRegulators covered include SEBI, RBI, MCA, IRDAI, TRAI, DGFT, MOEFCC and CPCB. Every section carries a `sourceUrl` pointing at the publisher's own document.\n\n## Scope\n\nThis document describes the **India** surface only. US statutes are a separate document at `/external/openapi.json`, so an MCP client configured here sees Indian tools and nothing else.",
+    "license": {
+      "name": "Proprietary",
+      "url": "https://www.vaquill.ai/terms"
+    },
+    "termsOfService": "https://www.vaquill.ai/terms",
+    "title": "Vaquill India API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/in/acts/corresponding-provisions/{act_code}": {
+      "get": {
+        "description": "Section-by-section mapping from a repealed Indian criminal code to the 2023\ncode that replaced it, in force from 1 July 2025.\n\nPass either side of the pair: `ipc` and `bns` both return the IPC to BNS\nmapping, `crpc` and `bnss` both return CrPC to BNSS.\n\n**Coverage**: `ipc`/`bns` and `crpc`/`bnss`. `iea`/`bsa` are accepted but\nreturn 404 until the Evidence Act mapping lands, rather than an empty list\nthat would read as \"nothing changed\".\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 1 credit",
+        "operationId": "get_corresponding_provisions_api_v1_in_acts_corresponding_provisions__act_code__get",
+        "parameters": [
+          {
+            "description": "Act code: ipc, crpc, iea, bns, bnss or bsa",
+            "in": "path",
+            "name": "act_code",
+            "required": true,
+            "schema": {
+              "description": "Act code: ipc, crpc, iea, bns, bnss or bsa",
+              "pattern": "^(?i:ipc|crpc|iea|bns|bnss|bsa)$",
+              "title": "Act Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrespondingProvisionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Map a repealed code to its replacement",
+        "tags": [
+          "Indian Acts & Legislation"
+        ]
+      }
+    },
+    "/api/v1/in/acts/filters": {
+      "get": {
+        "description": "List every value accepted by the `category`, `state`, and `department` filters\non `POST /acts/search`, with the number of sections behind each.\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: free.\n\nValues are lowercase and hyphenated (`madhya-pradesh`, `law-commission`).\n`POST /acts/search` rejects anything not listed here with HTTP 422, so read\nthis rather than guessing. Counts are read from the corpus and refresh as\ningest runs land, so treat the list as live rather than caching it in your app.",
+        "operationId": "list_act_filters_api_v1_in_acts_filters_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActFiltersResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Discover valid filter values",
+        "tags": [
+          "Indian Acts & Legislation"
+        ]
+      }
+    },
+    "/api/v1/in/acts/list": {
+      "get": {
+        "description": "Browse 23,000+ Indian acts, regulations, and legislation with filters.\n\nUse this endpoint to **discover act IDs** for use with `/acts/{actId}/text`\nand `/acts/{actId}/amendments`.\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 1 credit\n\nFilter by category (central, state, regulatory, repealed, spent), state,\ndepartment, year range, and act status. Sort by year, title, or popularity.",
+        "operationId": "list_acts_api_v1_in_acts_list_get",
+        "parameters": [
+          {
+            "description": "Filter: central, state, regulatory, repealed, spent",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter: central, state, regulatory, repealed, spent",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Filter by state slug (e.g. 'maharashtra', 'delhi')",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by state slug (e.g. 'maharashtra', 'delhi')",
+              "title": "State"
+            }
+          },
+          {
+            "description": "Filter by regulatory body (e.g. 'sebi', 'rbi')",
+            "in": "query",
+            "name": "department",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by regulatory body (e.g. 'sebi', 'rbi')",
+              "title": "Department"
+            }
+          },
+          {
+            "description": "Minimum year (inclusive)",
+            "in": "query",
+            "name": "yearFrom",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum year (inclusive)",
+              "title": "Yearfrom"
+            }
+          },
+          {
+            "description": "Maximum year (inclusive)",
+            "in": "query",
+            "name": "yearTo",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum year (inclusive)",
+              "title": "Yearto"
+            }
+          },
+          {
+            "description": "Filter: in_force, repealed, spent",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter: in_force, repealed, spent",
+              "title": "Status"
+            }
+          },
+          {
+            "description": "Filter by title substring",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by title substring",
+              "title": "Search"
+            }
+          },
+          {
+            "description": "Sort: year_desc, year_asc, title_asc, title_desc, popular",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "year_desc",
+              "description": "Sort: year_desc, year_asc, title_asc, title_desc, popular",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page number",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Page number",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Results per page (1-100)",
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "description": "Results per page (1-100)",
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Browse and discover acts",
+        "tags": [
+          "Indian Acts & Legislation"
+        ]
+      }
+    },
+    "/api/v1/in/acts/search": {
+      "post": {
+        "description": "Search 23,000+ Indian acts, regulations, and legislation.\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 2 credits\n\nReturns relevant act sections with full metadata: category, state, department,\nprovision type, legal subject, acts referenced, enactment date, and more.\nFilter by category (central, state, regulatory), state, department, and year range.",
+        "operationId": "search_acts_api_v1_in_acts_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Indian legislation",
+        "tags": [
+          "Indian Acts & Legislation"
+        ]
+      }
+    },
+    "/api/v1/in/acts/{act_id}/amendments": {
+      "get": {
+        "description": "Get the amendment history (footnotes) for an act.\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 5 credits\n\nReturns footnotes including substitutions, insertions, omissions, and notes.\nPaginated \u2014 max 200 per request.",
+        "operationId": "get_act_amendments_api_v1_in_acts__act_id__amendments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "act_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Act Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by section number",
+            "in": "query",
+            "name": "section",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by section number",
+              "title": "Section"
+            }
+          },
+          {
+            "description": "Filter: substitution, insertion, omission, note, renumbering",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter: substitution, insertion, omission, note, renumbering",
+              "title": "Type"
+            }
+          },
+          {
+            "description": "Page number",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Page number",
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Results per page",
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "description": "Results per page",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActAmendmentsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get amendment history",
+        "tags": [
+          "Indian Acts & Legislation"
+        ]
+      }
+    },
+    "/api/v1/in/acts/{act_id}/text": {
+      "get": {
+        "description": "Get URLs for the full text, PDF, and HTML versions of an act.\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 3 credits",
+        "operationId": "get_act_text_api_v1_in_acts__act_id__text_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "act_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "^[a-zA-Z0-9_-]+$",
+              "title": "Act Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActTextResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get act text URLs",
+        "tags": [
+          "Indian Acts & Legislation"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Production",
+      "url": "https://api.vaquill.ai"
+    }
+  ]
+}

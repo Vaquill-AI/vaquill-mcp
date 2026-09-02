@@ -14,7 +14,11 @@ import time
 from collections import Counter
 from collections.abc import AsyncIterator
 
-import httpx
+# httpx2, not httpx2. fastmcp 4 deprecated passing an `httpx2.AsyncClient` to
+# `OpenAPIProvider` ("temporarily accepted via duck typing... will be rejected in
+# a future release") and ships httpx2 as a hard dependency. httpx2 is a drop-in
+# fork with the same public API, so this is an import swap, not a rewrite.
+import httpx2
 from fastmcp import FastMCP
 from fastmcp.server.providers.openapi import (
     MCPType,
@@ -25,10 +29,22 @@ from fastmcp.server.providers.openapi import (
     RouteMap,
 )
 from fastmcp.utilities.openapi.models import HTTPRoute
+from mcp.types import ToolAnnotations
 
 from vaquill_mcp import __version__
-from vaquill_mcp.config import get_api_key, get_base_url, get_timeout
+from vaquill_mcp.aliases import register_aliases
+from vaquill_mcp.config import (
+    get_api_key,
+    get_base_url,
+    get_jurisdiction,
+    get_spec_url,
+    get_timeout,
+)
 from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
+from vaquill_mcp.ordering import DeterministicToolOrder
+from vaquill_mcp.prompts import register_prompts
+from vaquill_mcp.resources import register_resources
+from vaquill_mcp.schema_slim import slim_input_schema
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +67,11 @@ logger = logging.getLogger(__name__)
 # longer exists. An override for a route the spec no longer carries is inert
 # but misleading, and it makes the description drift-guard pass vacuously.
 _FUNC_OVERRIDES: dict[str, str] = {
-    "external_search": "search_legal_cases",
-    "bot_search": "quick_search",
+    # `external_search` -> search_legal_cases and `bot_search` -> quick_search
+    # were removed on 2026-09-01. They renamed operations on /research/*, which
+    # was retired and deleted with the case-law routers on 2026-08-31, so the
+    # overrides could never fire against the live spec and their descriptions
+    # were dead weight that `test_all_tools_have_descriptions` still demanded.
     "search_statutes": "search_us_statutes",
     "get_section": "get_us_statute_section",
     "get_section_body": "get_us_statute_section_text",
@@ -91,6 +110,32 @@ def _derive_mcp_names(spec: dict) -> dict[str, str]:
             base = f"{resource}_{base}"
         names[op_id] = base
     return names
+
+def published_tool_names(spec: dict) -> set[str]:
+    """Every tool name the OpenAPI provider will publish for this document.
+
+    Two sources, and the second is easy to forget: `_derive_mcp_names` returns
+    RENAMES only. An operation carrying an explicit `operation_id` has no
+    `_api_v1_` marker, is deliberately absent from that map, and FastMCP then
+    uses the operationId verbatim as the tool name. Counting only the map
+    under-reports the catalogue by exactly those tools
+    (`resolve_statute_citation` and `resolve_statute_citations_batch` on the live
+    US document).
+    """
+    mapped = _derive_mcp_names(spec)
+    names = set(mapped.values())
+    for item in (spec.get("paths") or {}).values():
+        if not isinstance(item, dict):
+            continue
+        for op in item.values():
+            if (
+                isinstance(op, dict)
+                and (op_id := op.get("operationId"))
+                and op_id not in mapped
+            ):
+                names.add(op_id)
+    return names
+
 
 # ---------------------------------------------------------------------------
 # Route exclusions
@@ -245,6 +290,32 @@ def _build_tool_costs(spec: dict, cost_entries: list[dict]) -> dict[str, str]:
     return tool_costs
 
 
+def _fetch_public_costs(base_url: str) -> list[dict]:
+    """Fetch the credit-cost matrix WITHOUT an API key.
+
+    The remote server has no key at startup -- keys arrive per request -- so it
+    cannot use the authenticated `/pricing/all` below. It does not need to:
+    `PUBLIC_HIDDEN_CATEGORIES` is empty and is asserted empty by
+    `test_all_matrix_equals_public_while_nothing_is_hidden` on the API side, so
+    the public matrix and the full matrix are the same set. If that invariant
+    ever breaks, this returns fewer rows and some tools lose a cost line; it
+    cannot return a WRONG price, which is the failure that would matter.
+    """
+    url = f"{base_url}/api/v1/api-credits/pricing"
+    try:
+        response = httpx2.get(url, timeout=15.0)
+        response.raise_for_status()
+        return response.json().get("costs", [])
+    except (httpx2.HTTPError, ValueError) as exc:
+        logger.warning(
+            "Could not fetch public credit pricing from %s; tool descriptions "
+            "will omit cost lines this session: %s",
+            url,
+            exc,
+        )
+        return []
+
+
 def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
     """Fetch the full per-endpoint credit-cost matrix from the live API.
 
@@ -255,14 +326,14 @@ def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
     """
     url = f"{base_url}/api/v1/api-credits/pricing/all"
     try:
-        response = httpx.get(
+        response = httpx2.get(
             url,
             headers={"Authorization": f"Bearer {api_key}"},
             timeout=15.0,
         )
         response.raise_for_status()
         return response.json().get("costs", [])
-    except (httpx.HTTPError, ValueError) as exc:
+    except (httpx2.HTTPError, ValueError) as exc:
         logger.warning(
             "Could not fetch credit pricing from %s; tool descriptions will "
             "omit cost lines this session: %s",
@@ -270,6 +341,99 @@ def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
             exc,
         )
         return []
+
+
+# ---------------------------------------------------------------------------
+# Tool annotations (readOnlyHint / destructiveHint)
+# ---------------------------------------------------------------------------
+# Without these a client cannot tell `search_us_statutes` from `delete_watch`,
+# so a user must either auto-approve everything including the deletes or
+# hand-approve every read. The catalogue mixes both, so neither is acceptable.
+#
+# WHY NOT JUST THE HTTP VERB. That was the obvious rule and it is wrong on this
+# API. Three of the read tools are POST, because their input is too large for a
+# query string:
+#
+#     POST /us/statutes/search      POST /us/statutes/sections
+#     POST /us/statutes/resolve
+#
+# Deriving read-only from `method == "GET"` would mark all three as writes, and
+# the most-used tool in the catalogue would lose auto-approval. Deriving it from
+# `method != "GET"` being a write is equally wrong in the other direction.
+#
+# WHAT IS ACTUALLY DERIVABLE. Most of it:
+#
+#     GET              -> read
+#     DELETE           -> write, destructive
+#     PATCH / PUT      -> write, not destructive
+#     POST with a 201  -> write, not destructive (it says it created something)
+#
+# POST without a 201 is genuinely ambiguous, and that ambiguity belongs to REST
+# rather than to us. So it FAILS CLOSED: an unrecognized POST is treated as a
+# write unless its path is on `_READ_ONLY_POSTS` below.
+#
+# That direction is the whole point. A stale allow-list costs a user one extra
+# approval prompt on a read. The opposite default would auto-approve a write
+# nobody classified. `test_every_post_route_is_classified` then makes even the
+# cheap failure loud: a new POST that is neither 201 nor listed fails the suite
+# until somebody decides which it is.
+
+# Paths (path-parameters stripped, as `_pricing_endpoint_for_route` renders
+# them) whose POST reads rather than writes. POST-as-query, never a mutation.
+_READ_ONLY_POSTS: frozenset[str] = frozenset(
+    {
+        "/us/statutes/search",
+        "/us/statutes/sections",
+        "/us/statutes/resolve",
+        "/in/acts/search",
+    }
+)
+
+# POSTs that DO act but return 200 rather than 201, so the response-code rule
+# cannot see them. `test_watch` sends a real signed delivery to the customer's
+# endpoint: a side effect on the outside world, and nothing this server should
+# ever let a client auto-approve as a read.
+#
+# The runtime does not consult this set -- fail-closed already treats these as
+# writes -- and that is deliberate. It exists so the CLASSIFICATION is
+# exhaustive: `test_every_post_route_is_classified` requires every published
+# POST to be a 201, a listed read, or a listed write, so a new endpoint cannot
+# arrive and quietly inherit a default nobody looked at.
+_ACKNOWLEDGED_WRITE_POSTS: frozenset[str] = frozenset({"/watches/test"})
+
+# Emitted only where the value differs from the MCP default, because every
+# annotation is bytes in a definition that is resident for the whole
+# conversation. `readOnlyHint` defaults to false and `destructiveHint` to TRUE,
+# so a non-destructive write MUST say so explicitly or a client is entitled to
+# treat `create_watch` as if it were `delete_watch`.
+# snake_case because MCP SDK v2 (which fastmcp 4 depends on) renamed these
+# fields; the camelCase spellings still work through a warning bridge. The WIRE
+# format is unaffected and stays camelCase, as the MCP spec requires -- verified
+# by `test_annotations_serialize_as_camel_case_on_the_wire`.
+_READ_ONLY = ToolAnnotations(read_only_hint=True)
+_WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False)
+_DESTRUCTIVE = ToolAnnotations(read_only_hint=False, destructive_hint=True)
+
+
+def _is_read_only(route: HTTPRoute) -> bool:
+    """Whether this route only reads. See the note above for why not the verb."""
+    method = route.method.upper()
+    if method == "GET":
+        return True
+    if method != "POST":
+        return False
+    if "201" in {str(code) for code in (route.responses or {})}:
+        return False
+    return _pricing_endpoint_for_route(route.path) in _READ_ONLY_POSTS
+
+
+def _annotations_for(route: HTTPRoute) -> ToolAnnotations:
+    """Derive the MCP tool annotations for one route."""
+    if _is_read_only(route):
+        return _READ_ONLY
+    if route.method.upper() == "DELETE":
+        return _DESTRUCTIVE
+    return _WRITE
 
 
 # ---------------------------------------------------------------------------
@@ -303,6 +467,19 @@ def _make_customize_component(tool_costs: dict[str, str]):
                 description = f"{description} {cost_line}"
             component.description = description
 
+        if isinstance(component, OpenAPITool):
+            # The input schema, not the description, is where this catalogue's
+            # tokens actually are: 86% of it against 12.8% for descriptions.
+            # `slim_input_schema` is a pure function and returns a new schema, so
+            # the in-place assignment here is the only mutation, as FastMCP's
+            # contract requires. It rewrites annotations only; the arguments the
+            # tool accepts are untouched, and `test_schema_slim.py` proves that
+            # structurally against both published documents.
+            component.parameters = slim_input_schema(
+                component.name, component.parameters
+            )
+            component.annotations = _annotations_for(route)
+
         # Tag all components for discoverability
         component.tags.add("legal-research")
         component.tags.add("vaquill")
@@ -317,7 +494,7 @@ def _make_customize_component(tool_costs: dict[str, str]):
 _MAX_RETRIES = 2
 
 
-def _fetch_openapi_spec(base_url: str) -> dict:
+def _fetch_openapi_spec(base_url: str, jurisdiction: str | None = None) -> dict:
     """Fetch the OpenAPI spec from the Vaquill API server.
 
     Retries up to 2 times with exponential backoff for transient network
@@ -326,17 +503,21 @@ def _fetch_openapi_spec(base_url: str) -> dict:
     loop starts.
 
     Raises:
-        httpx.HTTPStatusError: If the API returns a non-2xx status.
-        httpx.ConnectError: If the API is unreachable after retries.
-        httpx.TimeoutException: If all attempts time out.
+        httpx2.HTTPStatusError: If the API returns a non-2xx status.
+        httpx2.ConnectError: If the API is unreachable after retries.
+        httpx2.TimeoutException: If all attempts time out.
         ValueError: If the response is not valid JSON.
     """
-    url = f"{base_url}/external/openapi.json"
+    # The document, and therefore the entire tool catalogue, follows from the
+    # jurisdiction. US derives from /external/openapi.json, India from
+    # /in/openapi.json, and the two are disjoint, so a server cannot leak a
+    # tool from the jurisdiction it was not configured for.
+    url = get_spec_url(base_url, jurisdiction)
     last_error: Exception | None = None
 
     for attempt in range(_MAX_RETRIES + 1):
         try:
-            response = httpx.get(url, timeout=15.0)
+            response = httpx2.get(url, timeout=15.0)
             response.raise_for_status()
             try:
                 return response.json()
@@ -345,7 +526,7 @@ def _fetch_openapi_spec(base_url: str) -> dict:
                     f"Failed to parse OpenAPI spec from {url} -- "
                     f"expected JSON but got: {response.text[:200]}"
                 ) from exc
-        except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        except (httpx2.ConnectError, httpx2.TimeoutException) as exc:
             last_error = exc
             if attempt < _MAX_RETRIES:
                 delay = 2**attempt  # 1s, 2s
@@ -366,7 +547,7 @@ def _fetch_openapi_spec(base_url: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def create_server() -> FastMCP:
+def create_server(jurisdiction: str | None = None) -> FastMCP:
     """Create and configure the Vaquill MCP server.
 
     Reads configuration from environment variables:
@@ -379,14 +560,17 @@ def create_server() -> FastMCP:
 
     Raises:
         ValueError: If VAQUILL_API_KEY is not set.
-        httpx.HTTPError: If the OpenAPI spec cannot be fetched.
+        httpx2.HTTPError: If the OpenAPI spec cannot be fetched.
     """
     api_key = get_api_key()
     base_url = get_base_url()
     timeout = get_timeout()
 
-    # Fetch OpenAPI spec from the live API
-    openapi_spec = _fetch_openapi_spec(base_url)
+    # Fetch OpenAPI spec from the live API for THIS server's jurisdiction.
+    # An explicit argument (the `--jurisdiction` flag) beats the environment,
+    # so a client config can select India without setting env vars at all.
+    jurisdiction = jurisdiction or get_jurisdiction()
+    openapi_spec = _fetch_openapi_spec(base_url, jurisdiction)
 
     # Fetch the live credit-cost matrix so each tool description carries an
     # accurate, never-drifting cost line (best-effort; empty on failure).
@@ -396,13 +580,13 @@ def create_server() -> FastMCP:
     # The auth header is set on the client so ALL requests carry it.
     # The pricing endpoint ignores the extra header (it's unauthenticated).
     # Timeout is generous (120s default) because /ask in deep mode can take 90s.
-    client = httpx.AsyncClient(
+    client = httpx2.AsyncClient(
         base_url=base_url,
         headers={
             "Authorization": f"Bearer {api_key}",
             "User-Agent": f"vaquill-mcp/{__version__}",
         },
-        timeout=httpx.Timeout(timeout, connect=10.0),
+        timeout=httpx2.Timeout(timeout, connect=10.0),
     )
 
     # Lifespan context manager to cleanly close the httpx client on shutdown.
@@ -415,7 +599,10 @@ def create_server() -> FastMCP:
 
     # Build MCP server with lifespan for proper resource cleanup,
     # then add the OpenAPI provider for tool generation.
-    mcp = FastMCP(name="Vaquill Legal Research", lifespan=_lifespan)
+    # The name carries the jurisdiction so a user running both servers can
+    # tell them apart in a client that lists them side by side.
+    name = "Vaquill Legal Research" if jurisdiction == "US" else f"Vaquill Legal Research ({jurisdiction})"
+    mcp = FastMCP(name=name, lifespan=_lifespan)
 
     provider = OpenAPIProvider(
         openapi_spec=openapi_spec,
@@ -429,5 +616,28 @@ def create_server() -> FastMCP:
         validate_output=False,
     )
     mcp.add_provider(provider)
+
+    # Sorted `tools/list`, so the provider prompt-prefix cache survives. See
+    # ordering.py: nothing sorted before this and the stability was accidental.
+    mcp.add_middleware(DeterministicToolOrder())
+
+    # The generic pair OpenAI's deep-research clients match on. Additive: every
+    # typed tool above is untouched, and the aliases stand down if the document
+    # ever publishes an operation of the same name. See aliases.py.
+    register_aliases(
+        mcp,
+        client,
+        jurisdiction,
+        base_url,
+        published_tool_names(openapi_spec),
+    )
+
+    # The other two MCP primitives. `OpenAPIProvider` only ever emits tools, so
+    # a server built purely from it publishes 25 tools, 0 resources and 0
+    # prompts -- which is what "thin wrapper" means in practice. Resources carry
+    # the reference data and the corpus guide; prompts carry the workflows and
+    # the traps. Neither rides in the per-turn tool budget.
+    register_resources(mcp, client, jurisdiction)
+    register_prompts(mcp, jurisdiction)
 
     return mcp

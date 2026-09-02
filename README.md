@@ -57,6 +57,26 @@ Open the config file from **Settings > Developer > Edit Config**:
 }
 ```
 
+For **Indian legislation**, add `--jurisdiction IN`. One process serves one
+corpus, so run two entries if you want both:
+
+```json
+{
+  "mcpServers": {
+    "vaquill": {
+      "command": "uvx",
+      "args": ["vaquill-mcp"],
+      "env": { "VAQUILL_API_KEY": "vq_key_your_key_here" }
+    },
+    "vaquill-india": {
+      "command": "uvx",
+      "args": ["vaquill-mcp", "--jurisdiction", "IN"],
+      "env": { "VAQUILL_API_KEY": "vq_key_your_key_here" }
+    }
+  }
+}
+```
+
 Quit Claude completely and reopen it. It does not reload the file.
 
 ### Claude Code
@@ -225,7 +245,6 @@ Register, and agency guidance.
 | `resolve_statute_citation` | Resolve a Bluebook citation (e.g. `42 U.S.C. § 1983`) straight to its section. |
 | `list_statute_divisions` | Browse the statutory hierarchy one level at a time. |
 | `list_statutes_coverage` | Self-describing coverage matrix: which corpora exist in which jurisdiction. |
-| `list_statutes_laws` | Catalog the distinct bodies of law available, with their `corpusType` values. |
 
 ### Reading a section in context
 
@@ -259,6 +278,72 @@ section text.
 | Tool | Description |
 |------|-------------|
 | `get_pricing` | Live API credit pricing (free, no auth). |
+| `search` | Generic one-string corpus search returning `{id, title, url}`. |
+| `fetch` | Generic one-string retrieval returning `{id, title, text, url, metadata}`. |
+
+`search` and `fetch` exist because ChatGPT's deep research and company-knowledge
+connectors match a corpus server by those exact names and their single-string
+signature, and refuse to work without them. They are thin wrappers over the
+typed tools above, which any client that can call them should prefer: the typed
+ones filter by jurisdiction, corpus, date and status, and these two do not.
+`fetch` is deliberately lenient about its `id`, accepting an act_id, a citation
+URL, a bare path, or a Bluebook citation such as `42 U.S.C. 1983`.
+
+### Resources and prompts
+
+This server is not only tools. An MCP server generated from an OpenAPI document
+publishes one tool per endpoint and nothing else; these two primitives are where
+the knowledge that is not in the API lives, and neither costs anything in the
+per-turn tool budget.
+
+**Resources** (read, don't call):
+
+| Resource | Contents |
+|----------|----------|
+| `vaquill://guide` | How to use the corpus correctly: identifier rules, what "still good law" actually means here, what an empty change list does and does not tell you, and where the cost is. Not backed by any endpoint. |
+| `vaquill://us/coverage` | Coverage matrix: every corpusType and its per-jurisdiction counts. Free. |
+| `vaquill://in/filters` | The filter vocabulary the India corpus actually holds. Free. |
+| `vaquill://pricing` | Live credit pricing. Free. |
+
+**Prompts** (workflows, with the traps built in):
+
+| Prompt | What it encodes |
+|--------|-----------------|
+| `good_law_check(citation)` | `actStatus` vs `goodLawStatus` vs `amendmentHistory`, and why `unknown` means unchecked rather than current. |
+| `fifty_state_survey(topic, states)` | Check coverage first, so "no such law" and "not in our corpus" are never conflated. |
+| `whats_changed(since, corpus, state)` | Change capture is observation, not effect; an empty result is not "nothing was amended". |
+| `cite_check(text)` | Batch-resolve rather than looping, then verify the passage's claims against each section. |
+| `old_code_citation(citation)` | India: map IPC/CrPC to the BNS/BNSS provision in force since 1 July 2024 before answering. |
+| `indian_provision_check(question)` | India: read the filter vocabulary first, and state the amendment caveat correctly. |
+
+### Indian legislation
+
+A **separate endpoint on the same host**. Central and State Acts plus the
+instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, TRAI, DGFT):
+22,265 enactments and 1,098,577 individually addressable sections.
+
+```
+https://mcp.vaquill.ai/in/s/vq_key_your_key_here
+```
+
+Same API key, same credit balance as the US endpoint.
+
+| Tool | Description |
+|------|-------------|
+| `search_acts` | Search Indian legislation down to the section. |
+| `list_acts` | Browse and filter enactments by jurisdiction, regulator, year, status. |
+| `list_act_filters` | The filter vocabulary the corpus actually holds, with counts. |
+| `get_act_text` | Source links (text, PDF, HTML) for one enactment. |
+| `get_act_amendments` | Amendment history: what changed, by which Act, effective when. |
+| `search` / `fetch` | The same generic pair described above, over Indian legislation. |
+| `get_corresponding_provisions` | Map a repealed criminal code to its 2023 replacement (IPC to BNS, CrPC to BNSS). |
+
+**One endpoint serves one jurisdiction, deliberately.** The US and India
+OpenAPI documents are disjoint, and each app derives its entire tool set from
+one of them, so `/s/` cannot expose an Indian tool and `/in/s/` cannot expose a
+US one. The mount path selects an app; it does not filter one, so there is no
+per-request check to get wrong. That also keeps an integrator's context window
+to the jurisdiction they actually work in.
 
 ## Environment Variables
 
@@ -267,6 +352,7 @@ section text.
 | `VAQUILL_API_KEY` | Yes | - | API key (`vq_key_...`) from [vaquill.ai](https://www.vaquill.ai) |
 | `VAQUILL_BASE_URL` | No | `https://api.vaquill.ai` | API base URL |
 | `VAQUILL_TIMEOUT` | No | `120` | Request timeout in seconds |
+| `VAQUILL_JURISDICTION` | No | `US` | **stdio server only.** `US` or `IN`. Selects the OpenAPI document, and therefore the whole tool set. The hosted server ignores it and serves both jurisdictions on separate paths. |
 
 ## Example Usage
 
@@ -290,6 +376,22 @@ VAQUILL_API_KEY=vq_key_... uv run vaquill-mcp
 
 # Run tests
 uv run pytest
+
+### Tests
+
+```bash
+uv sync --extra dev --extra remote
+uv run pytest                                    # 306 tests
+uv run pytest -W error::DeprecationWarning       # what CI runs
+```
+
+CI (`.github/workflows/test.yml`) runs two jobs, and they are deliberately not
+redundant. `test` runs the suite against the **locked** environment on Python
+3.10-3.13. `wheel` builds the package, installs it into a fresh venv **without
+the lockfile**, and runs the same suite there. The second reproduces what a
+customer gets from `uvx vaquill-mcp`: a lockfile does not constrain anyone
+installing the published wheel, so a dependency shipping a breaking major shows
+up in that job and nowhere else.
 
 # Test with FastMCP inspector
 uv run fastmcp dev src/vaquill_mcp/server.py
