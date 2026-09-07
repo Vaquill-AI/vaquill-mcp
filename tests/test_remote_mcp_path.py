@@ -468,3 +468,52 @@ async def test_offline_access_is_advertised_so_refresh_is_possible(
 
     assert "offline_access" in server["scopes_supported"]
     assert "openid" not in server["scopes_supported"]
+
+
+async def test_html_pages_are_skinned_and_json_is_untouched(
+    _live_api: None, _oauth_on: None
+) -> None:
+    """The brand skin must reach FastMCP's pages and nothing else.
+
+    FastMCP renders the consent screen itself and exposes only `icons`,
+    `website_url` and a CSP override, so its colours and 64px logo are not
+    configurable. The middleware restyles HTML in transit rather than forking a
+    pinned dependency.
+
+    The second half is the half that matters: this middleware sits in front of
+    the MCP endpoint, so touching anything but `text/html` would corrupt
+    JSON-RPC, the discovery documents, or a token response.
+    """
+    from fastmcp.utilities.ui import create_page
+
+    from vaquill_mcp.oauth import _inject_brand_css
+
+    # Against a REAL FastMCP page, not a hand-written string: the injection
+    # depends on that template still having a `</style>` to land before.
+    page = create_page("<p>hi</p>", title="Application Access Request")
+    skinned = _inject_brand_css(page)
+    assert "vaquill brand skin" in skinned
+    assert "#6e3730" in skinned, "brand colour missing"
+    assert "width: 192px" in skinned, "logo not enlarged"
+    # It must land INSIDE the stylesheet and AFTER the base rules, which is what
+    # makes it win without !important.
+    assert skinned.index("width: 64px") < skinned.index("width: 192px")
+    assert skinned.index("width: 192px") < skinned.index("</style>")
+
+    # A page with no stylesheet is returned untouched rather than mangled, so an
+    # upstream template change degrades to "unstyled" not "broken".
+    assert _inject_brand_css("<h1>Error</h1>") == "<h1>Error</h1>"
+
+    async with _serving() as app:
+        transport = httpx2.ASGITransport(app=app)
+        async with httpx2.AsyncClient(
+            transport=transport, base_url="https://mcp.vaquill.ai"
+        ) as raw:
+            discovery = await raw.get("/.well-known/oauth-authorization-server")
+            resource = await raw.get("/.well-known/oauth-protected-resource/mcp")
+
+    for doc in (discovery, resource):
+        assert doc.status_code == 200
+        assert "vaquill brand skin" not in doc.text
+    assert discovery.json()["client_id_metadata_document_supported"] is True
+    assert resource.json()["resource"] == "https://mcp.vaquill.ai/mcp"

@@ -79,6 +79,8 @@ import time
 
 import httpx2
 from fastmcp.server.auth import AccessToken, TokenVerifier
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 logger = logging.getLogger(__name__)
 
@@ -348,3 +350,114 @@ def build_connector_key_resolver() -> ConnectorKeyResolver | None:
     from vaquill_mcp.config import get_base_url
 
     return ConnectorKeyResolver(get_base_url(), secret)
+
+
+# ---------------------------------------------------------------------------
+# Brand skin for the proxy's consent screen
+# ---------------------------------------------------------------------------
+
+#: Tokens copied from the product's own `globals.css`, so the screen a user
+#: lands on mid-sign-in looks like the product they are signing in to. Values,
+#: not variables, because this CSS is injected into a page that has none of the
+#: app's stylesheets.
+_BRAND_CSS = """
+/* vaquill brand skin, appended after FastMCP's base styles so it wins on
+   equal specificity. Every rule here is cosmetic: if FastMCP renames a class
+   the rule stops matching and the page renders in its default styling rather
+   than breaking. */
+body {
+    background: #f4f1ec;
+    color: #25211d;
+}
+.container, .card {
+    background: #ffffff;
+    border-color: #dcd4c6;
+}
+.logo {
+    /* 3x FastMCP's 64px. The lockup is wordmark-plus-mark, so at 64px the
+       word is unreadable and the screen reads as un-branded. */
+    width: 192px;
+    margin-bottom: 2rem;
+}
+h1, h2, h3 {
+    color: #25211d;
+}
+a {
+    color: #6e3730;
+}
+.btn-approve, .btn-primary {
+    background: #6e3730;
+    color: #ffffff;
+}
+.btn-approve:hover, .btn-primary:hover {
+    background: #5a2d27;
+}
+.btn-deny, .btn-secondary {
+    background: #ece6db;
+    color: #25211d;
+}
+.btn-deny:hover, .btn-secondary:hover {
+    background: #ddd4c4;
+}
+button {
+    border-radius: 8px;
+}
+"""
+
+
+def _inject_brand_css(html: str) -> str:
+    """Append the brand skin to a FastMCP-rendered page.
+
+    Inserted before `</style>` so it lands INSIDE the existing stylesheet and
+    after the base rules, which is what makes it win without `!important` or a
+    specificity fight. The page's CSP already allows inline styles
+    (`style-src 'unsafe-inline'`), so this adds no new source.
+
+    Returns the html untouched when there is no `</style>` to insert before, so
+    an upstream template change degrades to "unstyled but working" rather than
+    to a broken page mid-authorization.
+    """
+    marker = "</style>"
+    if marker not in html:
+        return html
+    return html.replace(marker, _BRAND_CSS + marker, 1)
+
+
+class BrandSkinMiddleware(BaseHTTPMiddleware):
+    """Restyle FastMCP's own HTML pages on the way out.
+
+    FastMCP renders the consent screen itself and exposes only `icons`,
+    `website_url` and a CSP override; colours, sizing and layout are not
+    configurable. Rather than fork a pinned dependency for a cosmetic change,
+    the HTML is restyled in transit.
+
+    Deliberately narrow, because this sits in front of the MCP endpoint itself:
+
+    * only `text/html` is touched, so JSON-RPC, discovery documents and token
+      responses pass through untouched;
+    * streaming responses are passed through, since the MCP transport streams
+      and buffering it would break the protocol;
+    * it never raises. Any failure returns the original response, so the worst
+      case is an unstyled page rather than a broken authorization.
+    """
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if "text/html" not in (response.headers.get("content-type") or ""):
+            return response
+        try:
+            body = b"".join([chunk async for chunk in response.body_iterator])
+        except Exception:
+            return response
+        try:
+            skinned = _inject_brand_css(body.decode()).encode()
+        except Exception:
+            skinned = body
+        headers = dict(response.headers)
+        headers.pop("content-length", None)
+        return Response(
+            content=skinned,
+            status_code=response.status_code,
+            headers=headers,
+            media_type="text/html",
+        )

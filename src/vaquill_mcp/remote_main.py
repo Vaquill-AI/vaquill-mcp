@@ -94,7 +94,13 @@ _MOUNTS: tuple[tuple[str, str], ...] = (
 def build_app() -> Starlette:
     """Compose one ASGI app serving every jurisdiction."""
     from vaquill_mcp import __version__
-    from vaquill_mcp.oauth import build_auth_provider, build_connector_key_resolver
+    from starlette.middleware import Middleware
+
+    from vaquill_mcp.oauth import (
+        BrandSkinMiddleware,
+        build_auth_provider,
+        build_connector_key_resolver,
+    )
     from vaquill_mcp.remote import create_remote_server
 
     auth = build_auth_provider()
@@ -144,7 +150,16 @@ def build_app() -> Starlette:
         # prefix matches and never falls through to a later one, so a second app
         # mounted alongside would simply be unreachable.
         key_app = key_server.http_app(path="/{api_key}", transport="streamable-http")
-        mcp_app = mcp_server.http_app(path="/mcp", transport="streamable-http")
+        # The brand skin goes on the `/mcp` app only, because only that app
+        # serves HTML: FastMCP renders the OAuth consent screen there and
+        # exposes no way to style it. The middleware passes everything that
+        # is not text/html straight through, so the MCP transport itself is
+        # untouched.
+        mcp_app = mcp_server.http_app(
+            path="/mcp",
+            transport="streamable-http",
+            middleware=[Middleware(BrandSkinMiddleware)],
+        )
         sub_apps.extend((key_app, mcp_app))
 
         # `/mcp` is a ROUTE inside the mounted app, never a Mount prefix of its
