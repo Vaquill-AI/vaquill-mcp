@@ -46,6 +46,21 @@ RUN groupadd --gid 65532 appuser && \
 COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# FastMCP's OAuthProxy keeps its client registrations and token mappings in a
+# file store under `settings.home`, which defaults to a per-user data directory
+# and is created eagerly with `mkdir(parents=True)` during construction. This
+# image's user is made with `--no-create-home`, so that path is unwritable and
+# the constructor raises: uvicorn never starts and the container exits 1 while
+# Swarm keeps the previous healthy task serving. The symptom is a server that
+# looks fine on every probe and silently never picks up the new configuration.
+#
+# EPHEMERAL ON PURPOSE, for now. There is no volume here, so a redeploy clears
+# the store and anyone mid-session has to reconnect. That is acceptable while
+# this is one replica and CIMD needs no registration round trip; point
+# `client_storage` at Redis when either stops being true.
+ENV FASTMCP_HOME=/data
+RUN mkdir -p /data && chown 65532:65532 /data
+
 # Dokploy writes the app's saved environment variables to `.env` in the build
 # context. Nothing else brings them into the container: this image declares no
 # ENV for them and the package reads `os.environ` only, with no dotenv. Without
