@@ -297,21 +297,29 @@ def build_auth_provider():
         # nothing else.
         valid_scopes=["offline_access"],
         enable_cimd=True,
-        # ON, despite the upstream ALSO showing a consent screen we build and
-        # own. The two screens are not redundant: Supabase's names the client
-        # registered with it, which is this proxy's single static OAuth app, so
-        # it says "Vaquill MCP" no matter which downstream client is really
-        # asking. Only the proxy's screen names the actual caller, which is what
-        # makes it the defence against a confused-deputy attack -- a malicious
-        # client borrowing our static upstream client_id to obtain a token the
-        # user never knowingly granted. FastMCP warns loudly when this is off,
-        # and the warning is right.
+        # "remember", NOT False, and not True either.
         #
-        # If the double prompt proves too much friction, the knob is
-        # "remember", which shows the screen once per (client_id, redirect_uri)
-        # per browser and still prompts on cross-site navigations. Do not set
-        # it to False.
-        require_authorization_consent=True,
+        # There are two consent screens in this flow and neither is removable.
+        # The upstream's is ours to build (Supabase Auth ships no hosted consent
+        # UI, so the flow dead-ends without it) but it names the client
+        # registered WITH Supabase, which is this proxy's single static OAuth
+        # app -- "Vaquill AI MCP" regardless of who is really asking. Only the
+        # proxy's screen names the ACTUAL downstream caller, which is what makes
+        # it the defence against a confused deputy: a malicious client borrowing
+        # our static upstream client_id to obtain a token the user never
+        # knowingly granted. The MCP specification requires a proxy to keep a
+        # per-user registry of approved client_ids for exactly this reason.
+        #
+        # "remember" keeps that protection where it matters and drops it where
+        # it does not: the screen shows on the FIRST authorization for a given
+        # (client_id, redirect_uri) in a browser, and cross-site navigations are
+        # still prompted, so an attacker arriving from elsewhere cannot inherit
+        # the silent approval. What it removes is the second and subsequent
+        # prompt for a user reconnecting a client they have already vouched for.
+        #
+        # Never False. That is the setting FastMCP warns about, and the warning
+        # is right.
+        require_authorization_consent="remember",
     )
     return MultiAuth(server=proxy, verifiers=[RawApiKeyVerifier()])
 

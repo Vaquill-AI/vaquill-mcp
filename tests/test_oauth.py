@@ -289,3 +289,29 @@ def test_the_consent_screen_carries_our_branding(
     assert server.website_url == "https://www.vaquill.ai"
     assert server.icons, "no icon: the consent page falls back to FastMCP's logo"
     assert "vaquill" in server.icons[0].src.lower()
+
+
+def test_the_consent_screen_is_remembered_never_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The proxy's consent screen is the only one naming the ACTUAL caller.
+
+    The upstream's screen names the client registered with it, which is this
+    proxy's single static OAuth app, so it reads the same regardless of who is
+    asking. Disabling the proxy's screen therefore removes the confused-deputy
+    defence entirely, and the MCP specification requires a proxy to keep a
+    per-user registry of approved client_ids precisely to prevent that.
+
+    "remember" keeps the first authorization gated and still prompts on
+    cross-site navigations; it only drops the repeat prompt for a client the
+    user already vouched for in this browser. False is the setting FastMCP
+    warns about, and this asserts we never drift into it.
+    """
+    for name, value in _OAUTH_ENV.items():
+        monkeypatch.setenv(name, value)
+
+    auth = build_auth_provider()
+    assert auth is not None
+    proxy = auth.server  # MultiAuth wraps the OAuthProxy
+    assert proxy._require_authorization_consent == "remember"
+    assert proxy._require_authorization_consent is not False
