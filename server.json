@@ -11,7 +11,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://mcp.vaquill.ai/s/_",
+      "url": "https://mcp.vaquill.ai/mcp",
       "headers": [
         {
           "name": "Authorization",
@@ -24,7 +24,7 @@
     },
     {
       "type": "streamable-http",
-      "url": "https://mcp.vaquill.ai/in/s/_",
+      "url": "https://mcp.vaquill.ai/in/mcp",
       "headers": [
         {
           "name": "Authorization",

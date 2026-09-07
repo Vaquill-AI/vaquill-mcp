@@ -1,12 +1,13 @@
 """The hosted entry point, which serves BOTH jurisdictions from one process.
 
-`remote_main.build_app()` is what `mcp.vaquill.ai` actually runs: the US app at
-`/s/{api_key}` and the India app at `/in/s/{api_key}`, mounted into one
-Starlette application. Nothing covered it until now, which is uncomfortable for
-the piece of code with the most ways to go quietly wrong:
+`remote_main.build_app()` is what `mcp.vaquill.ai` actually runs: each
+jurisdiction at two URL shapes (`/mcp` and `/s/{api_key}`, India under `/in`),
+mounted into one Starlette application. Nothing covered it until now, which is
+uncomfortable for the piece of code with the most ways to go quietly wrong:
 
-* `Mount("/")` matches everything, so route ORDER decides whether `/in/...` and
-  `/health` are reachable at all or are swallowed by the US catch-all;
+* `Mount("/")` matches everything and `Mount` matches on PREFIX without falling
+  through, so route ORDER decides whether `/health`, `/in/...` and the path-key
+  URLs are reachable at all or are swallowed by a broader mount declared first;
 * Starlette does not run a mounted app's lifespan for it, so a missing
   `AsyncExitStack` leaves every httpx client uncreated and every tool call
   failing on a closed session;
@@ -16,6 +17,10 @@ the piece of code with the most ways to go quietly wrong:
 The isolation assertion is the load-bearing one. It is not a style check: a
 leak here puts the entire US statutes surface into an Indian integrator's
 context window, and vice versa, and the customer pays per tool for it.
+
+What each URL shape actually SERVES is asserted in `test_remote_mcp_path.py`,
+by driving requests through the composed app. This file asserts the routing
+table; that one asserts the answers.
 """
 
 from __future__ import annotations
@@ -56,27 +61,35 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     )
 
 
-def test_both_jurisdictions_mount(_live_api: None) -> None:
+def test_every_jurisdiction_mounts_both_url_shapes(_live_api: None) -> None:
     from vaquill_mcp.remote_main import _MOUNTS, build_app
 
     app = build_app()
     # Starlette normalizes `Mount("/")` to the empty path, so the root
     # jurisdiction is "" rather than "/".
-    mounts = {r.path: r for r in app.routes if isinstance(r, Mount)}
-    assert set(mounts) == {"/in", ""}, sorted(mounts)
+    mounts = {r.path for r in app.routes if isinstance(r, Mount)}
+    assert mounts == {"/in/s", "/in", "/s", ""}, sorted(mounts)
     assert [j for j, _ in _MOUNTS] == ["IN", "US"]
 
 
-def test_health_is_routed_before_the_root_catch_all(_live_api: None) -> None:
-    """`Mount("/")` matches everything, so anything it must not swallow has to
-    be declared first. Asserting the ORDER, not merely the presence."""
+def test_broader_mounts_are_routed_after_narrower_ones(_live_api: None) -> None:
+    """Asserting the ORDER, not merely the presence.
+
+    `Mount` matches on prefix and the router hands the request to the FIRST
+    match without ever falling through, so a broader prefix declared early does
+    not shadow a narrower one loudly, it shadows it silently: `/in/s/vq_key_...`
+    would reach the app that only knows `/mcp` and come back a bare 404, which
+    reads as a dead customer URL rather than a routing bug.
+    """
     from vaquill_mcp.remote_main import build_app
 
     app = build_app()
     paths = [r.path for r in app.routes if isinstance(r, (Route, Mount))]
     root = paths.index("")  # the US catch-all
+
     assert paths.index("/health") < root
-    assert paths.index("/in") < root
+    assert paths.index("/in/s") < paths.index("/in") < root
+    assert paths.index("/s") < root
 
 
 async def test_each_mount_serves_only_its_own_jurisdiction(_live_api: None) -> None:

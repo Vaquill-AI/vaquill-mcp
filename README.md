@@ -12,24 +12,29 @@ Sign up at [vaquill.ai](https://www.vaquill.ai) to get your API key.
 
 No installation needed. Add as a remote MCP server from **Customize > Connectors > Add custom connector**:
 
-**Option A: Simple URL (API key in path)**
-
-```
-https://mcp.vaquill.ai/s/vq_key_your_key_here
-```
-
-**Option B: Bearer token (recommended)**
+**Option A: Bearer token (recommended)**
 
 Open the **Request headers** section of the same dialog and add the credential there:
 
 ```
-URL:            https://mcp.vaquill.ai/s/_
+URL:            https://mcp.vaquill.ai/mcp
 Header name:    Authorization
 Header value:   Bearer vq_key_your_key_here
 ```
 
 Claude sends the value exactly as you type it and adds no scheme of its own, so the value
 field holds `Bearer vq_key_...` and **not** `Authorization: Bearer vq_key_...`.
+
+**Option B: API key in the URL (compatibility)**
+
+```
+https://mcp.vaquill.ai/s/vq_key_your_key_here
+```
+
+Still live, and still the only form that works where a client cannot send a
+header at all. Prefer Option A everywhere else: a credential in a URL is
+recorded in server logs, proxies and browsing history, which is why Anthropic's
+connector guidance advises against it and the MCP specification prohibits it.
 
 Available on Claude Pro, Max, Team, and Enterprise plans. The Request headers section is in
 beta and is enabled per account, it accepts a short allowlist of header names, and it holds at
@@ -85,7 +90,7 @@ Quit Claude completely and reopen it. It does not reload the file.
 
 ```bash
 claude mcp add --transport http --scope user vaquill \
-  https://mcp.vaquill.ai/s/_ \
+  https://mcp.vaquill.ai/mcp \
   --header "Authorization: Bearer vq_key_your_key_here"
 ```
 
@@ -111,7 +116,7 @@ Edit `~/.cursor/mcp.json` for every project, or `.cursor/mcp.json` for one.
 {
   "mcpServers": {
     "vaquill": {
-      "url": "https://mcp.vaquill.ai/s/_",
+      "url": "https://mcp.vaquill.ai/mcp",
       "headers": {
         "Authorization": "Bearer vq_key_your_key_here"
       }
@@ -156,7 +161,7 @@ Add to `.vscode/mcp.json`. For every project instead of one, run the
   "servers": {
     "vaquill": {
       "type": "http",
-      "url": "https://mcp.vaquill.ai/s/_",
+      "url": "https://mcp.vaquill.ai/mcp",
       "headers": {
         "Authorization": "${input:vaquill-authorization}"
       }
@@ -196,7 +201,7 @@ Add to `~/.codeium/windsurf/mcp_config.json`.
 {
   "mcpServers": {
     "vaquill": {
-      "serverUrl": "https://mcp.vaquill.ai/s/_",
+      "serverUrl": "https://mcp.vaquill.ai/mcp",
       "headers": {
         "Authorization": "Bearer vq_key_your_key_here"
       }
@@ -323,7 +328,8 @@ instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, TRAI, DGFT):
 22,265 enactments and 1,098,577 individually addressable sections.
 
 ```
-https://mcp.vaquill.ai/in/s/vq_key_your_key_here
+https://mcp.vaquill.ai/in/mcp        with Authorization: Bearer vq_key_your_key_here
+https://mcp.vaquill.ai/in/s/vq_key_your_key_here      key in the path, as above
 ```
 
 Same API key, same credit balance as the US endpoint.
@@ -340,9 +346,9 @@ Same API key, same credit balance as the US endpoint.
 
 **One endpoint serves one jurisdiction, deliberately.** The US and India
 OpenAPI documents are disjoint, and each app derives its entire tool set from
-one of them, so `/s/` cannot expose an Indian tool and `/in/s/` cannot expose a
-US one. The mount path selects an app; it does not filter one, so there is no
-per-request check to get wrong. That also keeps an integrator's context window
+one of them, so nothing under `/mcp` or `/s/` can expose an Indian tool and
+nothing under `/in/` can expose a US one. The mount path selects an app; it
+does not filter one, so there is no per-request check to get wrong. That also keeps an integrator's context window
 to the jurisdiction they actually work in.
 
 ## Environment Variables
@@ -353,6 +359,37 @@ to the jurisdiction they actually work in.
 | `VAQUILL_BASE_URL` | No | `https://api.vaquill.ai` | API base URL |
 | `VAQUILL_TIMEOUT` | No | `120` | Request timeout in seconds |
 | `VAQUILL_JURISDICTION` | No | `US` | **stdio server only.** `US` or `IN`. Selects the OpenAPI document, and therefore the whole tool set. The hosted server ignores it and serves both jurisdictions on separate paths. |
+
+### Hosted server only
+
+The variables below apply to `vaquill-mcp-remote` (the deployment behind
+`mcp.vaquill.ai`) and are ignored by the stdio server.
+
+OAuth is OFF unless the whole `VAQUILL_OAUTH_*` group is set, and the server
+behaves exactly as it did before OAuth existed. A PARTIAL group raises at
+startup rather than serving a half-built discovery document, because Claude
+caches discovery globally by URL for about five minutes across all users, so a
+wrong one outlives the misconfiguration that produced it.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HOST` | No | `0.0.0.0` | Listen address |
+| `PORT` | No | `8000` | Listen port |
+| `VAQUILL_PUBLIC_URL` | With OAuth | - | This server's public URL (`https://mcp.vaquill.ai`). Becomes the OAuth issuer and the `resource` in the protected-resource document, which Claude requires to match the URL the user typed, path included. |
+| `VAQUILL_INTERNAL_SECRET` | With OAuth | - | Shared secret for resolving an OAuth user to their `vq_key_`. Must equal `MCP_INTERNAL_SECRET` on the API. Without it an OAuth caller authenticates and then fails at the first tool call. |
+| `VAQUILL_OAUTH_UPSTREAM_JWKS_URI` | With OAuth | - | `https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json`. Empty `keys` means the project is still on symmetric HS256 and no token will verify. |
+| `VAQUILL_OAUTH_UPSTREAM_ISSUER` | With OAuth | - | `https://<project-ref>.supabase.co/auth/v1` |
+| `VAQUILL_OAUTH_AUTHORIZE_URL` | With OAuth | - | `https://<project-ref>.supabase.co/auth/v1/oauth/authorize` |
+| `VAQUILL_OAUTH_TOKEN_URL` | With OAuth | - | `https://<project-ref>.supabase.co/auth/v1/oauth/token` |
+| `VAQUILL_OAUTH_CLIENT_ID` | With OAuth | - | The STATIC client registered upstream. Dynamic client registration stays off; this server is itself the DCR/CIMD facade. |
+| `VAQUILL_OAUTH_CLIENT_SECRET` | With OAuth | - | Secret for that client |
+| `VAQUILL_OAUTH_ALGORITHM` | No | `ES256` | Must match the upstream signing key. `RS256` if the project was migrated to RSA. |
+| `VAQUILL_OAUTH_AUDIENCE` | No | `authenticated` | Expected `aud` on upstream tokens |
+
+The only redirect URI registered upstream is `https://mcp.vaquill.ai/auth/callback`.
+Do NOT also register Claude's (`https://claude.ai/api/mcp/auth_callback`) or Claude
+Code's loopback: this server proxies the flow, so the upstream never sees them, and
+the ephemeral-port matching RFC 8252 requires is handled here.
 
 ## Example Usage
 

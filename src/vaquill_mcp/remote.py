@@ -63,7 +63,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Generator
+from collections.abc import AsyncGenerator, AsyncIterator, Generator
 from typing import Any
 
 # httpx2, not httpx2. fastmcp 4 deprecated passing an `httpx2.AsyncClient` to
@@ -78,6 +78,7 @@ from fastmcp.server.providers.openapi import OpenAPIProvider
 from vaquill_mcp import __version__
 from vaquill_mcp.aliases import register_aliases
 from vaquill_mcp.config import _SPEC_PATHS, get_base_url, get_timeout
+from vaquill_mcp.oauth import ConnectorKeyResolver
 from vaquill_mcp.ordering import DeterministicToolOrder
 from vaquill_mcp.prompts import register_prompts
 from vaquill_mcp.resources import register_resources
@@ -98,12 +99,36 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
+def _oauth_subject() -> str | None:
+    """The verified OAuth subject for this request, or None.
+
+    None covers three distinct cases that all mean "no OAuth identity here":
+    the mount has no auth provider (`/s/{api_key}`), the credential was a raw
+    `vq_key_` (`RawApiKeyVerifier` sets no subject, deliberately), or there is
+    no HTTP context at all. Every one of them falls through to the header and
+    path below, which is the pre-OAuth behaviour unchanged.
+    """
+    try:
+        from fastmcp.server.dependencies import get_access_token
+
+        token = get_access_token()
+    except Exception:
+        return None
+    if token is None or token.token.startswith("vq_key_"):
+        return None
+    return token.subject
+
+
 def _get_api_key() -> str:
     """Extract API key from Bearer header (preferred) or URL path ``/s/{api_key}``.
 
     Order:
         1. ``Authorization: Bearer <key>`` header
         2. URL path parameter ``/s/{api_key}`` (simple paste for Claude.ai)
+
+    An OAuth caller has NEITHER, and is handled one level up in
+    `_PerRequestBearerAuth.async_auth_flow`, because resolving an OAuth subject
+    to a key is an awaitable round trip and this function is synchronous.
     """
     try:
         request = get_http_request()
@@ -140,8 +165,36 @@ class _PerRequestBearerAuth(httpx2.Auth):
     and the key still arrives.
     """
 
-    def auth_flow(self, request: httpx2.Request) -> Generator[httpx2.Request, None, None]:
+    def __init__(self, resolver: ConnectorKeyResolver | None = None) -> None:
+        self._resolver = resolver
+
+    def auth_flow(
+        self, request: httpx2.Request
+    ) -> Generator[httpx2.Request, None, None]:
         request.headers["Authorization"] = f"Bearer {_get_api_key()}"
+        yield request
+
+    async def async_auth_flow(
+        self, request: httpx2.Request
+    ) -> AsyncGenerator[httpx2.Request, httpx2.Response]:
+        """The OAuth-aware path, which is the one production actually takes.
+
+        Overridden rather than left to the base class, which defers to the
+        synchronous `auth_flow` in a way that cannot await anything: resolving
+        an OAuth subject to a `vq_key_` is an HTTP call to the backend.
+
+        The OAuth token itself is NEVER forwarded. The MCP specification says
+        plainly that "the MCP server MUST NOT pass through the token it received
+        from the MCP client", and resolving to our own key server-side is both
+        the compliant shape and the one that leaves metering, credits, rate
+        limits and refunds seeing exactly the credential they were built for.
+        """
+        subject = _oauth_subject()
+        if subject and self._resolver is not None:
+            key = await self._resolver.resolve(subject)
+        else:
+            key = _get_api_key()
+        request.headers["Authorization"] = f"Bearer {key}"
         yield request
 
 
@@ -150,7 +203,12 @@ class _PerRequestBearerAuth(httpx2.Auth):
 # ---------------------------------------------------------------------------
 
 
-def create_remote_server(jurisdiction: str = "US") -> FastMCP:
+def create_remote_server(
+    jurisdiction: str = "US",
+    *,
+    auth: object | None = None,
+    resolver: ConnectorKeyResolver | None = None,
+) -> FastMCP:
     """Build the remote server for ONE jurisdiction.
 
     Mirrors `server.create_server()` deliberately. The two entry points differ
@@ -162,6 +220,14 @@ def create_remote_server(jurisdiction: str = "US") -> FastMCP:
     describe one of them, and deploying the pair would need configuration that
     can be set wrong. The stdio server still reads `VAQUILL_JURISDICTION`,
     because there one process genuinely does serve one user.
+
+    `auth` is per-SERVER because FastMCP reads `self.auth` when it builds each
+    HTTP app, so a provider set here reaches every mount built from this
+    instance. The OAuth mount and the path-key mount therefore cannot share one
+    instance: `RequireAuthMiddleware` 401s a request carrying no Authorization
+    header at all, which is exactly what a `/s/{api_key}` caller sends, so
+    enabling OAuth on a shared instance would 401 every existing customer URL.
+    `remote_main` builds one server per (jurisdiction, mount) for that reason.
     """
     base_url = get_base_url()
     timeout = get_timeout()
@@ -180,7 +246,7 @@ def create_remote_server(jurisdiction: str = "US") -> FastMCP:
     # one inside the lifespan, which left two alive and closed only one.
     client = httpx2.AsyncClient(
         base_url=base_url,
-        auth=_PerRequestBearerAuth(),
+        auth=_PerRequestBearerAuth(resolver),
         headers={
             "User-Agent": f"vaquill-mcp-remote/{__version__}",
             "Accept": "application/json",
@@ -207,7 +273,7 @@ def create_remote_server(jurisdiction: str = "US") -> FastMCP:
         if jurisdiction == "US"
         else f"Vaquill Legal Research ({jurisdiction})"
     )
-    server = FastMCP(name, lifespan=_lifespan)
+    server = FastMCP(name, lifespan=_lifespan, auth=auth)
 
     @server.custom_route("/health", methods=["GET"])
     async def health_check(_request: Any) -> Any:
