@@ -74,6 +74,7 @@ import httpx2
 from fastmcp import FastMCP
 from fastmcp.server.dependencies import get_http_request
 from fastmcp.server.providers.openapi import OpenAPIProvider
+from mcp.types import Icon
 
 from vaquill_mcp import __version__
 from vaquill_mcp.aliases import register_aliases
@@ -273,7 +274,25 @@ def create_remote_server(
         if jurisdiction == "US"
         else f"Vaquill Legal Research ({jurisdiction})"
     )
-    server = FastMCP(name, lifespan=_lifespan, auth=auth)
+    # `icons` and `website_url` are not decoration. FastMCP's OAuth consent
+    # screen reads them off this object (`fastmcp.icons[0].src`,
+    # `fastmcp.website_url`) to render the page a user sees mid-sign-in, and
+    # without them it shows FastMCP's own logo and no link. That screen is the
+    # one naming the ACTUAL calling client, so it is the one a user checks
+    # before granting access to their account, and a generic vendor logo there
+    # invites exactly the "is this real?" hesitation it exists to resolve.
+    server = FastMCP(
+        name,
+        lifespan=_lifespan,
+        auth=auth,
+        icons=[
+            Icon(
+                src="https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png",
+                mime_type="image/png",
+            )
+        ],
+        website_url="https://www.vaquill.ai",
+    )
 
     @server.custom_route("/health", methods=["GET"])
     async def health_check(_request: Any) -> Any:

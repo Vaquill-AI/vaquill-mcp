@@ -250,3 +250,42 @@ class TestOutgoingCredential:
         monkeypatch.setattr(remote, "_get_api_key", _boom)
         with pytest.raises(ValueError, match="Missing API key"):
             await self._sent_header(monkeypatch, "user-1", None)
+
+
+def test_the_consent_screen_carries_our_branding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FastMCP's OAuth consent page reads these off the server object.
+
+    `consent.py` renders `fastmcp.icons[0].src` and `fastmcp.website_url`, so
+    leaving them unset shows FastMCP's own logo and no link on the screen a user
+    is looking at while deciding whether to grant access to their account. That
+    screen is the one naming the ACTUAL calling client, which makes it the one
+    worth getting right.
+    """
+    import httpx as _httpx
+
+    from vaquill_mcp.remote import create_remote_server
+
+    base = "https://api.vaquill.ai"
+    monkeypatch.setenv("VAQUILL_BASE_URL", base)
+    import json
+    import pathlib
+
+    fixtures = pathlib.Path(__file__).resolve().parent / "fixtures"
+    import respx
+
+    with respx.mock(using="httpcore2", assert_all_called=False) as router:
+        router.get(f"{base}/external/openapi.json").mock(
+            return_value=_httpx.Response(
+                200, json=json.loads((fixtures / "openapi_us.json").read_text())
+            )
+        )
+        router.get(f"{base}/api/v1/api-credits/pricing").mock(
+            return_value=_httpx.Response(200, json={"costs": []})
+        )
+        server = create_remote_server("US")
+
+    assert server.website_url == "https://www.vaquill.ai"
+    assert server.icons, "no icon: the consent page falls back to FastMCP's logo"
+    assert "vaquill" in server.icons[0].src.lower()
