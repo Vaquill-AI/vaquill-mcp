@@ -280,6 +280,22 @@ def build_auth_provider():
         upstream_client_secret=required["VAQUILL_OAUTH_CLIENT_SECRET"],
         token_verifier=upstream_jwt,
         base_url=required["VAQUILL_PUBLIC_URL"],
+        # `offline_access`, and ONLY that, for a measured reason.
+        #
+        # Claude requests whatever this server advertises in `scopes_supported`,
+        # and the proxy forwards it upstream. Advertising nothing means Supabase
+        # is asked for no refresh token, so when the upstream access token
+        # expires (about an hour) the proxy has nothing to refresh with and the
+        # connection dies with no way back except reconnecting by hand. Verified
+        # 2026-09-07 that the upstream lists `offline_access` in its own
+        # `scopes_supported`, so it will honour the request.
+        #
+        # `openid` is deliberately NOT requested. It makes Supabase mint an ID
+        # token, and Supabase's own docs say ID token generation FAILS on a
+        # symmetric HS256 project. We verify the access token against JWKS and
+        # never read an ID token, so asking for one would buy a failure mode and
+        # nothing else.
+        valid_scopes=["offline_access"],
         enable_cimd=True,
         # ON, despite the upstream ALSO showing a consent screen we build and
         # own. The two screens are not redundant: Supabase's names the client

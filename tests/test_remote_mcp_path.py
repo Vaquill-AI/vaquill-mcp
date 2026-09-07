@@ -444,3 +444,27 @@ async def test_india_is_left_alone_by_oauth(_live_api: None, _oauth_on: None) ->
 
     assert init.status_code == 200
     assert stray.status_code == 404
+
+
+async def test_offline_access_is_advertised_so_refresh_is_possible(
+    _live_api: None, _oauth_on: None
+) -> None:
+    """Without this the connection dies about an hour after it is made.
+
+    Claude requests the scopes this server advertises and the proxy forwards
+    them upstream. Advertising none means the upstream is never asked for a
+    refresh token, so when its access token expires there is nothing to refresh
+    with and the user has to reconnect by hand, with no error naming the cause.
+
+    `openid` must stay OUT: it makes Supabase mint an ID token, which its own
+    docs say FAILS on a symmetric HS256 project, and nothing here reads one.
+    """
+    async with _serving() as app:
+        transport = httpx2.ASGITransport(app=app)
+        async with httpx2.AsyncClient(
+            transport=transport, base_url="https://mcp.vaquill.ai"
+        ) as raw:
+            server = (await raw.get("/.well-known/oauth-authorization-server")).json()
+
+    assert "offline_access" in server["scopes_supported"]
+    assert "openid" not in server["scopes_supported"]
