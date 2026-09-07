@@ -14,8 +14,13 @@ htmlcov/
 docs/
 *.md
 !README.md
-.env
-.env.*
+# NOT excluded: Dokploy writes the saved environment variables to `.env` in
+# the build context and expects the Dockerfile to bring it into the image.
+# Excluding it here is one of the three reasons the OAuth configuration
+# silently never reached the container (2026-09-07). The build context is
+# private to Docker and this image is not pushed to a registry.
+# .env
+# .env.*
 Dockerfile*
 docker-compose*
 .dockerignore

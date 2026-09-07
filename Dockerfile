@@ -46,6 +46,17 @@ RUN groupadd --gid 65532 appuser && \
 COPY --from=builder --chown=65532:65532 /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Dokploy writes the app's saved environment variables to `.env` in the build
+# context. Nothing else brings them into the container: this image declares no
+# ENV for them and the package reads `os.environ` only, with no dotenv. Without
+# this COPY the variables exist in the Dokploy UI and nowhere else, which is
+# exactly how the OAuth group appeared "set" while `oauth_enabled()` stayed
+# false and /mcp kept answering 200 instead of 401.
+#
+# The trailing `*` keeps the build working on a machine with no .env (local
+# builds, CI), where the glob simply matches nothing.
+COPY --chown=65532:65532 .env* ./
+
 USER 65532:65532
 
 EXPOSE 8000
@@ -54,5 +65,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["python", "-c", "import http.client; c = http.client.HTTPConnection('localhost', 8000); c.request('GET', '/health'); r = c.getresponse(); exit(0 if r.status < 500 else 1)"]
 
-# Exec form for proper SIGTERM handling (uvicorn receives signals directly).
-CMD ["vaquill-mcp-remote"]
+# `set -a` exports everything sourced from .env, then `exec` replaces the shell
+# so uvicorn still receives SIGTERM directly -- the property the previous exec
+# form existed to protect. Sourcing is guarded, so a container run with real
+# environment variables and no .env behaves identically.
+CMD ["sh", "-c", "set -a; [ -f /.env ] && . /.env; set +a; exec vaquill-mcp-remote"]
