@@ -53,6 +53,12 @@ Changelog = "https://github.com/Vaquill-AI/vaquill-mcp/blob/main/CHANGELOG.md"
 [project.optional-dependencies]
 remote = [
     "uvicorn>=0.30.0",
+    # Redis-backed OAuth state. NOT optional in production despite living in an
+    # extra: without it the proxy falls back to a file store inside the
+    # container and every redeploy signs all connected users out, and any
+    # second replica breaks the flow outright because /authorize and
+    # /oauth/callback stop sharing transactions. See `_durable_storage`.
+    "py-key-value-aio[redis]>=0.2.0",
 ]
 dev = [
     "pytest>=8.0",

@@ -197,6 +197,78 @@ class RawApiKeyVerifier(TokenVerifier):
         )
 
 
+# ---------------------------------------------------------------------------
+# Durable OAuth state
+# ---------------------------------------------------------------------------
+
+# What the proxy keeps in `client_storage` is not a cache. It holds the active
+# authorization transactions, the issued authorization codes, the client
+# registrations, the JTI mapping from a FastMCP token to its upstream one, and
+# the refresh-token metadata. Lose it and every connected user is signed out
+# with "Connection has expired"; SHARE it wrongly and OAuth breaks outright,
+# because `/authorize` and `/oauth/callback` can land on different replicas and
+# the callback cannot find the transaction the first one wrote.
+#
+# 🔴 The default is a local encrypted FileTreeStore under `settings.home`. That
+# is documented by FastMCP as development-only, and on this image it is inside
+# the container, so a REDEPLOY SIGNS EVERYONE OUT. Measured 2026-09-08: routine
+# deploys for unrelated changes killed a live session twice in one afternoon.
+#
+# The second half is `jwt_signing_key`. Left unset, FastMCP derives it from
+# `upstream_client_secret` via HKDF, and the storage encryption key (and so the
+# storage DIRECTORY) is derived from that in turn. Rotating the Supabase client
+# secret would therefore orphan the entire store and sign everyone out again,
+# silently. An explicit key decouples the two, which is exactly why upstream
+# documents the pair as one production setting rather than two.
+_STORAGE_ENV = (
+    "VAQUILL_OAUTH_REDIS_URL",
+    "VAQUILL_OAUTH_JWT_SIGNING_KEY",
+    "VAQUILL_OAUTH_STORAGE_ENCRYPTION_KEY",
+)
+
+
+def _durable_storage() -> tuple[object | None, str | None]:
+    """Return `(client_storage, jwt_signing_key)` for a production deployment.
+
+    `(None, None)` when none of the three variables is set, which keeps the
+    development default: a local encrypted file store, ephemeral on this image.
+
+    Configuring SOME of them raises. A half-configured store is worse than none,
+    because it looks configured and still loses sessions on the one event it
+    exists to survive.
+    """
+    values = {name: os.environ.get(name, "").strip() for name in _STORAGE_ENV}
+    supplied = {name for name, value in values.items() if value}
+    if not supplied:
+        logger.warning(
+            "OAuth state is stored on local disk inside the container, so a "
+            "redeploy will sign every connected user out. Set %s together for "
+            "a durable store.",
+            ", ".join(_STORAGE_ENV),
+        )
+        return None, None
+    if supplied != set(_STORAGE_ENV):
+        raise RuntimeError(
+            "OAuth durable storage is half-configured. Set all of "
+            f"{', '.join(_STORAGE_ENV)} or none of them; missing: "
+            f"{', '.join(sorted(set(_STORAGE_ENV) - supplied))}"
+        )
+
+    from cryptography.fernet import Fernet
+    from key_value.aio.stores.redis import RedisStore
+    from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
+
+    # Encrypted AT REST, not merely behind Redis auth. The upstream Supabase
+    # access and refresh tokens live in these values; anyone who can read the
+    # Redis keyspace would otherwise read them in plaintext.
+    storage = FernetEncryptionWrapper(
+        key_value=RedisStore(url=values["VAQUILL_OAUTH_REDIS_URL"]),
+        fernet=Fernet(values["VAQUILL_OAUTH_STORAGE_ENCRYPTION_KEY"]),
+    )
+    logger.info("OAuth state persisted to Redis; sessions survive a redeploy")
+    return storage, values["VAQUILL_OAUTH_JWT_SIGNING_KEY"]
+
+
 def build_auth_provider():
     """The auth provider for the `/mcp` mounts, or None when unconfigured.
 
@@ -275,7 +347,11 @@ def build_auth_provider():
         audience=os.environ.get("VAQUILL_OAUTH_AUDIENCE", "authenticated"),
     )
 
+    client_storage, jwt_signing_key = _durable_storage()
+
     proxy = OAuthProxy(
+        client_storage=client_storage,
+        jwt_signing_key=jwt_signing_key,
         upstream_authorization_endpoint=required["VAQUILL_OAUTH_AUTHORIZE_URL"],
         upstream_token_endpoint=required["VAQUILL_OAUTH_TOKEN_URL"],
         upstream_client_id=required["VAQUILL_OAUTH_CLIENT_ID"],

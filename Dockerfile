@@ -54,10 +54,17 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Swarm keeps the previous healthy task serving. The symptom is a server that
 # looks fine on every probe and silently never picks up the new configuration.
 #
-# EPHEMERAL ON PURPOSE, for now. There is no volume here, so a redeploy clears
-# the store and anyone mid-session has to reconnect. That is acceptable while
-# this is one replica and CIMD needs no registration round trip; point
-# `client_storage` at Redis when either stops being true.
+# This path is now the FALLBACK, not the production store. It is still created
+# because `OAuthProxy` builds its default file store eagerly, but a deployment
+# that sets VAQUILL_OAUTH_REDIS_URL / _JWT_SIGNING_KEY / _STORAGE_ENCRYPTION_KEY
+# never writes here. Without them, a redeploy clears the store and signs every
+# connected user out: measured 2026-09-08, twice in one afternoon, on deploys
+# for unrelated changes. See `_durable_storage` in oauth.py.
+#
+# A volume was considered and rejected. It would fix the restart case and not
+# the other one: FastMCP keeps the in-flight authorization TRANSACTION here, so
+# with two replicas /authorize and /oauth/callback stop sharing state and OAuth
+# fails outright rather than merely expiring.
 ENV FASTMCP_HOME=/data
 RUN mkdir -p /data && chown 65532:65532 /data
 
