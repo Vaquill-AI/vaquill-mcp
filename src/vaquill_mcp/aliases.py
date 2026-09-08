@@ -131,7 +131,7 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "`search_us_statutes`, prefer it: it filters by jurisdiction, corpus, "
             "date and status, which this cannot. Pair with `fetch` to read a result."
         ),
-        annotations={"readOnlyHint": True, "title": TOOL_TITLES["search"]},
+        annotations={"readOnlyHint": True, "openWorldHint": False, "title": TOOL_TITLES["search"]},
     )
     async def search(query: str) -> dict[str, list[dict[str, str]]]:
         """Search US statutes, regulations, constitutions and court rules."""
@@ -173,7 +173,7 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "search/fetch pair; prefer `get_us_statute_section_text` if available. "
             "Charged as a section lookup plus a body read."
         ),
-        annotations={"readOnlyHint": True, "title": TOOL_TITLES["fetch"]},
+        annotations={"readOnlyHint": True, "openWorldHint": False, "title": TOOL_TITLES["fetch"]},
     )
     async def fetch(id: str) -> dict[str, Any]:  # noqa: A002 - the spec names it `id`
         """Retrieve one US law section by act_id, URL, path or citation."""
@@ -246,7 +246,7 @@ def _register_in(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "Prefer `search_acts` if you can call it: it filters by category, "
             "state, year and status. Pair with `fetch` to read a result."
         ),
-        annotations={"readOnlyHint": True, "title": TOOL_TITLES["search_in"]},
+        annotations={"readOnlyHint": True, "openWorldHint": False, "title": TOOL_TITLES["search_in"]},
     )
     async def search(query: str) -> dict[str, list[dict[str, str]]]:
         """Search Indian legislation down to the individual section."""
@@ -285,7 +285,7 @@ def _register_in(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "and `metadata` carries the PDF, HTML and plain-text URLs to read. "
             "Prefer `get_act_text` if you can call it."
         ),
-        annotations={"readOnlyHint": True, "title": TOOL_TITLES["fetch_in"]},
+        annotations={"readOnlyHint": True, "openWorldHint": False, "title": TOOL_TITLES["fetch_in"]},
     )
     async def fetch(id: str) -> dict[str, Any]:  # noqa: A002 - the spec names it `id`
         """Retrieve one Indian enactment's source links by act_id, URL or path."""

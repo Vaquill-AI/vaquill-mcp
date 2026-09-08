@@ -78,7 +78,7 @@ import os
 from collections.abc import AsyncIterator
 
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, PlainTextResponse
 from starlette.routing import Mount, Route
 
 logger = logging.getLogger(__name__)
@@ -187,6 +187,24 @@ def build_app() -> Starlette:
             }
         )
 
+    async def openai_apps_challenge(_request):
+        """Domain-verification token for the OpenAI plugin/app directory.
+
+        OpenAI proves you control the MCP host before it will publish a plugin,
+        by fetching an exact token from this path on the MCP host name (or a
+        parent). Served from an environment variable rather than a committed
+        file because the token is issued per submission and rotates: a redeploy
+        must be able to answer a NEW challenge without a code change.
+
+        404 while unset, which is the honest answer, and identical to the state
+        before this route existed. Returned as text/plain because the value is a
+        bare token and not JSON.
+        """
+        token = os.environ.get("OPENAI_APPS_CHALLENGE_TOKEN", "").strip()
+        if not token:
+            return PlainTextResponse("Not Found", status_code=404)
+        return PlainTextResponse(token)
+
     @contextlib.asynccontextmanager
     async def lifespan(_app: Starlette) -> AsyncIterator[None]:
         """Run every mounted app's lifespan.
@@ -210,7 +228,14 @@ def build_app() -> Starlette:
     # matches on PREFIX, so "/in/s" has to precede "/in" or every path-key call
     # to India lands in the app that only knows "/mcp".
     return Starlette(
-        routes=[Route("/health", health), *routes],
+        routes=[
+            Route("/health", health),
+            Route(
+                "/.well-known/openai-apps-challenge",
+                openai_apps_challenge,
+            ),
+            *routes,
+        ],
         lifespan=lifespan,
     )
 

@@ -169,3 +169,65 @@ def test_each_jurisdiction_asks_for_its_own_prices(_live_api: None, respx_mock) 
     assert set(regions) == {"US", "IN"}, (
         f"pricing fetched with regions {regions}; each jurisdiction must ask for its own"
     )
+
+
+def test_openai_challenge_404s_until_a_token_is_configured(
+    _live_api: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Absent token means 404, which is what the path did before it existed.
+
+    OpenAI's plugin directory verifies control of the MCP host by fetching an
+    exact token from this path. The token is issued per submission and rotates,
+    so it comes from the environment: a redeploy has to be able to answer a NEW
+    challenge without a code change, and a committed file could not.
+
+    Serving something when nothing is configured would be worse than 404: it
+    would look verified while failing OpenAI's exact-match check.
+    """
+    from starlette.testclient import TestClient
+
+    from vaquill_mcp.remote_main import build_app
+
+    monkeypatch.delenv("OPENAI_APPS_CHALLENGE_TOKEN", raising=False)
+    with TestClient(build_app()) as client:
+        assert client.get("/.well-known/openai-apps-challenge").status_code == 404
+
+
+def test_openai_challenge_serves_the_exact_token(
+    _live_api: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Byte-for-byte, with no JSON wrapper and no trailing newline.
+
+    OpenAI compares the response body to the token it issued. Any framing at
+    all fails the check, which is why this is PlainTextResponse rather than the
+    JSONResponse used by /health next to it.
+    """
+    from starlette.testclient import TestClient
+
+    from vaquill_mcp.remote_main import build_app
+
+    monkeypatch.setenv("OPENAI_APPS_CHALLENGE_TOKEN", "openai-apps-verify-abc123")
+    with TestClient(build_app()) as client:
+        r = client.get("/.well-known/openai-apps-challenge")
+        assert r.status_code == 200
+        assert r.text == "openai-apps-verify-abc123"
+        assert r.headers["content-type"].startswith("text/plain")
+
+
+def test_the_challenge_is_not_shadowed_by_the_root_mount(
+    _live_api: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The US app mounts at "/" and would otherwise swallow this path.
+
+    Starlette hands a request to the FIRST match and never falls through, so a
+    route declared AFTER the root Mount is unreachable. This is the same trap
+    that made `/mcp` 307 when it was a Mount prefix; asserting it here means a
+    future reordering fails loudly instead of 404ing during someone's review.
+    """
+    from starlette.testclient import TestClient
+
+    from vaquill_mcp.remote_main import build_app
+
+    monkeypatch.setenv("OPENAI_APPS_CHALLENGE_TOKEN", "tok-not-shadowed")
+    with TestClient(build_app()) as client:
+        assert client.get("/.well-known/openai-apps-challenge").text == "tok-not-shadowed"

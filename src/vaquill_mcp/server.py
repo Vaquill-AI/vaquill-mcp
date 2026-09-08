@@ -421,9 +421,23 @@ _ACKNOWLEDGED_WRITE_POSTS: frozenset[str] = frozenset({"/watches/test"})
 # fields; the camelCase spellings still work through a warning bridge. The WIRE
 # format is unaffected and stays camelCase, as the MCP spec requires -- verified
 # by `test_annotations_serialize_as_camel_case_on_the_wire`.
-_READ_ONLY = ToolAnnotations(read_only_hint=True)
-_WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False)
-_DESTRUCTIVE = ToolAnnotations(read_only_hint=False, destructive_hint=True)
+# `open_world_hint=False` on every tool, and it is a CLAIM about this server
+# rather than a formality: each tool reads or writes only inside Vaquill's own
+# closed corpus and the caller's own watches. Nothing reaches an open-ended
+# external surface, so a client can reason about blast radius before calling.
+#
+# Emitted even though it is not MCP's default (the spec defaults it to TRUE, the
+# cautious answer) because the honest value here is the narrower one, and
+# because OpenAI's plugin review requires readOnlyHint, openWorldHint AND
+# destructiveHint on every tool. Two of the three were already set; a submission
+# scanned without this one is rejected on metadata rather than behaviour.
+_READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
+_WRITE = ToolAnnotations(
+    read_only_hint=False, destructive_hint=False, open_world_hint=False
+)
+_DESTRUCTIVE = ToolAnnotations(
+    read_only_hint=False, destructive_hint=True, open_world_hint=False
+)
 
 
 def _is_read_only(route: HTTPRoute) -> bool:

@@ -167,9 +167,43 @@ def test_annotations_serialize_as_camel_case_on_the_wire() -> None:
     def wire(annotations) -> dict:
         return annotations.model_dump(mode="json", exclude_none=True, by_alias=True)
 
-    assert wire(_READ_ONLY) == {"readOnlyHint": True}
-    assert wire(_WRITE) == {"readOnlyHint": False, "destructiveHint": False}
-    assert wire(_DESTRUCTIVE) == {"readOnlyHint": False, "destructiveHint": True}
+    assert wire(_READ_ONLY) == {"readOnlyHint": True, "openWorldHint": False}
+    assert wire(_WRITE) == {
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "openWorldHint": False,
+    }
+    assert wire(_DESTRUCTIVE) == {
+        "readOnlyHint": False,
+        "destructiveHint": True,
+        "openWorldHint": False,
+    }
+
+
+def test_every_tool_declares_all_three_hints() -> None:
+    """OpenAI's plugin review requires all three, not the two MCP defaults fill in.
+
+    `readOnlyHint` and `destructiveHint` were set from the start; `openWorldHint`
+    was not, and its MCP default is TRUE, so every tool was implicitly claiming
+    an open-ended external surface it does not have. That is both wrong about
+    this server and a rejection on metadata rather than behaviour.
+
+    Asserted on the WIRE shape, because a hint left at its default is absent
+    from the payload and a client cannot tell "unset" from "checked and false".
+    """
+    from vaquill_mcp.server import _DESTRUCTIVE, _READ_ONLY, _WRITE
+
+    required = {"readOnlyHint", "openWorldHint"}
+    for annotations in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
+        emitted = set(
+            annotations.model_dump(mode="json", exclude_none=True, by_alias=True)
+        )
+        assert required <= emitted, f"missing {sorted(required - emitted)}"
+
+    # Nothing here reaches an open-ended external surface: every tool reads the
+    # closed Vaquill corpus or writes the caller's own watches.
+    for annotations in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
+        assert annotations.open_world_hint is False
 
 
 def _built_tools(jurisdiction: str):
