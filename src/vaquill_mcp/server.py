@@ -438,13 +438,28 @@ def _is_read_only(route: HTTPRoute) -> bool:
     return _pricing_endpoint_for_route(route.path) in _READ_ONLY_POSTS
 
 
-def _annotations_for(route: HTTPRoute) -> ToolAnnotations:
-    """Derive the MCP tool annotations for one route."""
+def _annotations_for(route: HTTPRoute, name: str | None = None) -> ToolAnnotations:
+    """Derive the MCP tool annotations for one route.
+
+    🔴 `title` goes HERE, inside the annotations, and not only on the tool's own
+    `title` field. Both exist in the schema and they are not interchangeable:
+    the Anthropic connector directory reads `annotations.title` and reports
+    "Missing annotations: title" when only the top-level one is set, then falls
+    back to a name-derived label. Measured 2026-09-08 against the live server,
+    which was serving `Tool.title = "Credit Pricing"` while the submission
+    portal displayed "Get Pricing" and flagged all 25 tools.
+
+    Setting only `annotations.title` would be the mirror mistake for clients
+    that read the newer top-level field, so `_customize_component` writes both.
+    """
     if _is_read_only(route):
-        return _READ_ONLY
-    if route.method.upper() == "DELETE":
-        return _DESTRUCTIVE
-    return _WRITE
+        base = _READ_ONLY
+    elif route.method.upper() == "DELETE":
+        base = _DESTRUCTIVE
+    else:
+        base = _WRITE
+    title = TOOL_TITLES.get(name or "")
+    return base.model_copy(update={"title": title}) if title else base
 
 
 # ---------------------------------------------------------------------------
@@ -496,7 +511,7 @@ def _make_customize_component(tool_costs: dict[str, str]):
             component.parameters = slim_input_schema(
                 component.name, component.parameters
             )
-            component.annotations = _annotations_for(route)
+            component.annotations = _annotations_for(route, component.name)
 
         # Tag all components for discoverability
         component.tags.add("legal-research")

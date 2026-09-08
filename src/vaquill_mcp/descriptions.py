@@ -525,7 +525,13 @@ TOOL_TITLES: dict[str, str] = {
     # --- Shared -------------------------------------------------------------
     "get_pricing": "Credit Pricing",
     # --- India --------------------------------------------------------------
-    "search_acts": "Search Indian Legislation",
+    # `search` and `fetch` are registered once per jurisdiction under the SAME
+    # tool name, so the map is keyed by a suffixed alias here and each India
+    # registration asks for its own. Two servers, two catalogues, never both in
+    # one client.
+    "search_in": "Search Indian Legislation",
+    "fetch_in": "Fetch Indian Enactment",
+    "search_acts": "Search Indian Acts",
     "list_acts": "Browse Indian Acts",
     "list_act_filters": "Act Filter Values",
     "get_act_text": "Act Text",

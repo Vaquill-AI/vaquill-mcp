@@ -209,7 +209,22 @@ def test_every_tool_has_a_title_and_no_mangled_acronym(jurisdiction: str) -> Non
 
     for tool in _built_tools(jurisdiction):
         mcp_tool = tool.to_mcp_tool(name=tool.name)
-        assert mcp_tool.title, f"{jurisdiction}/{tool.name} has no title"
+
+        # BOTH fields, and annotations.title is the load-bearing one: the
+        # Anthropic connector directory reads it, reports "Missing annotations:
+        # title" when only the top-level field is set, and then displays a
+        # name-derived label instead. Asserting only `mcp_tool.title` passed
+        # while the live submission portal flagged all 25 tools.
+        assert mcp_tool.title, f"{jurisdiction}/{tool.name} has no Tool.title"
+        assert mcp_tool.annotations is not None, f"{jurisdiction}/{tool.name} has no annotations"
+        assert mcp_tool.annotations.title, (
+            f"{jurisdiction}/{tool.name} has no annotations.title; the directory "
+            "reads that field, not the tool's own title"
+        )
+        assert mcp_tool.annotations.title == mcp_tool.title, (
+            f"{jurisdiction}/{tool.name} disagrees with itself: "
+            f"{mcp_tool.annotations.title!r} vs {mcp_tool.title!r}"
+        )
         words = set(mcp_tool.title.replace("/", " ").split())
         assert not (words & mangled), (
             f"{jurisdiction}/{tool.name} title {mcp_tool.title!r} title-cases the "
