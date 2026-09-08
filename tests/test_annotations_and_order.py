@@ -181,12 +181,18 @@ def _built_tools(jurisdiction: str):
     when `TOOL_TITLES` was first wired only into the OpenAPI customizer.
     """
     import asyncio
+    import os
     from unittest.mock import patch
 
     from vaquill_mcp import server as server_module
 
     spec = json.loads((_FIXTURES / f"openapi_{jurisdiction.lower()}.json").read_text())
+    # The key is patched IN, not read from the environment. `create_server`
+    # calls `get_api_key()`, which raises when VAQUILL_API_KEY is unset: a
+    # developer with a real key exported sees this pass and CI, which has none,
+    # sees it fail. That is exactly how it shipped red.
     with (
+        patch.dict(os.environ, {"VAQUILL_API_KEY": "vq_key_test"}),
         patch.object(server_module, "_fetch_openapi_spec", return_value=spec),
         patch.object(server_module, "_fetch_full_costs", return_value=[]),
     ):
