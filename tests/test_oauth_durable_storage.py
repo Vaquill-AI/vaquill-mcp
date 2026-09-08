@@ -20,6 +20,25 @@ from vaquill_mcp.oauth import _STORAGE_ENV, _durable_storage
 _FERNET_KEY = "yBpH1n3rXQ8m0kR2sT4uV6wX8yZ0aB2cD4eF6gH8iJk="
 
 
+def _requires_redis_extra() -> None:
+    """Skip where `py-key-value-aio[redis]` is genuinely absent.
+
+    Redis lives in the `remote` extra, not the base package, because the stdio
+    server has no use for it. The CI job that installs the published wheel on a
+    FRESH resolution therefore does NOT have it, and these two tests failed
+    there while passing everywhere else. That job is right and the tests were
+    wrong: it exists to prove the base wheel imports on a clean machine.
+
+    `importorskip` rather than a module-level guard, so the other four tests in
+    this file still run there and still cover the half-configured guard, which
+    is the one that needs no Redis at all.
+    """
+    pytest.importorskip(
+        "redis",
+        reason="py-key-value-aio[redis] is in the `remote` extra, not the base wheel",
+    )
+
+
 def _clear(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in _STORAGE_ENV:
         monkeypatch.delenv(name, raising=False)
@@ -60,6 +79,7 @@ def test_fully_configured_returns_an_encrypted_store(monkeypatch: pytest.MonkeyP
     The upstream Supabase access and refresh tokens are inside these values, so
     anyone able to read the keyspace could otherwise read them in plaintext.
     """
+    _requires_redis_extra()
     from key_value.aio.wrappers.encryption import FernetEncryptionWrapper
 
     _clear(monkeypatch)
@@ -82,6 +102,7 @@ def test_the_signing_key_is_ours_and_not_derived_from_the_client_secret(
     the store survives a redeploy and still dies on a credential rotation. Both
     must come from the environment for either to be worth configuring.
     """
+    _requires_redis_extra()
     _clear(monkeypatch)
     monkeypatch.setenv("VAQUILL_OAUTH_REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("VAQUILL_OAUTH_JWT_SIGNING_KEY", "independent-of-supabase")
