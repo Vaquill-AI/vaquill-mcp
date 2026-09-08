@@ -40,7 +40,7 @@ from vaquill_mcp.config import (
     get_spec_url,
     get_timeout,
 )
-from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
+from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS, TOOL_TITLES
 from vaquill_mcp.ordering import DeterministicToolOrder
 from vaquill_mcp.prompts import register_prompts
 from vaquill_mcp.resources import register_resources
@@ -93,7 +93,11 @@ def _derive_mcp_names(spec: dict) -> dict[str, str]:
     for path, item in (spec.get("paths") or {}).items():
         if not isinstance(item, dict):
             continue
-        segs = [s for s in path.strip("/").split("/") if s not in ("api", "v1", "us") and "{" not in s]
+        segs = [
+            s
+            for s in path.strip("/").split("/")
+            if s not in ("api", "v1", "us") and "{" not in s
+        ]
         resource = segs[0] if segs else ""
         for op in item.values():
             if not isinstance(op, dict):
@@ -110,6 +114,7 @@ def _derive_mcp_names(spec: dict) -> dict[str, str]:
             base = f"{resource}_{base}"
         names[op_id] = base
     return names
+
 
 def published_tool_names(spec: dict) -> set[str]:
     """Every tool name the OpenAPI provider will publish for this document.
@@ -290,20 +295,26 @@ def _build_tool_costs(spec: dict, cost_entries: list[dict]) -> dict[str, str]:
     return tool_costs
 
 
-def _fetch_public_costs(base_url: str) -> list[dict]:
-    """Fetch the credit-cost matrix WITHOUT an API key.
+def _fetch_public_costs(base_url: str, region: str) -> list[dict]:
+    """Fetch one jurisdiction's credit-cost matrix WITHOUT an API key.
 
     The remote server has no key at startup -- keys arrive per request -- so it
     cannot use the authenticated `/pricing/all` below. It does not need to:
     `PUBLIC_HIDDEN_CATEGORIES` is empty and is asserted empty by
     `test_all_matrix_equals_public_while_nothing_is_hidden` on the API side, so
-    the public matrix and the full matrix are the same set. If that invariant
-    ever breaks, this returns fewer rows and some tools lose a cost line; it
-    cannot return a WRONG price, which is the failure that would matter.
+    the public matrix and the full matrix are the same set for a region. If that
+    invariant ever breaks, this returns fewer rows and some tools lose a cost
+    line; it cannot return a WRONG price, which is the failure that matters.
+
+    🔴 `region` is REQUIRED, and it is the caller's jurisdiction, not a
+    preference. This hits the MAIN app route rather than the one mounted inside
+    a jurisdiction's OpenAPI document, so it gets no scoping from the mount and
+    the API defaults it to US. An India server that omitted it would silently
+    label its India tools with United States prices.
     """
     url = f"{base_url}/api/v1/api-credits/pricing"
     try:
-        response = httpx2.get(url, timeout=15.0)
+        response = httpx2.get(url, params={"region": region}, timeout=15.0)
         response.raise_for_status()
         return response.json().get("costs", [])
     except (httpx2.HTTPError, ValueError) as exc:
@@ -467,6 +478,13 @@ def _make_customize_component(tool_costs: dict[str, str]):
                 description = f"{description} {cost_line}"
             component.description = description
 
+        # A title is REQUIRED by the Anthropic connector directory and is what a
+        # client shows in its tool list. Set before the OpenAPITool branch so a
+        # resource gets one too.
+        title = TOOL_TITLES.get(component.name)
+        if title:
+            component.title = title
+
         if isinstance(component, OpenAPITool):
             # The input schema, not the description, is where this catalogue's
             # tokens actually are: 86% of it against 12.8% for descriptions.
@@ -601,7 +619,11 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
     # then add the OpenAPI provider for tool generation.
     # The name carries the jurisdiction so a user running both servers can
     # tell them apart in a client that lists them side by side.
-    name = "Vaquill Legal Research" if jurisdiction == "US" else f"Vaquill Legal Research ({jurisdiction})"
+    name = (
+        "Vaquill Legal Research"
+        if jurisdiction == "US"
+        else f"Vaquill Legal Research ({jurisdiction})"
+    )
     mcp = FastMCP(name=name, lifespan=_lifespan)
 
     provider = OpenAPIProvider(

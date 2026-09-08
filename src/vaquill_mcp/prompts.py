@@ -109,9 +109,13 @@ When reporting:
             )
             if part
         )
-        hint = f" Narrow with {narrowing}." if narrowing else (
-            " Narrow with `corpusType` and `state`: an unnarrowed window can match "
-            "too many sections and is rejected with a 422."
+        hint = (
+            f" Narrow with {narrowing}."
+            if narrowing
+            else (
+                " Narrow with `corpusType` and `state`: an unnarrowed window can match "
+                "too many sections and is rejected with a 422."
+            )
         )
         return f"""\
 Report what changed since **{since}**.
@@ -165,8 +169,7 @@ def _register_in(mcp: FastMCP) -> None:
     @mcp.prompt(
         name="old_code_citation",
         description=(
-            "Answer an IPC/CrPC citation under the 2023 code that actually "
-            "replaced it."
+            "Answer an IPC/CrPC citation under the 2023 code that actually replaced it."
         ),
     )
     def old_code_citation(citation: str) -> str:

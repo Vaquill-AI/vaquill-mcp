@@ -7,9 +7,8 @@
           "category": {
             "description": "Endpoint category.",
             "enum": [
-              "research",
-              "citations",
               "acts",
+              "alerts",
               "statutes"
             ],
             "examples": [
@@ -144,6 +143,86 @@
           "detail"
         ],
         "title": "ApiDetailError",
+        "type": "object"
+      },
+      "AsOfProvenance": {
+        "description": "Where an `asOf` body came from, and how far the evidence reaches.\n\nEvery field but `text` on the parent exists so this answer cannot be\nover-read. The corpus holds ONE current text per citation; an earlier one is\nRECONSTRUCTED from observed changes, and observation started when it started.",
+        "properties": {
+          "basisChangeId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The change event whose before-side supplied this text. Null when `source` is `live`. Pass it to `/us/statutes/section/{actId}/changes` to see the event this answer rests on.",
+            "examples": [
+              91
+            ],
+            "title": "Basischangeid"
+          },
+          "coverage": {
+            "description": "Prose statement of the same limit, safe to show a reader verbatim.",
+            "title": "Coverage",
+            "type": "string"
+          },
+          "existed": {
+            "description": "False when the earliest thing we ever captured for this section is its ADDITION and that addition postdates your date, so it demonstrably did not exist yet. A real answer, not a miss.",
+            "title": "Existed",
+            "type": "boolean"
+          },
+          "isBounded": {
+            "description": "TRUE means: we observed no change affecting your date, and that is NOT the same as there having been none.\n\nSet when your date predates `observedFrom`, or when we captured no change for this section at all. Change capture began long after the corpus did and is per-source, so a bounded answer is our best reconstruction rather than a verified historical text. Surface it. Rendering a bounded answer as authoritative point-in-time law makes a claim we did not make.",
+            "title": "Isbounded",
+            "type": "boolean"
+          },
+          "observedFrom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The earliest change we ever captured for this section. Null when we captured none. This is how far back the reconstruction can see, and it is a property of when capture began for this source, not of the age of the law.",
+            "examples": [
+              "2026-08-09T04:10:00Z"
+            ],
+            "title": "Observedfrom"
+          },
+          "requested": {
+            "description": "The date you asked for, echoed back (`YYYY-MM-DD`).",
+            "examples": [
+              "2026-01-15"
+            ],
+            "title": "Requested",
+            "type": "string"
+          },
+          "source": {
+            "description": "`live`: we captured no change to this section after your date, so today's text is what stood then as far as we ever saw. `reconstructed`: rebuilt from the before-side of the first change we captured after your date. `unavailable`: we know it changed but cannot rebuild the earlier text, so no text is returned. That is different from the section being empty, and different again from it not existing.",
+            "enum": [
+              "live",
+              "reconstructed",
+              "unavailable"
+            ],
+            "examples": [
+              "reconstructed"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested",
+          "source",
+          "existed",
+          "isBounded",
+          "coverage"
+        ],
+        "title": "AsOfProvenance",
         "type": "object"
       },
       "CreateWatchRequest": {
@@ -396,11 +475,37 @@
             "title": "Actid",
             "type": "string"
           },
+          "asOf": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AsOfProvenance"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present only when the request passed `asOf`. Says WHICH version of the section you are holding and how far the evidence for it goes. Read `isBounded` before treating the text as the law on that date."
+          },
           "available": {
             "default": true,
             "description": "Whether full text is available.",
             "title": "Available",
             "type": "boolean"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The OPERATIVE TEXT of the section, with the source credit and the notes apparatus removed. This is the law; `plain` is the law plus everything the publisher prints around it.\n\nPopulated for **United States Code** sections, where GPO delimits the fields in the granule it publishes. Null for CFR and for state corpora, whose sources carry no equivalent structure -- null means \"we cannot split this reliably\", never \"this section is empty\", and `plain` is still the whole body.\n\nWorth using if you feed sections to a model: measured 2026-09-02, the operative text is a median 46% of `plain` across USC and as little as 3.4% (`17 U.S.C. \u00a7 107`, where 28,529 of 29,775 characters are committee reports and amendment notes). A model handed the full body can quote a 1992 amendment note as the law in force.",
+            "examples": [
+              "Notwithstanding the provisions of sections 106 and 106A, the fair use..."
+            ],
+            "title": "Content"
           },
           "creditsConsumed": {
             "default": 0.0,
@@ -447,6 +552,21 @@
             "description": "Note if text is unavailable.",
             "title": "Note"
           },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The notes apparatus the publisher prints after the section: Historical and Revision Notes, committee reports, Editorial Notes (codification and amendments), Statutory Notes and Related Subsidiaries (effective dates), and any guidelines reprinted by the editors.\n\nKept, not discarded: it is the legislative history, and it is the reason a section's body can be twenty times the length of the law. It is simply NOT the operative text, so it is served as its own field. Null where we cannot split the body.",
+            "examples": [
+              "Historical and Revision Notes\n\nhouse report no. 94\u20131476..."
+            ],
+            "title": "Notes"
+          },
           "plain": {
             "anyOf": [
               {
@@ -479,6 +599,21 @@
             ],
             "description": "Data source identifier.",
             "title": "Source"
+          },
+          "sourceCredit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The publisher's credit line for the section, e.g. `(Pub. L. 94-553, title I, \u00a7101, Oct. 19, 1976, 90 Stat. 2546; ...)`. Split out of the body rather than left inside it.\n\nThe same value is also on `GET /us/statutes/section/{actId}` as `sourceCredit`; it is repeated here so a caller fetching the text does not need a second call to know what enacted it.",
+            "examples": [
+              "(Pub. L. 94\u2013553, title I, \u00a7101, Oct. 19, 1976, 90 Stat. 2546)"
+            ],
+            "title": "Sourcecredit"
           },
           "sourceUrl": {
             "anyOf": [
@@ -1103,6 +1238,7 @@
         "type": "object"
       },
       "StatuteResolveBatchRequest": {
+        "additionalProperties": false,
         "description": "Batch citation resolution. See `POST /us/statutes/resolve`.\n\n`/resolve` took 1,159 calls in the 16 days to 2026-08-31, second only to\nsearch, and every one of them carried a single citation. The caller shape it\nis actually serving is an agent handed a brief, a memo or a model's output\nwith thirty citations in it, doing thirty round trips to check them.",
         "properties": {
           "citations": {
@@ -1117,7 +1253,6 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 50,
             "minItems": 1,
             "title": "Citations",
             "type": "array"
@@ -1505,6 +1640,21 @@
               "All Persons Engaged in Marketing"
             ],
             "title": "Audience"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Full plain text of the section. Present ONLY when the request set `includeBody: true`, and null on any row whose text could not be resolved (those rows are not charged for a body).\n\nThis is the actual statutory text, not the `excerpt`. The two are different things and the difference matters for quoting: `excerpt` is a ranking preview windowed around the match, so it can begin mid-section and drop a leading subsection marker -- measured 2026-09-02, four of five California rows lost their opening `(a) `. `body` is the document as the publisher printed it.",
+            "examples": [
+              "(a) If within a reasonable time after written or oral notice..."
+            ],
+            "title": "Body"
           },
           "breadcrumb": {
             "anyOf": [
@@ -2616,7 +2766,7 @@
                 "type": "null"
               }
             ],
-            "description": "The named source within `corpusType`, for corpora that fold several independently filterable bodies of law into one token.\n\n`FEDERAL_RULES` sources: `frcp` (Federal Rules of Civil Procedure), `frcrp` (Federal Rules of Criminal Procedure), `fre` (Federal Rules of Evidence), `frap` (Federal Rules of Appellate Procedure), `frbp` (Federal Rules of Bankruptcy Procedure), `sct` (Rules of the Supreme Court of the United States).\n\n`CFR` sources: `far` (Federal Acquisition Regulation (48 C.F.R. ch. 1)), `dfars` (Defense Federal Acquisition Regulation Supplement (48 C.F.R. ch. 2)) (both are already part of `CFR`; this only splits the existing Title 48 data by chapter, it does not add new sections).\n\n`AGENCY_GUIDANCE` sources: `administrative_guidance` (Synthesized administrative guidance (e.g. SALT cap, CTC, 401(k) limits)), `ssa_ruling` (Social Security Administration Rulings), `irs_rev_proc` (IRS Revenue Procedures), `irs_notice` (IRS Notices), `irs_rev_rul` (IRS Revenue Rulings), `irs_announcement` (IRS Announcements), `merger_guidelines` (DOJ & FTC Merger Guidelines (2023)), `doj_leniency` (DOJ Antitrust Division Leniency Policy), `copyright_circular` (US Copyright Office Circulars), `doj_justice_manual` (DOJ Justice Manual), `uscis_policy_manual` (USCIS Policy Manual), `mpep` (USPTO Manual of Patent Examining Procedure (MPEP)), `tmep` (USPTO Trademark Manual of Examining Procedure (TMEP)), `cftc_staff_letter` (CFTC Staff Letters (no-action, exemptive, interpretative; 2008-present)), `fincen_ruling` (FinCEN Administrative Rulings), `fincen_guidance` (FinCEN Guidance (alerts, advisories, notices, bulletins, fact sheets)), `frb_sr_letter` (Federal Reserve Supervision and Regulation (SR) / Consumer Affairs (CA) Letters), `occ_bulletin` (OCC Bulletins), `occ_interpretive_letter` (OCC Interpretive Letters), `fdic_fil` (FDIC Financial Institution Letters (FILs)), `dfars_pgi` (DFARS PGI (Procedures, Guidance, and Information)), `nlrb_gc_memo` (NLRB General Counsel Memoranda), `nlrb_advice_memo` (NLRB Division of Advice Memoranda (rolling 10-year window, not the full archive)), `cpsc_advisory_opinion` (CPSC Office of General Counsel Advisory Opinions (historical, 1970s-2012)), `cpsc_secg` (CPSC Small Entity Compliance Guides), `bis_advisory_opinion` (BIS (Bureau of Industry and Security) Advisory Opinions), `ddtc_commodity_jurisdiction` (DDTC (Directorate of Defense Trade Controls) Commodity Jurisdiction Determinations), `ddtc_guidance` (DDTC (Directorate of Defense Trade Controls) Policy Guidance Documents), `hhs_ocr_hipaa_faq` (HHS Office for Civil Rights HIPAA FAQs), `hhs_ocr_hipaa_guidance` (HHS Office for Civil Rights HIPAA Guidance Materials), `hhs_ocr_resolution_agreement` (HHS Office for Civil Rights HIPAA Resolution Agreements and Civil Money Penalties), `fcc_declaratory_ruling` (FCC (Federal Communications Commission) Declaratory Rulings), `ferc_policy_statement` (FERC (Federal Energy Regulatory Commission) Policy Statements), `doe_appliance_guidance` (DOE Appliance Standards Guidance and FAQs).\n\n`US_TAX_TREATY` sources: `us_tax_treaty` (U.S. Bilateral Income and Estate Tax Treaties), `us_tax_treaty_technical_explanation` (Treasury Technical Explanations (article-by-article commentary on a tax treaty)).\n\n`STATE_AGENCY_GUIDANCE` sources: `state_insurance_bulletin` (State Department of Insurance Bulletins). Pass it back as the `source` search filter to scope to just this one source. Null for corpora with only one source.",
+            "description": "The named source within `corpusType`, for corpora that fold several independently filterable bodies of law into one token.\n\n`FEDERAL_RULES` sources: `frcp` (Federal Rules of Civil Procedure), `frcrp` (Federal Rules of Criminal Procedure), `fre` (Federal Rules of Evidence), `frap` (Federal Rules of Appellate Procedure), `frbp` (Federal Rules of Bankruptcy Procedure), `sct` (Rules of the Supreme Court of the United States).\n\n`CFR` sources: `far` (Federal Acquisition Regulation (48 C.F.R. ch. 1)), `dfars` (Defense Federal Acquisition Regulation Supplement (48 C.F.R. ch. 2)) (both are already part of `CFR`; this only splits the existing Title 48 data by chapter, it does not add new sections).\n\n`AGENCY_GUIDANCE` sources: `administrative_guidance` (Synthesized administrative guidance (e.g. SALT cap, CTC, 401(k) limits)), `ssa_ruling` (Social Security Administration Rulings), `irs_rev_proc` (IRS Revenue Procedures), `irs_notice` (IRS Notices), `irs_rev_rul` (IRS Revenue Rulings), `irs_announcement` (IRS Announcements), `merger_guidelines` (DOJ & FTC Merger Guidelines (2023)), `doj_leniency` (DOJ Antitrust Division Leniency Policy), `copyright_circular` (US Copyright Office Circulars), `doj_justice_manual` (DOJ Justice Manual), `uscis_policy_manual` (USCIS Policy Manual), `mpep` (USPTO Manual of Patent Examining Procedure (MPEP)), `tmep` (USPTO Trademark Manual of Examining Procedure (TMEP)), `cftc_staff_letter` (CFTC Staff Letters (no-action, exemptive, interpretative; 2008-present)), `fincen_ruling` (FinCEN Administrative Rulings), `fincen_guidance` (FinCEN Guidance (alerts, advisories, notices, bulletins, fact sheets)), `frb_sr_letter` (Federal Reserve Supervision and Regulation (SR) / Consumer Affairs (CA) Letters), `occ_bulletin` (OCC Bulletins), `occ_interpretive_letter` (OCC Interpretive Letters), `fdic_fil` (FDIC Financial Institution Letters (FILs)), `dfars_pgi` (DFARS PGI (Procedures, Guidance, and Information)), `nlrb_gc_memo` (NLRB General Counsel Memoranda), `nlrb_advice_memo` (NLRB Division of Advice Memoranda (rolling 10-year window, not the full archive)), `cpsc_advisory_opinion` (CPSC Office of General Counsel Advisory Opinions (historical, 1970s-2012)), `cpsc_secg` (CPSC Small Entity Compliance Guides), `bis_advisory_opinion` (BIS (Bureau of Industry and Security) Advisory Opinions), `ddtc_commodity_jurisdiction` (DDTC (Directorate of Defense Trade Controls) Commodity Jurisdiction Determinations), `ddtc_guidance` (DDTC (Directorate of Defense Trade Controls) Policy Guidance Documents), `hhs_ocr_hipaa_faq` (HHS Office for Civil Rights HIPAA FAQs), `hhs_ocr_hipaa_guidance` (HHS Office for Civil Rights HIPAA Guidance Materials), `hhs_ocr_resolution_agreement` (HHS Office for Civil Rights HIPAA Resolution Agreements and Civil Money Penalties), `fcc_declaratory_ruling` (FCC (Federal Communications Commission) Declaratory Rulings), `ferc_policy_statement` (FERC (Federal Energy Regulatory Commission) Policy Statements), `doe_appliance_guidance` (DOE Appliance Standards Guidance and FAQs).\n\n`US_TAX_TREATY` sources: `us_tax_treaty` (U.S. Bilateral Income and Estate Tax Treaties), `us_tax_treaty_technical_explanation` (Treasury Technical Explanations (article-by-article commentary on a tax treaty)), `senate_treaty` (Senate Treaty Records (transmittal, parties and proceedings)), `senate_treaty_resolution` (Senate Resolutions of Advice and Consent, including the reservations, understandings and declarations that narrow a treaty's effect in US law), `senate_treaty_document` (Treaty Documents (CDOC TDOC series): the President's message transmitting a treaty to the Senate, with the instrument's text).\n\n`STATE_AGENCY_GUIDANCE` sources: `state_insurance_bulletin` (State Department of Insurance Bulletins).\n\n`AGENCY_ADJUDICATION` sources: `mspb_precedential` (MSPB Precedential Decisions), `mspb_nonprecedential` (MSPB Nonprecedential Orders), `olc_opinion` (DOJ Office of Legal Counsel Opinions (official bound volumes, 1933-2020)). Pass it back as the `source` search filter to scope to just this one source. Null for corpora with only one source.",
             "examples": [
               "sct"
             ],
@@ -3223,7 +3373,9 @@
                   "SENTENCING_GUIDELINES",
                   "US_TAX_TREATY",
                   "STATE_AGENCY_GUIDANCE",
-                  "SESSION_LAW"
+                  "SESSION_LAW",
+                  "STATUTE_COMPILATION",
+                  "AGENCY_ADJUDICATION"
                 ],
                 "type": "string"
               },
@@ -3244,7 +3396,9 @@
                     "SENTENCING_GUIDELINES",
                     "US_TAX_TREATY",
                     "STATE_AGENCY_GUIDANCE",
-                    "SESSION_LAW"
+                    "SESSION_LAW",
+                    "STATUTE_COMPILATION",
+                    "AGENCY_ADJUDICATION"
                   ],
                   "type": "string"
                 },
@@ -3333,6 +3487,7 @@
               "articleName",
               "articleNumber",
               "audience",
+              "body",
               "breadcrumb",
               "caseName",
               "chapter",
@@ -3456,6 +3611,15 @@
             ],
             "title": "Fields"
           },
+          "includeBody": {
+            "default": false,
+            "description": "Return the full text of every hit inline, on each result's `body`, instead of making you fetch it per section afterwards.\n\n**Why it exists.** Search returns a ranking preview, so the documented flow was search then one `/section/{actId}/body` call per hit. Measured 2026-09-02 that is about 2s for the search plus about 3s for each body, so a page of five sections cost six round trips to put real law on screen. This collapses it to one.\n\n**Cost**: the 4-credit search PLUS the ordinary 6-credit body price for each row that actually returns text. Ten rows with text is 4 + 60 = 64 credits. A row whose text cannot be resolved comes back with `body: null` and is NOT charged, so read `creditsConsumed` rather than computing it from `limit` -- it is the same price as fetching them yourself, so this buys latency, not a discount.\n\n\u26a0\ufe0f It multiplies with `limit`. `limit: 50` with this set is 304 credits in a single call. Page deliberately.\n\nPrefer this over raising `excerptChars`: the excerpt is windowed around the match and can begin mid-section, dropping a leading subsection marker, so it is not safe to quote. `body` is the publisher's text.",
+            "examples": [
+              true
+            ],
+            "title": "Includebody",
+            "type": "boolean"
+          },
           "limit": {
             "default": 10,
             "description": "Number of results to return per page.",
@@ -3564,7 +3728,7 @@
                 "type": "null"
               }
             ],
-            "description": "Scope to one or more of the following. The named source within `corpusType`, for corpora that fold several independently filterable bodies of law into one token.\n\n`FEDERAL_RULES` sources: `frcp` (Federal Rules of Civil Procedure), `frcrp` (Federal Rules of Criminal Procedure), `fre` (Federal Rules of Evidence), `frap` (Federal Rules of Appellate Procedure), `frbp` (Federal Rules of Bankruptcy Procedure), `sct` (Rules of the Supreme Court of the United States).\n\n`CFR` sources: `far` (Federal Acquisition Regulation (48 C.F.R. ch. 1)), `dfars` (Defense Federal Acquisition Regulation Supplement (48 C.F.R. ch. 2)) (both are already part of `CFR`; this only splits the existing Title 48 data by chapter, it does not add new sections).\n\n`AGENCY_GUIDANCE` sources: `administrative_guidance` (Synthesized administrative guidance (e.g. SALT cap, CTC, 401(k) limits)), `ssa_ruling` (Social Security Administration Rulings), `irs_rev_proc` (IRS Revenue Procedures), `irs_notice` (IRS Notices), `irs_rev_rul` (IRS Revenue Rulings), `irs_announcement` (IRS Announcements), `merger_guidelines` (DOJ & FTC Merger Guidelines (2023)), `doj_leniency` (DOJ Antitrust Division Leniency Policy), `copyright_circular` (US Copyright Office Circulars), `doj_justice_manual` (DOJ Justice Manual), `uscis_policy_manual` (USCIS Policy Manual), `mpep` (USPTO Manual of Patent Examining Procedure (MPEP)), `tmep` (USPTO Trademark Manual of Examining Procedure (TMEP)), `cftc_staff_letter` (CFTC Staff Letters (no-action, exemptive, interpretative; 2008-present)), `fincen_ruling` (FinCEN Administrative Rulings), `fincen_guidance` (FinCEN Guidance (alerts, advisories, notices, bulletins, fact sheets)), `frb_sr_letter` (Federal Reserve Supervision and Regulation (SR) / Consumer Affairs (CA) Letters), `occ_bulletin` (OCC Bulletins), `occ_interpretive_letter` (OCC Interpretive Letters), `fdic_fil` (FDIC Financial Institution Letters (FILs)), `dfars_pgi` (DFARS PGI (Procedures, Guidance, and Information)), `nlrb_gc_memo` (NLRB General Counsel Memoranda), `nlrb_advice_memo` (NLRB Division of Advice Memoranda (rolling 10-year window, not the full archive)), `cpsc_advisory_opinion` (CPSC Office of General Counsel Advisory Opinions (historical, 1970s-2012)), `cpsc_secg` (CPSC Small Entity Compliance Guides), `bis_advisory_opinion` (BIS (Bureau of Industry and Security) Advisory Opinions), `ddtc_commodity_jurisdiction` (DDTC (Directorate of Defense Trade Controls) Commodity Jurisdiction Determinations), `ddtc_guidance` (DDTC (Directorate of Defense Trade Controls) Policy Guidance Documents), `hhs_ocr_hipaa_faq` (HHS Office for Civil Rights HIPAA FAQs), `hhs_ocr_hipaa_guidance` (HHS Office for Civil Rights HIPAA Guidance Materials), `hhs_ocr_resolution_agreement` (HHS Office for Civil Rights HIPAA Resolution Agreements and Civil Money Penalties), `fcc_declaratory_ruling` (FCC (Federal Communications Commission) Declaratory Rulings), `ferc_policy_statement` (FERC (Federal Energy Regulatory Commission) Policy Statements), `doe_appliance_guidance` (DOE Appliance Standards Guidance and FAQs).\n\n`US_TAX_TREATY` sources: `us_tax_treaty` (U.S. Bilateral Income and Estate Tax Treaties), `us_tax_treaty_technical_explanation` (Treasury Technical Explanations (article-by-article commentary on a tax treaty)).\n\n`STATE_AGENCY_GUIDANCE` sources: `state_insurance_bulletin` (State Department of Insurance Bulletins). Every result carries its own `source`, so you can pass a hit's value straight back. An unrecognized value is rejected with 422.",
+            "description": "Scope to one or more of the following. The named source within `corpusType`, for corpora that fold several independently filterable bodies of law into one token.\n\n`FEDERAL_RULES` sources: `frcp` (Federal Rules of Civil Procedure), `frcrp` (Federal Rules of Criminal Procedure), `fre` (Federal Rules of Evidence), `frap` (Federal Rules of Appellate Procedure), `frbp` (Federal Rules of Bankruptcy Procedure), `sct` (Rules of the Supreme Court of the United States).\n\n`CFR` sources: `far` (Federal Acquisition Regulation (48 C.F.R. ch. 1)), `dfars` (Defense Federal Acquisition Regulation Supplement (48 C.F.R. ch. 2)) (both are already part of `CFR`; this only splits the existing Title 48 data by chapter, it does not add new sections).\n\n`AGENCY_GUIDANCE` sources: `administrative_guidance` (Synthesized administrative guidance (e.g. SALT cap, CTC, 401(k) limits)), `ssa_ruling` (Social Security Administration Rulings), `irs_rev_proc` (IRS Revenue Procedures), `irs_notice` (IRS Notices), `irs_rev_rul` (IRS Revenue Rulings), `irs_announcement` (IRS Announcements), `merger_guidelines` (DOJ & FTC Merger Guidelines (2023)), `doj_leniency` (DOJ Antitrust Division Leniency Policy), `copyright_circular` (US Copyright Office Circulars), `doj_justice_manual` (DOJ Justice Manual), `uscis_policy_manual` (USCIS Policy Manual), `mpep` (USPTO Manual of Patent Examining Procedure (MPEP)), `tmep` (USPTO Trademark Manual of Examining Procedure (TMEP)), `cftc_staff_letter` (CFTC Staff Letters (no-action, exemptive, interpretative; 2008-present)), `fincen_ruling` (FinCEN Administrative Rulings), `fincen_guidance` (FinCEN Guidance (alerts, advisories, notices, bulletins, fact sheets)), `frb_sr_letter` (Federal Reserve Supervision and Regulation (SR) / Consumer Affairs (CA) Letters), `occ_bulletin` (OCC Bulletins), `occ_interpretive_letter` (OCC Interpretive Letters), `fdic_fil` (FDIC Financial Institution Letters (FILs)), `dfars_pgi` (DFARS PGI (Procedures, Guidance, and Information)), `nlrb_gc_memo` (NLRB General Counsel Memoranda), `nlrb_advice_memo` (NLRB Division of Advice Memoranda (rolling 10-year window, not the full archive)), `cpsc_advisory_opinion` (CPSC Office of General Counsel Advisory Opinions (historical, 1970s-2012)), `cpsc_secg` (CPSC Small Entity Compliance Guides), `bis_advisory_opinion` (BIS (Bureau of Industry and Security) Advisory Opinions), `ddtc_commodity_jurisdiction` (DDTC (Directorate of Defense Trade Controls) Commodity Jurisdiction Determinations), `ddtc_guidance` (DDTC (Directorate of Defense Trade Controls) Policy Guidance Documents), `hhs_ocr_hipaa_faq` (HHS Office for Civil Rights HIPAA FAQs), `hhs_ocr_hipaa_guidance` (HHS Office for Civil Rights HIPAA Guidance Materials), `hhs_ocr_resolution_agreement` (HHS Office for Civil Rights HIPAA Resolution Agreements and Civil Money Penalties), `fcc_declaratory_ruling` (FCC (Federal Communications Commission) Declaratory Rulings), `ferc_policy_statement` (FERC (Federal Energy Regulatory Commission) Policy Statements), `doe_appliance_guidance` (DOE Appliance Standards Guidance and FAQs).\n\n`US_TAX_TREATY` sources: `us_tax_treaty` (U.S. Bilateral Income and Estate Tax Treaties), `us_tax_treaty_technical_explanation` (Treasury Technical Explanations (article-by-article commentary on a tax treaty)), `senate_treaty` (Senate Treaty Records (transmittal, parties and proceedings)), `senate_treaty_resolution` (Senate Resolutions of Advice and Consent, including the reservations, understandings and declarations that narrow a treaty's effect in US law), `senate_treaty_document` (Treaty Documents (CDOC TDOC series): the President's message transmitting a treaty to the Senate, with the instrument's text).\n\n`STATE_AGENCY_GUIDANCE` sources: `state_insurance_bulletin` (State Department of Insurance Bulletins).\n\n`AGENCY_ADJUDICATION` sources: `mspb_precedential` (MSPB Precedential Decisions), `mspb_nonprecedential` (MSPB Nonprecedential Orders), `olc_opinion` (DOJ Office of Legal Counsel Opinions (official bound volumes, 1933-2020)). Every result carries its own `source`, so you can pass a hit's value straight back. An unrecognized value is rejected with 422.",
             "enum": [
               "administrative_guidance",
               "agency_guidance",
@@ -3601,11 +3765,17 @@
               "irs_rev_rul",
               "merger_guidelines",
               "mpep",
+              "mspb_nonprecedential",
+              "mspb_precedential",
               "nlrb_advice_memo",
               "nlrb_gc_memo",
               "occ_bulletin",
               "occ_interpretive_letter",
+              "olc_opinion",
               "sct",
+              "senate_treaty",
+              "senate_treaty_document",
+              "senate_treaty_resolution",
               "ssa_ruling",
               "state_insurance_bulletin",
               "tmep",
@@ -5352,7 +5522,7 @@
     },
     "/api/v1/us/statutes/search": {
       "post": {
-        "description": "Search across federal and state law and get back the most relevant sections\nwith citations and links to official source documents.\n\n**Corpora (`corpusType`):**\n- `USC`: United States Code (54,855 sections)\n- `CFR`: Code of Federal Regulations (219,403 sections)\n- `STATE`: State statutory codes, 49 states plus DC and Puerto Rico. Call `/us/statutes/coverage` for live coverage and `/us/statutes/divisions` (`corpusType=STATE&state=XX`) for a state's codes; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `CONSTITUTION`: U.S. Constitution (Articles I-VII + 27 Amendments)\n- `FEDERAL_RULES`: FRCP, FRCrP, FRE, FRAP, FRBP (297 sections)\n- `STATE_CONSTITUTION`: state constitutions (41 jurisdictions)\n- `STATE_RULES`: state court rules, 46 jurisdictions (44 states plus DC and Puerto Rico). Call `/us/statutes/coverage` for live coverage; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `EXECUTIVE_ACTION`: Federal Register Presidential Documents (Executive Orders, Proclamations, Memos; 2015 to today, refreshed daily)\n- `REGULATION`: state administrative regulations (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `FEDERAL_REGISTER`: Federal Register agency rules, final and proposed\n- `AGENCY_GUIDANCE`: sub-regulatory federal agency guidance, 34 named sources across the tax, banking, securities, labor, immigration, health-privacy, export-control, intellectual-property, antitrust, energy and communications agencies. Scope to one with `source` (which lists every code and name), or see the [Coverage page](https://www.vaquill.ai/docs/api-guide/coverage#federal) for the per-source table.\n- `STATE_AGENCY_GUIDANCE`: state-issued regulatory guidance, currently state Department of Insurance bulletins and circular letters (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `SENTENCING_GUIDELINES`: US Sentencing Guidelines Manual\n- `US_TAX_TREATY`: US income tax treaties and protocols\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 4 credits per call (see `/api-credits/pricing`). Failed calls are not charged.\n\n**Pagination**: use `limit` (page size, max 50) with `offset` (max 70); check\n`hasMore` in the response to page forward. `count` is the size of the CURRENT\npage, not a corpus-wide match total -- ranking runs over a bounded window, so no\nsuch total exists. (`total` is a deprecated alias for `count`.) Every page of a\ngiven query slices one ranking, so results never repeat or go missing across\npages.\n\nReturns relevant sections with full metadata: citation, title hierarchy, and\ndirect links to official source documents where available.\n\n**Matching (`matchType`)**: search is hybrid semantic + keyword by default\n(`any`), which suits natural-language questions. For strict keyword or\nexact-phrase lookups, use `matchType: \"all\"` or `\"phrase\"` -- there is no\nseparate keyword-only mode to reach for. To jump straight to one section, pass\nits citation as the `query` (e.g. `42 U.S.C. \u00a7 1983`) and it resolves to rank 1.\n\n## Examples\n\n```python\n# Search SEC regulations\nrequests.post(url, headers=h, json={\n    \"query\": \"insider trading material nonpublic information\",\n    \"corpusType\": \"CFR\",\n    \"titleNumber\": 17,\n    \"limit\": 5,\n})\n\n# Search California state statutes\nrequests.post(url, headers=h, json={\n    \"query\": \"shareholder derivative action standing\",\n    \"corpusType\": \"STATE\",\n    \"state\": \"ca\",\n})\n\n# Search Executive Orders on a topic\nrequests.post(url, headers=h, json={\n    \"query\": \"AI safety federal agency adoption\",\n    \"corpusType\": \"EXECUTIVE_ACTION\",\n})\n\n# Search Federal Rules of Civil Procedure\nrequests.post(url, headers=h, json={\n    \"query\": \"personal jurisdiction long-arm statute\",\n    \"corpusType\": \"FEDERAL_RULES\",\n})\n\n# Cross-corpus search (no corpusType filter)\nrequests.post(url, headers=h, json={\n    \"query\": \"due process equal protection fourteenth amendment\",\n})\n```\n\n## Parameters\n\nEvery filter below accepts a single value OR a list, so one call can span\nseveral jurisdictions or corpora.\n\n- `query` (required): natural-language or keyword query, 2 to 500 characters.\n- `corpusType` (optional, string or list): one of the corpus tokens above, e.g.\n  `\"CFR\"` or `[\"USC\", \"CFR\"]`. Case-insensitive. Omit to search every corpus.\n- `state` (optional, string or list): a 2-letter jurisdiction code (50 states +\n  DC + PR), or `federal` to scope to USC / CFR / Constitution / federal rules in\n  one call. `[\"ca\", \"ny\", \"tx\"]` searches three at once. Case-insensitive. An\n  unrecognized value is rejected with 422 rather than silently matching nothing.\n- `code` (optional, string or list): restrict to specific state statutory codes,\n  e.g. `\"tx_pe\"` for the Texas Penal Code. Values are the `code` field returned\n  by `GET /us/statutes/divisions?corpusType=STATE&state=XX`. This is the only way to scope BELOW a\n  jurisdiction: `state=tx` alone searches all ~15 Texas codes.\n- `titleNumber` (optional, integer): restrict to a USC/CFR title (e.g. 17 for\n  SEC, 42 for civil rights). Applies only to `USC`/`CFR`; state titles are\n  alphabetic or collide across states, so use `code` for those.\n- `chapter` / `part` (optional, string or list): scope BELOW a title/code to a\n  chapter (USC/state) or part (CFR), e.g. `chapter=\"21\"` or `part=\"240\"`. This is\n  the search-side of the `parent` object on each result: feed a hit's `parent`\n  back to search its neighbors. Must be paired with `titleNumber` or `code`, which\n  `parent` always carries; an unpaired chapter/part is rejected with 422.\n- `matchType` (optional): `any` (default) intent-ranked hybrid, `all` requires\n  every term, `phrase` requires the exact phrase.\n- `yearFrom` / `yearTo` (optional, integer): bound results by version year.\n  Sections with no year are excluded once either bound is set.\n- `limit` (optional, default 10, max 50): page size.\n- `offset` (optional, default 0, max 70): results to skip. See Pagination below.\n\n## Tips\n\n- Provide `corpusType` whenever you know it. Unscoped queries can surface keyword matches from unrelated corpora; a corpus filter sharply improves precision.\n- Take a returned `actId` and call `/us/statutes/section/{actId}` for metadata or `/us/statutes/section/{actId}/body` for the full text. To enrich a whole page at once, POST up to 50 ids to `/us/statutes/sections` instead of looping.\n- `relevanceScore` ranks results within one response; do not compare it across different queries. A recognized citation (e.g. `\"Cal. CIV \u00a7 1952\"`, `\"42 USC 1983\"`) always resolves its exact section to the top result at `relevanceScore: 1.0`; if you already know the citation, `GET /us/statutes/resolve` is a cheaper way to get the same section without paying for a search.",
+        "description": "Search across federal and state law and get back the most relevant sections\nwith citations and links to official source documents.\n\n**Corpora (`corpusType`):**\n- `USC`: United States Code (54,855 sections)\n- `CFR`: Code of Federal Regulations (219,403 sections)\n- `STATE`: State statutory codes, 49 states plus DC and Puerto Rico. Call `/us/statutes/coverage` for live coverage and `/us/statutes/divisions` (`corpusType=STATE&state=XX`) for a state's codes; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `CONSTITUTION`: U.S. Constitution (Articles I-VII + 27 Amendments)\n- `FEDERAL_RULES`: FRCP, FRCrP, FRE, FRAP, FRBP (297 sections)\n- `STATE_CONSTITUTION`: state constitutions (41 jurisdictions)\n- `STATE_RULES`: state court rules, 46 jurisdictions (44 states plus DC and Puerto Rico). Call `/us/statutes/coverage` for live coverage; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `EXECUTIVE_ACTION`: Federal Register Presidential Documents (Executive Orders, Proclamations, Memos; 2015 to today, refreshed daily)\n- `REGULATION`: state administrative regulations (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `FEDERAL_REGISTER`: Federal Register agency rules, final and proposed\n- `AGENCY_GUIDANCE`: sub-regulatory federal agency guidance, 34 named sources across the tax, banking, securities, labor, immigration, health-privacy, export-control, intellectual-property, antitrust, energy and communications agencies. Scope to one with `source` (which lists every code and name), or see the [Coverage page](https://www.vaquill.ai/docs/api-guide/coverage#federal) for the per-source table.\n- `STATE_AGENCY_GUIDANCE`: state-issued regulatory guidance, currently state Department of Insurance bulletins and circular letters (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `SENTENCING_GUIDELINES`: US Sentencing Guidelines Manual\n- `US_TAX_TREATY`: US income tax treaties and protocols\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 4 credits per call (see `/api-credits/pricing`). Failed calls are not charged.\n\nSet `includeBody: true` to get each hit's full text inline on `body`, instead of\na follow-up `/section/{actId}/body` call per result. That adds the ordinary\n6-credit body price for each row that actually returns text, so it buys round\ntrips and latency rather than a discount; rows we cannot resolve come back\n`body: null` and are not charged. Read `creditsConsumed`.\n\n**Pagination**: use `limit` (page size, max 50) with `offset` (max 70); check\n`hasMore` in the response to page forward. `count` is the size of the CURRENT\npage, not a corpus-wide match total -- ranking runs over a bounded window, so no\nsuch total exists. (`total` is a deprecated alias for `count`.) Every page of a\ngiven query slices one ranking, so results never repeat or go missing across\npages.\n\nReturns relevant sections with full metadata: citation, title hierarchy, and\ndirect links to official source documents where available.\n\n**Matching (`matchType`)**: search is hybrid semantic + keyword by default\n(`any`), which suits natural-language questions. For strict keyword or\nexact-phrase lookups, use `matchType: \"all\"` or `\"phrase\"` -- there is no\nseparate keyword-only mode to reach for. To jump straight to one section, pass\nits citation as the `query` (e.g. `42 U.S.C. \u00a7 1983`) and it resolves to rank 1.\n\n## Examples\n\n```python\n# Search SEC regulations\nrequests.post(url, headers=h, json={\n    \"query\": \"insider trading material nonpublic information\",\n    \"corpusType\": \"CFR\",\n    \"titleNumber\": 17,\n    \"limit\": 5,\n})\n\n# Search California state statutes\nrequests.post(url, headers=h, json={\n    \"query\": \"shareholder derivative action standing\",\n    \"corpusType\": \"STATE\",\n    \"state\": \"ca\",\n})\n\n# Search Executive Orders on a topic\nrequests.post(url, headers=h, json={\n    \"query\": \"AI safety federal agency adoption\",\n    \"corpusType\": \"EXECUTIVE_ACTION\",\n})\n\n# Search Federal Rules of Civil Procedure\nrequests.post(url, headers=h, json={\n    \"query\": \"personal jurisdiction long-arm statute\",\n    \"corpusType\": \"FEDERAL_RULES\",\n})\n\n# Cross-corpus search (no corpusType filter)\nrequests.post(url, headers=h, json={\n    \"query\": \"due process equal protection fourteenth amendment\",\n})\n```\n\n## Parameters\n\nEvery filter below accepts a single value OR a list, so one call can span\nseveral jurisdictions or corpora.\n\n- `query` (required): natural-language or keyword query, 2 to 500 characters.\n- `corpusType` (optional, string or list): one of the corpus tokens above, e.g.\n  `\"CFR\"` or `[\"USC\", \"CFR\"]`. Case-insensitive. Omit to search every corpus.\n- `state` (optional, string or list): a 2-letter jurisdiction code (50 states +\n  DC + PR), or `federal` to scope to USC / CFR / Constitution / federal rules in\n  one call. `[\"ca\", \"ny\", \"tx\"]` searches three at once. Case-insensitive. An\n  unrecognized value is rejected with 422 rather than silently matching nothing.\n- `code` (optional, string or list): restrict to specific state statutory codes,\n  e.g. `\"tx_pe\"` for the Texas Penal Code. Values are the `code` field returned\n  by `GET /us/statutes/divisions?corpusType=STATE&state=XX`. This is the only way to scope BELOW a\n  jurisdiction: `state=tx` alone searches all ~15 Texas codes.\n- `titleNumber` (optional, integer): restrict to a USC/CFR title (e.g. 17 for\n  SEC, 42 for civil rights). Applies only to `USC`/`CFR`; state titles are\n  alphabetic or collide across states, so use `code` for those.\n- `chapter` / `part` (optional, string or list): scope BELOW a title/code to a\n  chapter (USC/state) or part (CFR), e.g. `chapter=\"21\"` or `part=\"240\"`. This is\n  the search-side of the `parent` object on each result: feed a hit's `parent`\n  back to search its neighbors. Must be paired with `titleNumber` or `code`, which\n  `parent` always carries; an unpaired chapter/part is rejected with 422.\n- `matchType` (optional): `any` (default) intent-ranked hybrid, `all` requires\n  every term, `phrase` requires the exact phrase.\n- `yearFrom` / `yearTo` (optional, integer): bound results by version year.\n  Sections with no year are excluded once either bound is set.\n- `limit` (optional, default 10, max 50): page size.\n- `offset` (optional, default 0, max 70): results to skip. See Pagination below.\n\n## Tips\n\n- Provide `corpusType` whenever you know it. Unscoped queries can surface keyword matches from unrelated corpora; a corpus filter sharply improves precision.\n- Take a returned `actId` and call `/us/statutes/section/{actId}` for metadata or `/us/statutes/section/{actId}/body` for the full text. To enrich a whole page at once, POST up to 50 ids to `/us/statutes/sections` instead of looping.\n- `relevanceScore` ranks results within one response; do not compare it across different queries. A recognized citation (e.g. `\"Cal. CIV \u00a7 1952\"`, `\"42 USC 1983\"`) always resolves its exact section to the top result at `relevanceScore: 1.0`; if you already know the citation, `GET /us/statutes/resolve` is a cheaper way to get the same section without paying for a search.",
         "operationId": "search_statutes_api_v1_us_statutes_search_post",
         "requestBody": {
           "content": {
@@ -5562,7 +5732,7 @@
     },
     "/api/v1/us/statutes/section/{act_id}/body": {
       "get": {
-        "description": "Get the full text of a statute section in HTML and plain text.\n\n**Cost**: 6 credits. You are only charged when text is returned:\nnot-found (404), failed fetches, and sections whose text is not yet ingested\n(`available: false`) are all refunded.\n\nWorks across USC, CFR, and state corpora. The text preserves formatting,\ncross-references, and paragraph numbering as published in the official source.\n\n**Response**: `available: true` with `html` + `plain`, or `available: false`\nwith a `note` and `creditsConsumed: 0` when the full text is not yet ingested\n(metadata is still available from `/us/statutes/section/{actId}`).\n\n`sourceUrl` is where the government published this text: cite and verify\nagainst that, not against `source`, which names our storage backend. It is null\nwhen we hold no official link for the section; we never substitute a\nthird-party compiler.\n\nPass `structured=true` to also get `markdown` (the body as nested Markdown lists)\nand `subsections` (a tree you can address by pincite, e.g. `(b)(2)`, each node\ncarrying its pincite path and full pinpoint citation). Same cost.",
+        "description": "Get the full text of a statute section in HTML and plain text.\n\n**Cost**: 6 credits. You are only charged when text is returned:\nnot-found (404), failed fetches, and sections whose text is not yet ingested\n(`available: false`) are all refunded.\n\nWorks across USC, CFR, and state corpora. The text preserves formatting,\ncross-references, and paragraph numbering as published in the official source.\n\n**Response**: `available: true` with `html` + `plain`, or `available: false`\nwith a `note` and `creditsConsumed: 0` when the full text is not yet ingested\n(metadata is still available from `/us/statutes/section/{actId}`).\n\n`sourceUrl` is where the government published this text: cite and verify\nagainst that, not against `source`, which names our storage backend. It is null\nwhen we hold no official link for the section; we never substitute a\nthird-party compiler.\n\n## Telling the law from the apparatus (`content` / `sourceCredit` / `notes`)\n\n`plain` and `html` are the WHOLE body as the publisher prints it: the operative\ntext, then the source credit, then the notes apparatus (historical and revision\nnotes, committee reports, editorial notes, amendments, effective-date notes).\n\nFor **United States Code** sections that body is mostly not the law. Measured\n2026-09-02, the operative text is a median 46% of it across USC, and as little\nas 3.4% on `17 U.S.C. \u00a7 107`, where 28,529 of 29,775 characters are commentary.\n\nSo the granule is split into three additional fields, using the field\ndelimiters GPO publishes in the source:\n\n- `content` -- the operative text, and nothing else\n- `sourceCredit` -- the credit line, e.g. `(Pub. L. 94-553, ...)`\n- `notes` -- the apparatus, kept because it is the legislative history\n\nUse `content` if you are feeding sections to a model: the full body invites it\nto quote a 1992 amendment note as the law in force. Pass `format=content` to\nskip `plain`/`html` on the wire entirely.\n\n\u26a0\ufe0f USC only. CFR and the state corpora carry no equivalent structure in their\nsources, so all three fields are null there and `plain` remains the whole body.\nNull means \"we cannot split this reliably\", never \"this section is empty\".\n\nPass `structured=true` to also get `markdown` (the body as nested Markdown lists)\nand `subsections` (a tree you can address by pincite, e.g. `(b)(2)`, each node\ncarrying its pincite path and full pinpoint citation). Same cost.\n\n## Point-in-time (`asOf`)\n\nPass `asOf=YYYY-MM-DD` to get the text as it stood on that date instead of\ntoday's. Same cost.\n\nThis is the question behind every compliance diff and every historical citation:\nwhat did this say when we last reviewed it. Answering it previously required\nholding a board watch and reading the alert diff, so the historical text existed\nbut was reachable only through the alerts product.\n\n**It is a reconstruction, not an archive**, and the response says so in\nstructured form rather than in a footnote. The corpus holds one current text per\ncitation; an earlier one is rebuilt from the before-side of the first change we\nOBSERVED after your date, through the same resolver the watch diff uses. The\n`asOf` block reports:\n\n- `source` -- `live` (nothing captured after your date, so today's text stood\n  then), `reconstructed`, or `unavailable`\n- `basisChangeId` -- the change event this answer rests on, readable at\n  `/us/statutes/section/{actId}/changes`\n- `observedFrom` -- how far back the evidence reaches for this section\n- `isBounded` -- **read this one.** True means we observed no change affecting\n  your date, which is not the same as there having been none. Capture began long\n  after the corpus did and is per-source.\n\n`html` is never returned on this path: the reconstructed text is plain, and\nsynthesising markup the publisher never printed would be a wrong answer on the\nendpoint whose job is fidelity.\n\nA section that did not exist on that date returns `available: false` with\n`asOf.existed: false` and IS charged, the same way an unresolved citation is\ncharged on `/resolve`: a confident negative is the answer. A section we know\nchanged but cannot rebuild returns `source: \"unavailable\"` and is refunded.",
         "operationId": "get_section_body_api_v1_us_statutes_section__act_id__body_get",
         "parameters": [
           {
@@ -5582,20 +5752,21 @@
             }
           },
           {
-            "description": "Which representations to return. A long section carries the same text twice by default, so `plain` or `html` roughly halves the payload. Cost is unchanged: the fetch is the same either way.",
+            "description": "Which representations to return. A long section carries the same text twice by default, so `plain` or `html` roughly halves the payload. Cost is unchanged: the fetch is the same either way.\n\n`content` omits `html` and `plain` entirely and returns only the split fields (`content`, `sourceCredit`, `notes`). Use it when you want the operative text and nothing else: on `17 U.S.C. \u00a7 107` that is about 1 KB instead of 30 KB over the wire, for the same price. Only United States Code sections can be split, so for any other corpus `content` returns no text at all -- check `content` for null and fall back to `plain` if you are not sure which corpus you have.",
             "in": "query",
             "name": "format",
             "required": false,
             "schema": {
               "default": "both",
-              "description": "Which representations to return. A long section carries the same text twice by default, so `plain` or `html` roughly halves the payload. Cost is unchanged: the fetch is the same either way.",
+              "description": "Which representations to return. A long section carries the same text twice by default, so `plain` or `html` roughly halves the payload. Cost is unchanged: the fetch is the same either way.\n\n`content` omits `html` and `plain` entirely and returns only the split fields (`content`, `sourceCredit`, `notes`). Use it when you want the operative text and nothing else: on `17 U.S.C. \u00a7 107` that is about 1 KB instead of 30 KB over the wire, for the same price. Only United States Code sections can be split, so for any other corpus `content` returns no text at all -- check `content` for null and fall back to `plain` if you are not sure which corpus you have.",
               "enum": [
                 "both",
                 "html",
-                "plain"
+                "plain",
+                "content"
               ],
               "examples": [
-                "plain"
+                "content"
               ],
               "title": "Format",
               "type": "string"
@@ -5614,6 +5785,28 @@
               ],
               "title": "Structured",
               "type": "boolean"
+            }
+          },
+          {
+            "description": "Return the section's text as it stood on this date (`YYYY-MM-DD`) instead of today's. Same cost.\n\n**This is a reconstruction, not an archive.** The corpus holds one current text per citation; an earlier one is rebuilt from the before-side of the first change we OBSERVED after your date. The `asOf` block on the response says which version you got (`source`), what it rests on (`basisChangeId`), how far back the evidence reaches (`observedFrom`), and whether the answer is bounded by when capture began rather than by the law (`isBounded`). Read `isBounded` before citing the text.\n\nA section that did not exist yet returns `available: false` with `asOf.existed: false`, which is a real answer and is charged. A section we know changed but cannot rebuild returns `source: \"unavailable\"` and IS refunded, because you asked for a historical text and did not get one.",
+            "in": "query",
+            "name": "asOf",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Return the section's text as it stood on this date (`YYYY-MM-DD`) instead of today's. Same cost.\n\n**This is a reconstruction, not an archive.** The corpus holds one current text per citation; an earlier one is rebuilt from the before-side of the first change we OBSERVED after your date. The `asOf` block on the response says which version you got (`source`), what it rests on (`basisChangeId`), how far back the evidence reaches (`observedFrom`), and whether the answer is bounded by when capture began rather than by the law (`isBounded`). Read `isBounded` before citing the text.\n\nA section that did not exist yet returns `available: false` with `asOf.existed: false`, which is a real answer and is charged. A section we know changed but cannot rebuild returns `source: \"unavailable\"` and IS refunded, because you asked for a historical text and did not get one.",
+              "examples": [
+                "2026-01-15"
+              ],
+              "title": "Asof"
             }
           }
         ],

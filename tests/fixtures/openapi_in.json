@@ -684,6 +684,12 @@
             "title": "Chunkscount",
             "type": "integer"
           },
+          "currencyStatus": {
+            "default": "unknown",
+            "description": "How far the currency of this document can be vouched for. `repeal_tracked`: the publisher records a repeal flag for this document, so a repealed instrument is identifiable. `as_issued`: served as issued on `issuedDate`, and it MAY HAVE BEEN SUPERSEDED since. India Code publishes no supersession status for subordinate legislation, and a superseding instrument names its predecessor only in prose, so this API cannot tell you whether a notification is still in force. Treat `as_issued` documents as evidence of what was issued on a date, not as a statement of current law.",
+            "title": "Currencystatus",
+            "type": "string"
+          },
           "htmlUrl": {
             "anyOf": [
               {
@@ -694,6 +700,24 @@
               }
             ],
             "title": "Htmlurl"
+          },
+          "isSubordinate": {
+            "default": false,
+            "description": "True for subordinate legislation: notifications, rules, circulars, orders. False for principal acts.",
+            "title": "Issubordinate",
+            "type": "boolean"
+          },
+          "issuedDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date the instrument was issued by the publisher, where known.",
+            "title": "Issueddate"
           },
           "pdfUrl": {
             "anyOf": [
@@ -963,7 +987,7 @@
       "name": "Vaquill API Support",
       "url": "https://www.vaquill.ai"
     },
-    "description": "Public API for Indian primary law: Central and State Acts, the instruments of the principal regulators, and their individual sections.\n\n**Authentication**: Pass your API key via the `Authorization: Bearer vq_key_...` header. The same key works against the US API; the two share one credit balance.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Coverage\n\n| Layer | Volume |\n|---|---|\n| Enactments (Central, State and UT) | 22,265 |\n| Individually addressable provisions | 1,098,577 |\n| Regulator instruments | roughly half the corpus |\n\nRegulators covered include SEBI, RBI, MCA, IRDAI, TRAI, DGFT, MOEFCC and CPCB. Every section carries a `sourceUrl` pointing at the publisher's own document.\n\n## Scope\n\nThis document describes the **India** surface only. US statutes are a separate document at `/external/openapi.json`, so an MCP client configured here sees Indian tools and nothing else.",
+    "description": "Public API for Indian primary law: Central and State Acts, the instruments of the principal regulators, and their individual sections.\n\n**Authentication**: Pass your API key via the `Authorization: Bearer vq_key_...` header. The same key works against the US API; the two share one credit balance.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Coverage\n\n| Layer | Volume |\n|---|---|\n| Enactments (Central, State and UT) | 22,265 |\n| Individually addressable provisions | 1,098,577 |\n| Regulator instruments | roughly half the corpus |\n\nRegulators covered include SEBI, RBI, MCA, IRDAI, TRAI, DGFT, MOEFCC and CPCB.\n\n`sourceUrl` points at the publisher's own document where we hold a live one, and is `null` otherwise. India Code migrated hosts in August 2026 and re-minted its identifiers, so links into the old site no longer resolve; we return nothing rather than a link that 404s. `pdfUrl` and `textUrl` are served from our own mirror and are unaffected.\n\n## Scope\n\nThis document describes the **India** surface only. US statutes are a separate document at `/external/openapi.json`, so an MCP client configured here sees Indian tools and nothing else.",
     "license": {
       "name": "Proprietary",
       "url": "https://www.vaquill.ai/terms"

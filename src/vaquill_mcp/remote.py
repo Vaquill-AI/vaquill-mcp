@@ -239,8 +239,9 @@ def create_remote_server(
 
     openapi_spec = _fetch_openapi_spec(base_url, jurisdiction)
     # No API key at startup, so the public matrix is used. See
-    # `_fetch_public_costs` for why that is complete rather than a compromise.
-    tool_costs = _build_tool_costs(openapi_spec, _fetch_public_costs(base_url))
+    # `_fetch_public_costs` for why that is complete rather than a compromise,
+    # and why the jurisdiction has to be passed through to it explicitly.
+    tool_costs = _build_tool_costs(openapi_spec, _fetch_public_costs(base_url, jurisdiction))
 
     # ONE client, built here because the provider needs it at construction
     # time, and closed by the lifespan below. An earlier draft built a second

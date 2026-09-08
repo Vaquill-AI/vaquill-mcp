@@ -255,18 +255,60 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
 # on search, a board selector on create_watch, and a resolution constraint on
 # resolve_statute_citation, and one shared entry would be wrong on two of them.
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
+    # Three parameters the API added in early September 2026 that had no curated
+    # entry, found 2026-09-03 when the OpenAPI fixtures were regenerated: their
+    # inherited prose was 865 + 656 + 1,147 = 2,668 characters riding in every
+    # agent's context on every turn. The API reference is the right place for the
+    # long version; each one below keeps the fact a CALLER cannot guess and drops
+    # the rest.
+    ("get_us_statute_section_text", "asOf"): (
+        "Text as it stood on this date (`YYYY-MM-DD`), same cost. A "
+        "RECONSTRUCTION from observed changes, not an archive: read the response's "
+        "`asOf.isBounded` before citing it, since false means the answer is "
+        "limited by when capture began, not by the law. A section we cannot "
+        'rebuild returns `source: "unavailable"` and is refunded.'
+    ),
+    ("get_us_statute_section_text", "format"): (
+        "Which representations to return. The default `both` carries a long "
+        "section's text twice, so `plain` or `html` roughly halves the payload at "
+        "the same price. `content` returns only the operative text, about 1 KB "
+        "instead of 30 KB on a long section, but ONLY United States Code sections "
+        "can be split: on any other corpus it returns no text, so check for null."
+    ),
+    ("search_us_statutes", "includeBody"): (
+        "Return each hit's full text inline on `body`, instead of one "
+        "`/section/{actId}/body` call per hit. Buys latency, not a discount: the "
+        "4-credit search PLUS 6 credits for every row that returns text, so ten "
+        "rows is 64. ⚠️ It multiplies with `limit`; 50 rows is 304 credits in one "
+        "call. Rows with no text are not charged, so read `creditsConsumed`. "
+        "Prefer this over a bigger `excerptChars`: an excerpt is windowed around "
+        "the match and can start mid-section, so it is not safe to quote."
+    ),
     # --- search_us_statutes: 19,242 bytes, 38% of the whole US catalogue -----
     ("search_us_statutes", "source"): (
         "The named body of law within a `corpusType` that folds several together: "
         "`FEDERAL_RULES` into `frcp`/`fre`/`sct`, `CFR` into `far`/`dfars`, "
-        "`AGENCY_GUIDANCE` into ~34 agency sources. Every result carries its own "
-        "`source`, so a hit's value can be passed straight back."
+        "`AGENCY_GUIDANCE` into ~34 agency sources, `AGENCY_ADJUDICATION` into "
+        "`olc_opinion`/`mspb_precedential`/`mspb_nonprecedential`. Every result "
+        "carries its own `source`, so a hit's value can be passed straight back."
     ),
+    # 🔴 This sentence RESTATES the `enum` sitting beside it, which is the one
+    # thing `schema_slim` never touches. It is written out anyway because the
+    # bare tokens do not say which ones need `state`, and that pairing is the
+    # single most common 422. The cost is that it goes stale silently: it sat
+    # missing `AGENCY_ADJUDICATION` and `STATUTE_COMPILATION` after both landed
+    # on 2026-09-03, so an agent reading the description would never pass either
+    # even though the enum accepted them. `test_schema_slim.py::
+    # test_a_description_that_lists_enum_values_lists_all_of_them` now fails on
+    # exactly that, so the next token cannot drift the same way.
     ("search_us_statutes", "corpusType"): (
         "Restrict to one corpus, or several as a list. Federal: `USC`, `CFR`, "
         "`CONSTITUTION`, `FEDERAL_RULES`, `FEDERAL_REGISTER`, `EXECUTIVE_ACTION`, "
-        "`SENTENCING_GUIDELINES`, `US_TAX_TREATY`, `SESSION_LAW` (Statutes at Large, "
-        "as enacted). Pair with `state`: `STATE`, `REGULATION`, `STATE_RULES`, "
+        "`AGENCY_GUIDANCE`, `SENTENCING_GUIDELINES`, `US_TAX_TREATY`, `SESSION_LAW` "
+        "(Statutes at Large, as enacted), `STATUTE_COMPILATION` (an act as amended "
+        "through a stated later law), `AGENCY_ADJUDICATION` (federal administrative "
+        "adjudication: DOJ Office of Legal Counsel opinions and MSPB decisions). "
+        "Pair with `state`: `STATE`, `REGULATION`, `STATE_RULES`, "
         "`STATE_CONSTITUTION`, `STATE_AGENCY_GUIDANCE`. Omit for all."
     ),
     ("search_us_statutes", "changedSince"): (
@@ -307,7 +349,7 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "alone searches all ~15 Texas codes."
     ),
     ("search_us_statutes", "fields"): (
-        "Return only these result fields, e.g. `[\"title\", \"excerpt\"]`. A result "
+        'Return only these result fields, e.g. `["title", "excerpt"]`. A result '
         "carries 40+ fields, most null on any given row. `actId` and `citation` are "
         "always included. Unknown names are rejected 422. Omit for the full object."
     ),
@@ -370,11 +412,11 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # `schema_slim.uncurated_overruns`.
     ("create_watch", "scope"): (
         "Narrow the alert to one citation instead of a whole source. Three mutually "
-        "exclusive forms. Hierarchy prefix: `{\"title\": \"21\", \"part\": \"314\"}`, where "
+        'exclusive forms. Hierarchy prefix: `{"title": "21", "part": "314"}`, where '
         "every level set must match and `title` is required whenever a narrower level "
-        "is set. Exact section: `{\"actId\": \"CFR_T21_P314_S314_50\"}`, validated at "
+        'is set. Exact section: `{"actId": "CFR_T21_P314_S314_50"}`, validated at '
         "create time and the only form EVERY source accepts, including flat ones. "
-        "Named source: `{\"source\": \"fdic_fil\"}`, accepted on `agency_guidance`, "
+        'Named source: `{"source": "fdic_fil"}`, accepted on `agency_guidance`, '
         "`agency_manuals` and `cfr` only. Omit to watch the whole source."
     ),
     ("create_watch", "corpusType"): (
@@ -402,17 +444,17 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # one, which is why this is not a single shared entry.
     ("update_watch", "scope"): (
         "Replace the alert's narrowing. Three mutually exclusive forms. Hierarchy "
-        "prefix: `{\"title\": \"21\", \"part\": \"314\"}`, where every level set must "
+        'prefix: `{"title": "21", "part": "314"}`, where every level set must '
         "match and `title` is required whenever a narrower level is set. Exact "
-        "section: `{\"actId\": \"CFR_T21_P314_S314_50\"}`, the only form EVERY source "
-        "accepts. Named source: `{\"source\": \"fdic_fil\"}`, on `agency_guidance`, "
+        'section: `{"actId": "CFR_T21_P314_S314_50"}`, the only form EVERY source '
+        'accepts. Named source: `{"source": "fdic_fil"}`, on `agency_guidance`, '
         "`agency_manuals` and `cfr` only. Omitting the field leaves the current "
         "scope unchanged."
     ),
     ("update_watch", "webhookAuth"): (
         "Replace the outbound credential config, sent as a WHOLE object rather than "
         "field by field: a scheme without a credential is not a partial edit, it is a "
-        "broken config. `{\"scheme\": \"none\"}` removes auth. Keeping the scheme and "
+        'broken config. `{"scheme": "none"}` removes auth. Keeping the scheme and '
         "omitting `secret` retains the stored credential."
     ),
     ("list_watch_changes", "beforeId"): (
@@ -433,4 +475,60 @@ PARAM_DESCRIPTIONS: dict[str, str] = {
         "assembling it: the title and section are derivable from a citation but the "
         "CHAPTER is not, so hand-built ids usually 404."
     ),
+}
+
+
+# ---------------------------------------------------------------------------
+# Tool titles
+# ---------------------------------------------------------------------------
+
+# The DISPLAY name a client shows beside each tool. FastMCP derives one from the
+# tool name when this is unset, which title-cases the underscores and produces
+# "Get Us Statute Section Text": correct English, wrong acronym, and the word
+# "Us" reads as the pronoun. The Anthropic connector directory also REQUIRES a
+# title on every tool and syncs these into the submission, so they are
+# user-facing copy rather than an internal label.
+#
+# Written as verb-free noun phrases where the tool reads and verb-first where it
+# writes, so a reader scanning a list can tell the two apart without opening the
+# description. A name absent from this map still gets FastMCP's derived title,
+# so an unmapped new tool degrades rather than breaks; the guard in
+# `test_annotations_and_order.py` fails on an acronym mangled that way.
+TOOL_TITLES: dict[str, str] = {
+    # --- US: retrieval -----------------------------------------------------
+    "search": "Search US Law",
+    "fetch": "Fetch Document",
+    "search_us_statutes": "Search US Statutes",
+    "get_us_statute_section": "Statute Section Metadata",
+    "get_us_statute_section_text": "Statute Section Text",
+    "get_sections_batch": "Statute Sections (Batch)",
+    "list_statute_divisions": "Browse Code Structure",
+    "list_statutes_coverage": "Corpus Coverage",
+    # --- US: citation and context ------------------------------------------
+    "resolve_statute_citation": "Resolve Citation",
+    "resolve_statute_citations_batch": "Resolve Citations (Batch)",
+    "get_section_cited_by": "Sections Citing This One",
+    "get_section_cross_state": "Same Rule in Other States",
+    "get_section_definitions": "Defined Terms in Section",
+    "get_section_neighbors": "Adjacent Sections",
+    "get_section_changes": "Section Change History",
+    # --- US: law-change alerts ---------------------------------------------
+    "list_boards": "Alert Boards",
+    "list_watches": "Law Change Watches",
+    "list_watch_changes": "Changes on a Watch",
+    "list_watch_deliveries": "Watch Deliveries",
+    "get_watch_change_diff": "Change Diff",
+    "create_watch": "Create Law Change Watch",
+    "update_watch": "Update Law Change Watch",
+    "test_watch": "Send Test Alert",
+    "delete_watch": "Delete Law Change Watch",
+    # --- Shared -------------------------------------------------------------
+    "get_pricing": "Credit Pricing",
+    # --- India --------------------------------------------------------------
+    "search_acts": "Search Indian Legislation",
+    "list_acts": "Browse Indian Acts",
+    "list_act_filters": "Act Filter Values",
+    "get_act_text": "Act Text",
+    "get_act_amendments": "Act Amendment History",
+    "get_corresponding_provisions": "IPC/CrPC to BNS/BNSS Mapping",
 }

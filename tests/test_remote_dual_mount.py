@@ -140,3 +140,32 @@ async def test_every_mounted_app_sorts_and_annotates(_live_api: None) -> None:
         names = [t.name for t in tools]
         assert names == sorted(names), jurisdiction
         assert all(t.annotations is not None for t in tools), jurisdiction
+
+
+def test_each_jurisdiction_asks_for_its_own_prices(_live_api: None, respx_mock) -> None:
+    """The pricing fetch must carry the server's jurisdiction.
+
+    It hits the MAIN app route, `/api/v1/api-credits/pricing`, and not the copy
+    mounted inside a jurisdiction's OpenAPI document, so it inherits no scoping
+    from the mount. The API defaults an unscoped request to US, which is right
+    for the US server and silently wrong for the India one: India tools would be
+    labelled with United States per-call prices.
+
+    Until 2026-09-08 the API served every region's rows to every caller, so this
+    request carried no region and the US `get_pricing` tool returned the 16
+    `/in/acts/*` prices for tools that server does not expose. A customer saw
+    that in Claude before we did.
+    """
+    from vaquill_mcp.remote_main import build_app
+
+    build_app()
+
+    regions = [
+        dict(call.request.url.params).get("region")
+        for call in respx_mock.calls
+        if call.request.url.path == "/api/v1/api-credits/pricing"
+    ]
+    assert regions, "no pricing fetch was made at startup"
+    assert set(regions) == {"US", "IN"}, (
+        f"pricing fetched with regions {regions}; each jurisdiction must ask for its own"
+    )

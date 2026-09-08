@@ -253,3 +253,98 @@ def test_the_optimisation_actually_pays() -> None:
         f"US input schemas only fell from {before:,} to {after:,} bytes; the "
         "curated parameter descriptions have stopped being applied."
     )
+
+
+# ---------------------------------------------------------------------------
+# A curated description that RESTATES an enum must restate all of it
+# ---------------------------------------------------------------------------
+#
+# `schema_slim` never touches `enum`, so the accepted values are always correct
+# and always derived from the published document. What drifts is the PROSE
+# beside it, and a curated description is hand-written by definition.
+#
+# Measured 2026-09-03: the `corpusType` description spelled out fifteen of the
+# seventeen tokens and omitted `AGENCY_ADJUDICATION` and `STATUTE_COMPILATION`,
+# both of which had already shipped. The enum accepted them; every agent reading
+# the description believed they did not exist. That is worse than an outdated
+# sentence, because the tool advertises a corpus boundary that is not real.
+#
+# 🔴 The hard part is that "name every value" is the WRONG rule in general.
+# `source` has 46 values and `state` has 53, and spelling either out is exactly
+# the bloat this module exists to remove: the file's own header records `source`
+# spending 3,529 characters glossing values the enum already lists. So the guard
+# has to tell a description that CLAIMS to enumerate from one that gives
+# examples, and it does that two ways, both derived from the text itself rather
+# than from a hand-kept list of exceptions:
+#
+#   1. a HEDGE marker ("and the rest", "~34", "e.g.") means the author said out
+#      loud that the list is partial; and
+#   2. naming fewer than most of the values means it never was a list.
+#
+# A description that names 88% of an enum with no hedge is making a completeness
+# claim, and this fails until it is true.
+#
+# ⚠️ Known limit: adding many values at once can drop coverage under the
+# threshold and silence the guard. That is the loud case, not the quiet one, and
+# the quiet one is what has actually bitten.
+_HEDGES = (
+    "and the rest",
+    "among",
+    "e.g.",
+    "for example",
+    "such as",
+    "lists them all",
+    "~",
+    "...",
+)
+_ENUMERATION_THRESHOLD = 0.6
+
+
+def _enum_values(param: dict) -> list[str]:
+    """Every enum value a parameter accepts, through `anyOf`/`items` wrappers."""
+    found: list[str] = []
+
+    def walk(node: Any) -> None:
+        if isinstance(node, dict):
+            for value in node.get("enum") or ():
+                if isinstance(value, str):
+                    found.append(value)
+            for key in ("items", "anyOf", "oneOf", "allOf"):
+                child = node.get(key)
+                if isinstance(child, list):
+                    for entry in child:
+                        walk(entry)
+                elif child is not None:
+                    walk(child)
+
+    walk(param)
+    return sorted(set(found))
+
+
+@pytest.mark.parametrize(("jurisdiction", "tool"), _ALL_TOOLS)
+def test_a_description_that_lists_enum_values_lists_all_of_them(
+    jurisdiction: str, tool: str
+) -> None:
+    schema = _CATALOGUES[jurisdiction][tool]
+    for name, param in (schema.get("properties") or {}).items():
+        if not isinstance(param, dict):
+            continue
+        curated = PARAM_DESCRIPTIONS_BY_TOOL.get((tool, name))
+        if not curated:
+            continue
+        values = _enum_values(param)
+        if not values:
+            continue
+        named = [v for v in values if f"`{v}`" in curated]
+        if len(named) < len(values) * _ENUMERATION_THRESHOLD:
+            continue  # examples, not an enumeration
+        if any(hedge in curated for hedge in _HEDGES):
+            continue  # the author said the list is partial
+        missing = sorted(set(values) - set(named))
+        assert not missing, (
+            f"{jurisdiction} {tool}.{name}: the curated description spells out "
+            f"{len(named)} of {len(values)} enum values but omits {missing}. The "
+            "enum accepts them, so the tool advertises a boundary that is not "
+            "real. Add them to PARAM_DESCRIPTIONS_BY_TOOL in descriptions.py, or "
+            "hedge the sentence if the list is deliberately partial."
+        )

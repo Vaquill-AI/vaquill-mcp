@@ -187,9 +187,7 @@ def slim_input_schema(tool_name: str, schema: dict[str, Any]) -> dict[str, Any]:
     return {**slimmed, "properties": new_properties}
 
 
-def uncurated_overruns(
-    tool_name: str, schema: dict[str, Any]
-) -> list[tuple[str, int]]:
+def uncurated_overruns(tool_name: str, schema: dict[str, Any]) -> list[tuple[str, int]]:
     """Parameters that INHERIT a description longer than the budget.
 
     The drift guard reads this. A parameter with a curated entry is skipped

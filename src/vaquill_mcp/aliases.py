@@ -47,6 +47,8 @@ from urllib.parse import urlparse
 import httpx2
 from fastmcp import FastMCP
 
+from vaquill_mcp.descriptions import TOOL_TITLES
+
 # An act_id is a single token of uppercase-prefixed, underscore-joined segments
 # (`USC_T42_C21_S1983`, `STATE_TX_Cpr_C93_S93.005`, `IND_central_2065`). A
 # Bluebook citation is prose with spaces and periods ("42 U.S.C. 1983"). The
@@ -63,7 +65,13 @@ _SEARCH_LIMIT = 10
 
 # Result fields the US search needs to build the envelope. Requested explicitly
 # because a StatuteResult carries 100+ fields and the alias uses five of them.
-_US_SEARCH_FIELDS = ["sectionTitle", "excerpt", "externalUrl", "htmlUrl", "stateHtmlUrl"]
+_US_SEARCH_FIELDS = [
+    "sectionTitle",
+    "excerpt",
+    "externalUrl",
+    "htmlUrl",
+    "stateHtmlUrl",
+]
 
 
 def _first_url(*candidates: Any) -> str | None:
@@ -97,7 +105,9 @@ def _coerce_act_id(raw: str) -> tuple[str | None, str | None]:
 
     if "/" in text:
         # A bare path with no marker segment: take the last meaningful segment.
-        segments = [seg for seg in text.split("/") if seg and seg not in ("body", "text")]
+        segments = [
+            seg for seg in text.split("/") if seg and seg not in ("body", "text")
+        ]
         text = segments[-1] if segments else text
 
     if _ACT_ID_RE.match(text):
@@ -113,6 +123,7 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
 
     @mcp.tool(
         name="search",
+        title=TOOL_TITLES["search"],
         description=(
             "Generic corpus search over US primary law, returning `{id, title, url}` "
             "records for citation. Present so this server works in clients that "
@@ -153,6 +164,7 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
 
     @mcp.tool(
         name="fetch",
+        title=TOOL_TITLES["fetch"],
         description=(
             "Fetch the full text of one US law section by the `id` from a `search` "
             "result, returning `{id, title, text, url, metadata}`. Also accepts a "
@@ -193,7 +205,9 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "id": act_id,
             "title": _first_url(section.get("sectionTitle"), section.get("citation"))
             or act_id,
-            "text": _first_url(body.get("plain"), body.get("markdown"), body.get("html"))
+            "text": _first_url(
+                body.get("plain"), body.get("markdown"), body.get("html")
+            )
             or "",
             "url": _first_url(
                 body.get("sourceUrl"),
@@ -294,9 +308,7 @@ def _register_in(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
                 f"{title}. Full text is published at the source links in "
                 "`metadata`; this corpus serves enactments by reference."
             ),
-            "url": _first_url(
-                act.get("htmlUrl"), act.get("textUrl"), act.get("pdfUrl")
-            )
+            "url": _first_url(act.get("htmlUrl"), act.get("textUrl"), act.get("pdfUrl"))
             or _canonical_url(act_id),
             "metadata": {
                 key: str(value)

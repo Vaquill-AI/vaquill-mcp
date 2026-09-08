@@ -747,15 +747,30 @@
             "minLength": 3,
             "type": "string"
           },
+          "asOf": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-01-15"
+            ]
+          },
           "format": {
             "default": "both",
             "enum": [
               "both",
               "html",
-              "plain"
+              "plain",
+              "content"
             ],
             "examples": [
-              "plain"
+              "content"
             ],
             "type": "string"
           },
@@ -1235,7 +1250,6 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 50,
             "minItems": 1,
             "type": "array"
           },
@@ -1415,7 +1429,9 @@
                   "SENTENCING_GUIDELINES",
                   "US_TAX_TREATY",
                   "STATE_AGENCY_GUIDANCE",
-                  "SESSION_LAW"
+                  "SESSION_LAW",
+                  "STATUTE_COMPILATION",
+                  "AGENCY_ADJUDICATION"
                 ],
                 "type": "string"
               },
@@ -1436,7 +1452,9 @@
                     "SENTENCING_GUIDELINES",
                     "US_TAX_TREATY",
                     "STATE_AGENCY_GUIDANCE",
-                    "SESSION_LAW"
+                    "SESSION_LAW",
+                    "STATUTE_COMPILATION",
+                    "AGENCY_ADJUDICATION"
                   ],
                   "type": "string"
                 },
@@ -1516,6 +1534,7 @@
               "articleName",
               "articleNumber",
               "audience",
+              "body",
               "breadcrumb",
               "caseName",
               "chapter",
@@ -1637,6 +1656,13 @@
                 "state"
               ]
             ]
+          },
+          "includeBody": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
           },
           "limit": {
             "default": 10,
@@ -1768,11 +1794,17 @@
               "irs_rev_rul",
               "merger_guidelines",
               "mpep",
+              "mspb_nonprecedential",
+              "mspb_precedential",
               "nlrb_advice_memo",
               "nlrb_gc_memo",
               "occ_bulletin",
               "occ_interpretive_letter",
+              "olc_opinion",
               "sct",
+              "senate_treaty",
+              "senate_treaty_document",
+              "senate_treaty_resolution",
               "ssa_ruling",
               "state_insurance_bulletin",
               "tmep",

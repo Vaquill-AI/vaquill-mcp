@@ -170,3 +170,48 @@ def test_annotations_serialize_as_camel_case_on_the_wire() -> None:
     assert wire(_READ_ONLY) == {"readOnlyHint": True}
     assert wire(_WRITE) == {"readOnlyHint": False, "destructiveHint": False}
     assert wire(_DESTRUCTIVE) == {"readOnlyHint": False, "destructiveHint": True}
+
+
+def _built_tools(jurisdiction: str):
+    """Every tool a real server would publish for one jurisdiction.
+
+    Built through `create_server` rather than read off the spec, because the
+    `search` / `fetch` aliases are registered in code and never appear in an
+    OpenAPI document. They were the two tools that kept their derived titles
+    when `TOOL_TITLES` was first wired only into the OpenAPI customizer.
+    """
+    import asyncio
+    from unittest.mock import patch
+
+    from vaquill_mcp import server as server_module
+
+    spec = json.loads((_FIXTURES / f"openapi_{jurisdiction.lower()}.json").read_text())
+    with (
+        patch.object(server_module, "_fetch_openapi_spec", return_value=spec),
+        patch.object(server_module, "_fetch_full_costs", return_value=[]),
+    ):
+        server = server_module.create_server(jurisdiction)
+    return asyncio.run(server._list_tools())
+
+
+@pytest.mark.parametrize("jurisdiction", ["US", "IN"])
+def test_every_tool_has_a_title_and_no_mangled_acronym(jurisdiction: str) -> None:
+    """The connector directory REQUIRES a title on every tool, and shows it.
+
+    FastMCP derives one from the tool name when `TOOL_TITLES` has no entry,
+    which title-cases the underscores: `get_us_statute_section_text` becomes
+    "Get Us Statute Section Text". That satisfies the requirement and still
+    reads wrong, because "Us" is the pronoun rather than the country name. A
+    derived title is acceptable only where the name carries no acronym, so this
+    fails on the acronyms rather than on the absence of a map entry.
+    """
+    mangled = {"Us", "Cfr", "Usc", "Ipc", "Crpc", "Bns", "Bnss", "Api"}
+
+    for tool in _built_tools(jurisdiction):
+        mcp_tool = tool.to_mcp_tool(name=tool.name)
+        assert mcp_tool.title, f"{jurisdiction}/{tool.name} has no title"
+        words = set(mcp_tool.title.replace("/", " ").split())
+        assert not (words & mangled), (
+            f"{jurisdiction}/{tool.name} title {mcp_tool.title!r} title-cases the "
+            f"acronym {sorted(words & mangled)}. Add an entry to TOOL_TITLES."
+        )
