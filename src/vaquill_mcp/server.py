@@ -1,4 +1,4 @@
-"""Vaquill MCP Server - Legal research tools powered by 20M+ court judgments.
+"""Vaquill MCP Server - US primary law as MCP tools, plus Indian legislation.
 
 Uses FastMCP with an OpenAPIProvider to auto-generate tools from the Vaquill
 OpenAPI spec, with custom tool names and descriptions optimized for LLM agents.
@@ -14,7 +14,7 @@ import time
 from collections import Counter
 from collections.abc import AsyncIterator
 
-# httpx2, not httpx2. fastmcp 4 deprecated passing an `httpx2.AsyncClient` to
+# httpx2, not httpx. fastmcp 4 deprecated passing an `httpx.AsyncClient` to
 # `OpenAPIProvider` ("temporarily accepted via duck typing... will be rejected in
 # a future release") and ships httpx2 as a hard dependency. httpx2 is a drop-in
 # fork with the same public API, so this is an import swap, not a rewrite.

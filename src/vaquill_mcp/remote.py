@@ -66,7 +66,7 @@ import logging
 from collections.abc import AsyncGenerator, AsyncIterator, Generator
 from typing import Any
 
-# httpx2, not httpx2. fastmcp 4 deprecated passing an `httpx2.AsyncClient` to
+# httpx2, not httpx. fastmcp 4 deprecated passing an `httpx.AsyncClient` to
 # `OpenAPIProvider` ("temporarily accepted via duck typing... will be rejected in
 # a future release") and ships httpx2 as a hard dependency. httpx2 is a drop-in
 # fork with the same public API, so this is an import swap, not a rewrite.

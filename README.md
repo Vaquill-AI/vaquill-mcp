@@ -412,15 +412,17 @@ uv sync --all-extras
 
 # Run locally
 VAQUILL_API_KEY=vq_key_... uv run vaquill-mcp
-
-# Run tests
-uv run pytest
+```
 
 ### Tests
 
+The suite needs no API key and no network access. Every test runs against the
+checked-in OpenAPI fixtures in `tests/fixtures/`, and `tests/conftest.py` makes
+any unmocked HTTP call raise, so a clone plus `uv sync` is the whole setup.
+
 ```bash
 uv sync --extra dev --extra remote
-uv run pytest                                    # 306 tests
+uv run pytest                                    # 407 tests
 uv run pytest -W error::DeprecationWarning       # what CI runs
 ```
 
@@ -432,6 +434,7 @@ customer gets from `uvx vaquill-mcp`: a lockfile does not constrain anyone
 installing the published wheel, so a dependency shipping a breaking major shows
 up in that job and nowhere else.
 
+```bash
 # Test with FastMCP inspector
 uv run fastmcp dev src/vaquill_mcp/server.py
 ```

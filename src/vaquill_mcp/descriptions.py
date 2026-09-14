@@ -12,10 +12,15 @@ startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
-SCOPE: US only. The India corpus (`/ask`, `/acts/*`) was retired with the
-India-market exit, and `/research/*` + `/citations/*` now serve US case law
-only and reject `countryCode=IN` with a 400. Descriptions that still said
-"Indian" were rewritten on 2026-08-20; do not reintroduce them.
+SCOPE: both jurisdictions. US (23 tools, statutes, regulations, constitutions,
+court rules, agency guidance and watches) and India (6 tools, Central and State
+Acts). India was retired on 2026-08-20 and RESTORED on 2026-09-01, so an
+instruction to strip "Indian" descriptions is obsolete: the IN entries below are
+live and shipping.
+
+Every tool in BOTH catalogues must have an entry in ``TOOL_DESCRIPTIONS`` and in
+``TOOL_TITLES``. ``tests/test_derived_catalogue.py`` asserts that in both
+directions, so a missing entry and an orphaned one each fail.
 """
 
 TOOL_DESCRIPTIONS: dict[str, str] = {
@@ -152,10 +157,6 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "list, because email sends are not logged per attempt. Use to debug a webhook that is "
         "not arriving."
     ),
-    # ------------------------------------------------------------------
-    # US case law (CourtListener-backed). Hidden from the public docs, still
-    # live, and used by the hosted remote server in remote.py.
-    # ------------------------------------------------------------------
     # ------------------------------------------------------------------
     # Meta
     # ------------------------------------------------------------------
