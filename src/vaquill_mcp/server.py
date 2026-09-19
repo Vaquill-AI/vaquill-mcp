@@ -427,10 +427,10 @@ _ACKNOWLEDGED_WRITE_POSTS: frozenset[str] = frozenset({"/watches/test"})
 # external surface, so a client can reason about blast radius before calling.
 #
 # Emitted even though it is not MCP's default (the spec defaults it to TRUE, the
-# cautious answer) because the honest value here is the narrower one, and
-# because OpenAI's plugin review requires readOnlyHint, openWorldHint AND
-# destructiveHint on every tool. Two of the three were already set; a submission
-# scanned without this one is rejected on metadata rather than behaviour.
+# cautious answer) because the honest value here is the narrower one. Directory
+# clients that vet a server also expect all three hints present rather than
+# inferred, and two of the three were already set, so leaving this one to its
+# default understated the server on the one field it gets wrong by default.
 _READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 _WRITE = ToolAnnotations(
     read_only_hint=False, destructive_hint=False, open_world_hint=False
@@ -672,9 +672,10 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
     # ordering.py: nothing sorted before this and the stability was accidental.
     mcp.add_middleware(DeterministicToolOrder())
 
-    # The generic pair OpenAI's deep-research clients match on. Additive: every
-    # typed tool above is untouched, and the aliases stand down if the document
-    # ever publishes an operation of the same name. See aliases.py.
+    # The generic search/fetch pair that research-style clients match on.
+    # Additive: every typed tool above is untouched, and the aliases stand down
+    # if the document ever publishes an operation of the same name. See
+    # aliases.py.
     register_aliases(
         mcp,
         client,

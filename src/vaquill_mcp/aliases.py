@@ -1,4 +1,4 @@
-"""The generic `search` / `fetch` pair OpenAI's deep-research clients require.
+"""The generic `search` / `fetch` pair research-style clients require.
 
 WHY A SERVER WITH 23 GOOD TOOLS IS UNUSABLE WITHOUT THESE TWO
 =============================================================

@@ -188,13 +188,15 @@ def build_app() -> Starlette:
         )
 
     async def openai_apps_challenge(_request):
-        """Domain-verification token for the OpenAI plugin/app directory.
+        """Domain-verification token for a directory that publishes MCP servers.
 
-        OpenAI proves you control the MCP host before it will publish a plugin,
-        by fetching an exact token from this path on the MCP host name (or a
-        parent). Served from an environment variable rather than a committed
-        file because the token is issued per submission and rotates: a redeploy
-        must be able to answer a NEW challenge without a code change.
+        A directory proves control of the MCP host before it will publish a
+        server, by fetching an exact token from this fixed path on the host name
+        (or a parent). The path is set by the verifier and cannot be renamed.
+
+        Served from an environment variable rather than a committed file because
+        the token is issued per submission and rotates: a redeploy must be able
+        to answer a NEW challenge without a code change.
 
         404 while unset, which is the honest answer, and identical to the state
         before this route existed. Returned as text/plain because the value is a
