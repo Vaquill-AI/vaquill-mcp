@@ -78,6 +78,7 @@ from mcp.types import Icon
 
 from vaquill_mcp import __version__
 from vaquill_mcp.aliases import register_aliases
+from vaquill_mcp.client_identity import make_client_stamp
 from vaquill_mcp.config import _SPEC_PATHS, get_base_url, get_timeout
 from vaquill_mcp.oauth import ConnectorKeyResolver
 from vaquill_mcp.ordering import DeterministicToolOrder
@@ -246,13 +247,18 @@ def create_remote_server(
     # ONE client, built here because the provider needs it at construction
     # time, and closed by the lifespan below. An earlier draft built a second
     # one inside the lifespan, which left two alive and closed only one.
+    user_agent = f"vaquill-mcp-remote/{__version__}"
     client = httpx2.AsyncClient(
         base_url=base_url,
         auth=_PerRequestBearerAuth(resolver),
         headers={
-            "User-Agent": f"vaquill-mcp-remote/{__version__}",
+            "User-Agent": user_agent,
             "Accept": "application/json",
         },
+        # Rewrites the agent per request to name the MCP client that caused it.
+        # The header above is the fallback, and is what a request with no MCP
+        # context (the startup fetches) still sends. See client_identity.py.
+        event_hooks={"request": [make_client_stamp(user_agent)]},
         timeout=httpx2.Timeout(timeout, connect=10.0),
     )
 
