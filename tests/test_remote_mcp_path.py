@@ -492,7 +492,7 @@ async def test_html_pages_are_skinned_and_json_is_untouched(
     # depends on that template still having a `</style>` to land before.
     page = create_page("<p>hi</p>", title="Application Access Request")
     skinned = _inject_brand_css(page)
-    assert "vaquill brand skin" in skinned
+    assert "--vaquill-brand-skin" in skinned
     assert "#6e3730" in skinned, "brand colour missing"
     assert "width: 192px" in skinned, "logo not enlarged"
     # It must land INSIDE the stylesheet and AFTER the base rules, which is what
@@ -514,6 +514,248 @@ async def test_html_pages_are_skinned_and_json_is_untouched(
 
     for doc in (discovery, resource):
         assert doc.status_code == 200
-        assert "vaquill brand skin" not in doc.text
+        assert "--vaquill-brand-skin" not in doc.text
     assert discovery.json()["client_id_metadata_document_supported"] is True
     assert resource.json()["resource"] == "https://mcp.vaquill.ai/mcp"
+
+
+def test_the_skin_covers_every_surface_fastmcp_paints() -> None:
+    """Derived from the REAL consent page, not from a list kept by hand.
+
+    The skin is a set of overrides against a pinned dependency's stylesheet, so
+    its failure mode is silence: FastMCP adds a box, we do not name it, and a
+    sky-blue or lemon-yellow panel appears on the sign-in screen with every
+    test still green. That is how the page in production ended up branded on
+    its buttons and vendor-coloured on all three of its panels.
+
+    So this reads FastMCP's own stylesheet, keeps the rules that PAINT
+    something (a hex or an rgba, as opposed to the layout that is FastMCP's to
+    own), narrows those to selectors that match an element actually on the
+    consent page, and asserts we name each one. A new coloured surface upstream
+    fails here instead of shipping.
+    """
+    import re
+
+    from fastmcp.server.auth.oauth_proxy.ui import create_consent_html
+
+    from vaquill_mcp.oauth import _BRAND_CSS_WIRE
+
+    page = create_consent_html(
+        client_id="https://claude.ai/oauth/mcp-oauth-client-metadata",
+        redirect_uri="https://claude.ai/api/mcp/auth_callback",
+        scopes=["offline_access"],
+        txn_id="txn",
+        csrf_token="csrf",
+        client_name="Claude",
+        server_name="Vaquill Legal Research",
+        server_icon_url="https://vaquill.ai/logo.png",
+        server_website_url="https://vaquill.ai",
+        is_cimd_client=True,
+        cimd_domain="claude.ai",
+    )
+    stylesheet = page[page.index("<style>") + len("<style>") : page.index("</style>")]
+    markup = page[page.index("</head>") :]
+    classes = {
+        name
+        for attr in re.findall(r'class="([^"]+)"', markup)
+        for name in attr.split()
+    }
+
+    painted: set[str] = set()
+    for selector, block in re.findall(r"([^{}]+)\{([^{}]*)\}", stylesheet):
+        if "#" not in block and "rgba(" not in block:
+            continue  # layout, not colour
+        for part in selector.split(","):
+            token = re.match(r"(\.?[A-Za-z0-9_-]+)", part.strip())
+            if token is None:
+                continue
+            name = token.group(1)
+            on_page = (
+                name[1:] in classes
+                if name.startswith(".")
+                else f"<{name}" in markup
+            )
+            if on_page:
+                painted.add(name)
+
+    assert len(painted) >= 12, f"selector scrape looks broken: {sorted(painted)}"
+    missing = sorted(
+        name
+        for name in painted
+        if not re.search(rf"(?<![\w-]){re.escape(name)}(?![\w-])", _BRAND_CSS_WIRE)
+    )
+    assert not missing, (
+        "FastMCP paints these and the brand skin does not name them, so they "
+        f"render in vendor colours on the consent screen: {missing}"
+    )
+
+
+def test_an_unstyled_error_fragment_becomes_a_branded_page() -> None:
+    """The page a user reaches when the sign-in has ALREADY gone wrong.
+
+    `consent.py` answers a replayed or mismatched consent form with a literal
+    `"<h1>Error</h1><p>...</p>"`, with no document and no stylesheet, which a
+    browser paints as Times New Roman on white. It reads as a crash rather than
+    as a refusal, and it is the screen someone hits when they are least willing
+    to assume the problem is theirs. Observed in production on 2026-09-19 after
+    a Back-button resubmit.
+    """
+    from fastmcp.utilities.ui import create_page
+
+    from vaquill_mcp.oauth import _skin_html
+
+    fragment = "<h1>Error</h1><p>Invalid or expired consent token</p>"
+    wrapped = _skin_html(fragment)
+    assert fragment in wrapped, "the message must survive verbatim"
+    assert wrapped.lstrip().startswith("<!DOCTYPE html>")
+    assert "--vaquill-brand-skin" in wrapped
+    assert "#6e3730" in wrapped
+
+    # A full FastMCP page is appended to, never wrapped a second time.
+    styled = _skin_html(create_page("<p>hi</p>", title="Application Access Request"))
+    assert styled.count("<!DOCTYPE html>") == 1
+    assert styled.count("--vaquill-brand-skin") == 1
+
+    # A document with no stylesheet to extend is left exactly as it is, rather
+    # than having its structure guessed at mid-authorization.
+    document = "<html><body>something we did not render</body></html>"
+    assert _skin_html(document) == document
+
+
+async def test_the_skin_keeps_every_cookie_the_consent_page_sets() -> None:
+    """The regression that `dict(response.headers)` used to cause.
+
+    Headers are a multi-map and a dict keeps ONE value per name, so rebuilding
+    the response through a dict dropped every `Set-Cookie` but the first. The
+    consent page sets the new consent-state cookie and then expires the surplus
+    older ones, so the browser's consent cookies grew unbounded; reorder those
+    two writes upstream and the same bug drops the LIVE cookie instead, which
+    fails the double-submit check as a 403 in the middle of a sign-in.
+
+    Asserted on the wire, because the bug is invisible in the handler: the
+    response object is correct right up to the point the middleware copies it.
+    """
+    from starlette.applications import Starlette
+    from starlette.middleware import Middleware
+    from starlette.responses import HTMLResponse
+    from starlette.routing import Route
+
+    from vaquill_mcp.oauth import BrandSkinMiddleware
+
+    async def consent_like(_request):
+        response = HTMLResponse(
+            "<html><head><style>a{color:red}</style></head><body>x</body></html>"
+        )
+        response.set_cookie("__MCP_CONSENT_STATE_new", "live")
+        response.delete_cookie("__MCP_CONSENT_STATE_old")
+        response.set_cookie("MCP_APPROVED_CLIENTS", "remembered")
+        response.headers["X-Frame-Options"] = "DENY"
+        return response
+
+    app = Starlette(
+        routes=[Route("/consent", consent_like)],
+        middleware=[Middleware(BrandSkinMiddleware)],
+    )
+    transport = httpx2.ASGITransport(app=app)
+    async with httpx2.AsyncClient(
+        transport=transport, base_url="https://mcp.vaquill.ai"
+    ) as raw:
+        got = await raw.get("/consent")
+
+    cookies = got.headers.get_list("set-cookie")
+    assert len(cookies) == 3, f"Set-Cookie headers lost in transit: {cookies}"
+    assert any("__MCP_CONSENT_STATE_new=live" in c for c in cookies)
+    assert any("__MCP_CONSENT_STATE_old=" in c for c in cookies)
+    assert any("MCP_APPROVED_CLIENTS=remembered" in c for c in cookies)
+
+    # The skin ran, and the rest of the response survived it intact.
+    assert "--vaquill-brand-skin" in got.text
+    assert got.headers["x-frame-options"] == "DENY"
+    assert got.headers["content-type"].startswith("text/html")
+    assert int(got.headers["content-length"]) == len(got.content)
+
+
+def test_no_vendor_naming_survives_on_the_consent_screen() -> None:
+    """The sign-in page must not advertise the library it is built on.
+
+    FastMCP's help tooltip named itself twice and linked to gofastmcp.com, on
+    the one screen where a user decides whether to trust US with their account.
+    `_rebrand_help_link` replaces that block rather than hiding it, because the
+    tooltip carries the only explanation on the page of why the screen exists,
+    and a hesitating user who finds no reason is likelier to approve something
+    they should have refused.
+
+    Asserted as an ABSENCE across the whole served page, not just inside the
+    block we edit, so a vendor string appearing anywhere else (a logo alt text
+    falling back to its default, a new footer) fails here too.
+    """
+    from fastmcp.server.auth.oauth_proxy.ui import create_consent_html
+
+    from vaquill_mcp.oauth import _skin_html
+
+    page = create_consent_html(
+        client_id="https://claude.ai/oauth/mcp-oauth-client-metadata",
+        redirect_uri="https://claude.ai/api/mcp/auth_callback",
+        scopes=["offline_access"],
+        txn_id="txn",
+        csrf_token="csrf",
+        client_name="Claude",
+        server_name="Vaquill Legal Research",
+        server_icon_url="https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png",
+        server_website_url="https://www.vaquill.ai",
+        is_cimd_client=True,
+        cimd_domain="claude.ai",
+    )
+    # The premise: the vendor really is named on the page we start from.
+    assert "FastMCP" in page and "gofastmcp.com" in page
+
+    skinned = _skin_html(page)
+    assert "FastMCP" not in skinned, "vendor name still on the sign-in screen"
+    assert "gofastmcp.com" not in skinned, "vendor link still on the sign-in screen"
+
+    # The security explanation and its standards link survive the swap, and the
+    # classes do too, or every style rule above would stop matching.
+    assert "confused deputy attacks" in skinned
+    assert "modelcontextprotocol.io" in skinned
+    assert "https://www.vaquill.ai/mcp" in skinned
+    for css_class in ("help-link-container", "help-link", "tooltip", "tooltip-link"):
+        assert f'class="{css_class}"' in skinned
+
+    # Idempotent, because a response is skinned once but the function is not
+    # the only thing that could ever call it.
+    assert _skin_html(skinned) == skinned
+
+
+def test_the_help_link_swap_bails_on_markup_it_does_not_recognise() -> None:
+    """Degrade to the vendor's tooltip, never to a page with a hole in it.
+
+    The swap finds one container and replaces up to its first `</div>`. That is
+    correct only while the block holds no nested `<div>`, so the shape is
+    CHECKED rather than assumed: a template change upstream must cost us a
+    vendor mention, not a truncated consent page.
+    """
+    from vaquill_mcp.oauth import _rebrand_help_link
+
+    # No container at all.
+    assert _rebrand_help_link("<p>nothing here</p>") == "<p>nothing here</p>"
+
+    # Container present but never closed.
+    unterminated = '<div class="help-link-container"><span>oops'
+    assert _rebrand_help_link(unterminated) == unterminated
+
+    # Nested markup this does not understand: left alone rather than cut short.
+    nested = (
+        '<div class="help-link-container"><div class="new-upstream-thing">'
+        "keep me</div></div><p>tail</p>"
+    )
+    assert _rebrand_help_link(nested) == nested
+
+    # The shape it does understand, with everything after it preserved.
+    known = (
+        '<head></head><div class="help-link-container">'
+        "<span>vendor copy</span></div><footer>tail</footer>"
+    )
+    swapped = _rebrand_help_link(known)
+    assert "vendor copy" not in swapped
+    assert swapped.startswith("<head></head>")
+    assert swapped.endswith("<footer>tail</footer>")

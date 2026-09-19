@@ -75,6 +75,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import time
 
 import httpx2
@@ -436,18 +437,45 @@ def build_connector_key_resolver() -> ConnectorKeyResolver | None:
 #: lands on mid-sign-in looks like the product they are signing in to. Values,
 #: not variables, because this CSS is injected into a page that has none of the
 #: app's stylesheets.
+#:
+#: WHY THERE IS NO WEBFONT HERE
+#: ============================
+#:
+#: The consent page ships `default-src 'none'` with no `font-src`, so a
+#: `@font-face` or a Google Fonts `@import` is blocked by the page's own CSP,
+#: and `'none'` covers our own origin too. Loading the product's Fraunces and
+#: Inter would mean widening that policy on the one page where a user hands
+#: over access to their account, and paying for a third-party font round trip
+#: mid-authorization. Both families are named first in the stack anyway, so a
+#: visitor who has them installed gets them and everyone else gets the system
+#: stack FastMCP already used.
 _BRAND_CSS = """
+:root {
+    /* Inert, and the marker that says this page was skinned. Asserted by the
+       tests and readable in devtools; the comments around it do not ship. */
+    --vaquill-brand-skin: 1;
+}
+
 /* vaquill brand skin, appended after FastMCP's base styles so it wins on
    equal specificity. Every rule here is cosmetic: if FastMCP renames a class
    the rule stops matching and the page renders in its default styling rather
-   than breaking. */
+   than breaking. The selectors mirror `fastmcp.utilities.ui` (BASE_STYLES,
+   BUTTON_STYLES, INFO_BOX_STYLES, REDIRECT_SECTION_STYLES, DETAILS_STYLES,
+   DETAIL_BOX_STYLES and TOOLTIP_STYLES) plus the `.cimd-badge` block that
+   `oauth_proxy/ui.py` appends inline. */
+
+/* ---- page and card ---- */
 body {
     background: #f4f1ec;
     color: #25211d;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
 }
 .container, .card {
     background: #ffffff;
     border-color: #dcd4c6;
+    box-shadow: 0 4px 16px -4px rgba(37, 33, 29, 0.10),
+        0 2px 4px -2px rgba(37, 33, 29, 0.06);
 }
 .logo {
     /* 3x FastMCP's 64px. The lockup is wordmark-plus-mark, so at 64px the
@@ -457,28 +485,190 @@ body {
 }
 h1, h2, h3 {
     color: #25211d;
+    letter-spacing: -0.01em;
 }
 a {
     color: #6e3730;
 }
+
+/* ---- the intro box. `--info` in the product IS the primary maroon, so this
+   is tinted maroon rather than the vendor's sky blue, and the emphasised
+   client and server names follow it. Both need naming explicitly: FastMCP
+   colours them through `.info-box strong` and `.info-box .server-name-link`,
+   which outrank a bare `a` on specificity. ---- */
+.info-box {
+    background: rgba(110, 55, 48, 0.06);
+    border-color: rgba(110, 55, 48, 0.22);
+    color: #25211d;
+}
+.info-box strong,
+.info-box .server-name-link {
+    color: #6e3730;
+}
+.info-box.error {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.30);
+    color: #25211d;
+}
+
+/* ---- verified-domain badge, deliberately still green. The product spends
+   colour on semantic state and nothing else, and "this domain was verified"
+   is exactly that, so the tokens become ours (`--success`) while the meaning
+   stays put. ---- */
+.cimd-badge {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #1d5b48;
+}
+.cimd-check {
+    color: #10b981;
+}
+
+/* ---- the callback address, which is the one thing on this page the user is
+   actually asked to check. `--warm`, the product's amber accent, keeps it
+   flagged without the vendor's lemon yellow. ---- */
+.redirect-section {
+    background: rgba(211, 127, 23, 0.08);
+    border-color: rgba(211, 127, 23, 0.32);
+}
+.redirect-section .label {
+    color: #655d54;
+}
+.redirect-section .value,
+.detail-value {
+    color: #25211d;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Monaco, Consolas,
+        'Courier New', monospace;
+}
+
+/* ---- advanced details ---- */
+summary {
+    color: #655d54;
+}
+summary:hover {
+    background: #ece6db;
+    color: #25211d;
+}
+.detail-box {
+    background: #ece6db;
+    border-color: #dcd4c6;
+}
+.detail-row {
+    border-bottom-color: #dcd4c6;
+}
+.detail-label {
+    color: #655d54;
+}
+
+/* ---- buttons. `--radius` is 8px, and Deny sits light-on-light here, so it
+   needs the border the vendor's solid grey fill made unnecessary. ---- */
+button {
+    border-radius: 8px;
+}
+button:hover {
+    box-shadow: 0 4px 10px -2px rgba(37, 33, 29, 0.18);
+}
+button:focus-visible {
+    outline: 2px solid #6e3730;
+    outline-offset: 2px;
+}
 .btn-approve, .btn-primary {
     background: #6e3730;
     color: #ffffff;
+    border: 1px solid #6e3730;
 }
 .btn-approve:hover, .btn-primary:hover {
     background: #5a2d27;
+    border-color: #5a2d27;
 }
 .btn-deny, .btn-secondary {
     background: #ece6db;
     color: #25211d;
+    border: 1px solid #dcd4c6;
 }
 .btn-deny:hover, .btn-secondary:hover {
     background: #ddd4c4;
 }
-button {
-    border-radius: 8px;
+
+/* ---- the pinned help link and its tooltip ---- */
+.help-link {
+    color: #655d54;
+    border-bottom-color: #b8ad9d;
+}
+.help-link:hover {
+    color: #6e3730;
+    border-bottom-color: #6e3730;
+}
+.tooltip {
+    background: #25211d;
+}
+.tooltip::after {
+    border-top-color: #25211d;
+}
+.tooltip-link {
+    color: #e5c8a8;
 }
 """
+
+#: Layout for a page FastMCP hands us as a bare fragment, with no document and
+#: no stylesheet of its own. Only what `_BRAND_CSS` assumes is already there:
+#: it paints `body` and `.container` and expects something to have centred them.
+_BARE_PAGE_STYLES = """
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+.container {
+    border: 1px solid #dcd4c6;
+    border-radius: 1rem;
+    padding: 3rem 2.5rem;
+    max-width: 36rem;
+    width: 100%;
+    text-align: center;
+}
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+p {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: #655d54;
+}
+"""
+
+
+def _strip_css_comments(css: str) -> str:
+    """Drop `/* ... */` from CSS on its way to the browser.
+
+    The comments in `_BRAND_CSS` exist for whoever next reads this file, and
+    they name FastMCP and its style constants because that is the only way to
+    explain where a selector came from. None of that belongs in bytes we serve:
+    it puts the vendor's name in view-source on the consent screen, which is
+    exactly what the rest of this module works to keep off that page, and ships
+    our own reasoning to anyone who looks.
+
+    Safe as a plain scan because this stylesheet contains no `url()`, no quoted
+    string and no `content:` value, so there is nowhere for `/*` to appear
+    except as a comment. It is applied to OUR css only, never to FastMCP's.
+    """
+    without_comments = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
+    # Collapse the runs of blank lines the removal leaves behind, so the served
+    # stylesheet reads as something written rather than something processed.
+    return re.sub(r"\n[ \t]*(?:\n[ \t]*)+", "\n\n", without_comments)
+
+
+#: `_BRAND_CSS` as served. Built once: the source is authored for a reader and
+#: this is what a browser gets.
+_BRAND_CSS_WIRE = _strip_css_comments(_BRAND_CSS)
+
+#: Present on every page this module has skinned, and on no other.
+_SKIN_MARKER = "--vaquill-brand-skin"
 
 
 def _inject_brand_css(html: str) -> str:
@@ -492,11 +682,128 @@ def _inject_brand_css(html: str) -> str:
     Returns the html untouched when there is no `</style>` to insert before, so
     an upstream template change degrades to "unstyled but working" rather than
     to a broken page mid-authorization.
+
+    Idempotent, keyed off the `--vaquill-brand-skin` custom property the sheet
+    declares. Nothing double-skins a response today, but the middleware is
+    attached per app and a second pass would otherwise stack the whole sheet
+    again: harmless to look at, and a silently growing page on the one route
+    that must stay predictable.
     """
+    if _SKIN_MARKER in html:
+        return html
     marker = "</style>"
     if marker not in html:
         return html
-    return html.replace(marker, _BRAND_CSS + marker, 1)
+    return html.replace(marker, _BRAND_CSS_WIRE + marker, 1)
+
+
+def _wrap_bare_fragment(fragment: str) -> str:
+    """Put a document and a stylesheet around a fragment that has neither.
+
+    Not every page in this flow goes through FastMCP's `create_page`. The
+    consent POST handler answers a replayed or mismatched form with a literal
+    `"<h1>Error</h1><p>...</p>"`, which a browser renders as unstyled Times New
+    Roman on white: a page that reads as a crash rather than as a refusal, on
+    the one screen a user reaches when their sign-in has already gone wrong.
+
+    The fragment is inserted verbatim. This adds presentation and never content,
+    so it cannot change what the page says, and it carries no CSP of its own
+    because these responses ship none.
+    """
+    return (
+        "<!DOCTYPE html>\n"
+        '<html lang="en">\n'
+        "<head>\n"
+        '<meta charset="utf-8" />\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1" />\n'
+        "<title>Vaquill AI</title>\n"
+        "<style>"
+        + _BARE_PAGE_STYLES
+        + _BRAND_CSS_WIRE
+        + "</style>\n"
+        "</head>\n"
+        "<body>\n"
+        f'<div class="container">{fragment}</div>\n'
+        "</body>\n"
+        "</html>\n"
+    )
+
+
+#: FastMCP's help tooltip is the one block of copy on this page that is not
+#: ours, and it names the vendor twice ("This FastMCP server requires your
+#: consent", "Learn more about FastMCP security") over a link to gofastmcp.com,
+#: on the screen where a user decides whether to trust US with their account.
+#:
+#: REPLACED RATHER THAN HIDDEN, and that is the whole judgement here. This
+#: tooltip carries the only explanation on the page of why the screen exists at
+#: all. A user who hesitates, looks for a reason and finds nothing is likelier
+#: to click Allow on something they should have refused than one who reads it,
+#: so deleting the block would trade a branding leak for a security regression.
+#:
+#: The confused-deputy link stays and still points at the MCP specification,
+#: which is a standards document rather than anyone's marketing. Only the
+#: second link, the vendor's own, becomes ours.
+_HELP_LINK_OPEN = '<div class="help-link-container">'
+
+_HELP_LINK_HTML = """<div class="help-link-container">
+            <span class="help-link">
+                Why am I seeing this?
+                <span class="tooltip">
+                    Vaquill asks before a new application may act on your
+                    account. It is what protects you from <a
+                    href="https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices#confused-deputy-problem"
+                    target="_blank" rel="noopener noreferrer"
+                    class="tooltip-link">confused deputy attacks</a>, where an
+                    application you never authorised borrows this connection to
+                    act as you.<br><br>
+                    <a href="https://www.vaquill.ai/mcp" target="_blank"
+                    rel="noopener noreferrer" class="tooltip-link">About the
+                    Vaquill MCP server &#8594;</a>
+                </span>
+            </span>
+        </div>"""
+
+
+def _rebrand_help_link(html: str) -> str:
+    """Swap FastMCP's self-naming help tooltip for our own copy.
+
+    This is the one place the skin rewrites CONTENT rather than presentation,
+    so it is deliberately the narrowest edit that can do the job: it finds one
+    known container, checks the shape it is about to replace is the shape it
+    understands, and substitutes a block carrying the same classes so every
+    style rule above still applies.
+
+    Returns the html untouched when the container is absent, unterminated, or
+    holds nested markup this does not recognise. An upstream template change
+    therefore degrades to the vendor's tooltip rather than to a page with a
+    hole cut in it. Re-running it is a no-op on its own output.
+    """
+    start = html.find(_HELP_LINK_OPEN)
+    if start == -1:
+        return html
+    end = html.find("</div>", start)
+    if end == -1:
+        return html
+    if "<div" in html[start + len(_HELP_LINK_OPEN) : end]:
+        return html
+    return html[:start] + _HELP_LINK_HTML + html[end + len("</div>") :]
+
+
+def _skin_html(html: str) -> str:
+    """Brand one HTML response, whichever of the two shapes it arrives in.
+
+    A full FastMCP page carries its own stylesheet, so it has the brand CSS
+    appended and its one block of vendor copy replaced. A bare fragment gets a
+    document built around it. Anything that looks like a document we do not
+    recognise, meaning it has an `<html>` but no stylesheet to extend, is left
+    exactly as it is: guessing at its structure is how a cosmetic layer turns
+    into a broken authorization.
+    """
+    if "</style>" in html:
+        return _inject_brand_css(_rebrand_help_link(html))
+    if "<html" in html.lower():
+        return html
+    return _wrap_bare_fragment(html)
 
 
 class BrandSkinMiddleware(BaseHTTPMiddleware):
@@ -515,6 +822,12 @@ class BrandSkinMiddleware(BaseHTTPMiddleware):
       and buffering it would break the protocol;
     * it never raises. Any failure returns the original response, so the worst
       case is an unstyled page rather than a broken authorization.
+
+    It is presentation-only with ONE deliberate exception, `_rebrand_help_link`,
+    which replaces the vendor's help tooltip. That exception is bounded the same
+    way: it rewrites one known container, bails on any shape it does not
+    recognise, and keeps the security explanation the tooltip exists to give.
+    Nothing here alters what a page states about the authorization itself.
     """
 
     async def dispatch(self, request, call_next):
@@ -526,14 +839,30 @@ class BrandSkinMiddleware(BaseHTTPMiddleware):
         except Exception:
             return response
         try:
-            skinned = _inject_brand_css(body.decode()).encode()
+            skinned = _skin_html(body.decode()).encode()
         except Exception:
             skinned = body
-        headers = dict(response.headers)
-        headers.pop("content-length", None)
-        return Response(
-            content=skinned,
-            status_code=response.status_code,
-            headers=headers,
-            media_type="text/html",
+
+        # Rebuilt from `raw_headers`, NEVER from `dict(response.headers)`.
+        # Headers are a multi-map and a dict keeps one value per name, so a
+        # response that sets more than one cookie loses every cookie but the
+        # first. That is not hypothetical here: the consent page sets the new
+        # consent-state cookie and then expires the surplus older ones, so the
+        # dict form silently discarded the eviction and let the browser's
+        # consent cookies grow past `_MAX_CSRF_TOKENS`. Upstream reordering
+        # those two writes turns the same bug into a DROPPED live cookie, which
+        # fails the double-submit check as a 403 mid-authorization.
+        #
+        # `content-type` is carried over rather than re-declared, so the
+        # original charset survives, and `content-length` is recomputed because
+        # the body just changed size.
+        skinned_response = Response(
+            content=skinned, status_code=response.status_code
         )
+        skinned_response.raw_headers = [
+            (key, value)
+            for key, value in response.raw_headers
+            if key.lower() != b"content-length"
+        ] + [(b"content-length", str(len(skinned)).encode())]
+        skinned_response.background = response.background
+        return skinned_response
