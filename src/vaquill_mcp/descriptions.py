@@ -24,6 +24,141 @@ directions, so a missing entry and an orphaned one each fail.
 """
 
 TOOL_DESCRIPTIONS: dict[str, str] = {
+    # --- Added 2026-09-19 -------------------------------------------------
+    # Sixteen tools that the API had been publishing for weeks with no curated
+    # entry. They surfaced when the committed OpenAPI fixtures were refreshed:
+    # the September India redesign took that document from 6 paths to 19, and
+    # `/us/statutes/count` and the two credit-balance routes landed on the US
+    # one, while the fixtures here still described the old shape. Until this,
+    # every one of them shipped its raw multi-paragraph OpenAPI description
+    # into every agent's context on every turn.
+    "count_statute_sections": (
+        "Exact section count for a jurisdiction, corpus, code, title, chapter "
+        "or part. Use when sizing a job before walking divisions and fetching "
+        "sections. This counts a scope, not search matches. There is no query "
+        "parameter, because search ranks within a bounded window and cannot "
+        "give an exact total of matching sections. A zero count may indicate "
+        "a wrong filter. "
+    ),
+    "get_act_section": (
+        "Metadata for one provision, including its citation, position in the "
+        "act, structural features and references. Use when identifying or "
+        "inspecting a provision without fetching its wording. Text is not "
+        "included. Use get_act_section_body to read it. wordCount covers all "
+        "passages, and actsReferenced normalizes whitespace before "
+        "deduplication so publisher line breaks do not create duplicate acts. "
+    ),
+    "get_act_section_body": (
+        "The publisher's full text for one provision, taken directly from the "
+        "act document without synthesized search headers. Use when reading, "
+        "quoting or citing the provision's wording rather than its metadata. "
+        "Amendments are not applied to this text. Check get_section_history "
+        "for recorded changes before treating the wording as current law. "
+    ),
+    "get_act_status": (
+        "An act's standing in three separate fields, publisherStatus for "
+        "India Code's label, servedStatus for API availability and "
+        "repealClaim for the publisher's sourced repeal record. Use when "
+        "assessing whether an act remains law or why it is unavailable. These "
+        "are not one verdict. A repealClaim does not verify that the "
+        "repealing instrument was brought into force. "
+    ),
+    "get_act_structure": (
+        "An act's table of contents, with chapters and parts where the "
+        "publisher supplies them and provisions listed beneath. Use when "
+        "locating a section or planning a traversal of the act. hasHierarchy "
+        "is false for most acts, where nodes is a flat section list rather "
+        "than an error. Section numbers sort numerically with alphabetic "
+        "suffixes attached. "
+    ),
+    "get_coverage": (
+        "India corpus counts for acts and provisions, broken down by "
+        "jurisdiction, regulator and status, plus coverage depth. Use when "
+        "checking whether the corpus supports a question before searching or "
+        "interpreting an empty result. The depth block distinguishes text "
+        "coverage from much thinner parsed amendment coverage. "
+        "actsClaimingAmendmentsWithoutEvents marks missing records, not an "
+        "absence of amendments. "
+    ),
+    "get_credit_balance": (
+        "The credits this API key can spend now, calculated from live credit "
+        "buckets under the same expiry rules used for billing. Use for "
+        "pre-flight checks or low-balance alerts. creditsRemaining is a "
+        "spendable balance, not a cached estimate. Any valid API key works "
+        "without a particular scope, and normal rate limits still apply. "
+    ),
+    "get_india_credit_balance": (
+        "The account-wide spendable credit balance shared by the India and "
+        "United States APIs. Use for pre-flight checks or low-balance alerts "
+        "from an India workflow. This returns the same balance as "
+        "get_credit_balance, not a separate India allowance. Check bySource "
+        "before assuming credits will last. Subscription credits expire at "
+        "the period end. "
+    ),
+    "get_pricing_in": (
+        "Credit-to-price conversion and per-endpoint costs for the India "
+        "legislation API, billed in US dollars. Use when estimating a "
+        "workflow or comparing endpoint charges. Set region to US for United "
+        "States primary-law pricing instead. Both surfaces use the same API "
+        "key and account-wide credit balance. No authentication is required. "
+    ),
+    "get_section_history": (
+        "Recorded amendments to one provision, including the changing Act and "
+        "section, effective dates and replaced wording where published. Use "
+        "when tracing changes or checking whether published text reflects "
+        "later amendments. An empty history can mean no changes or no parsed "
+        "records, as coverage explains. Read appliedStatus on every event. "
+        "Amendments are not applied to served text. "
+    ),
+    "india_act_cited_by": (
+        "Paged inbound citations from provisions elsewhere in the corpus that "
+        "name an act. Use when finding provisions that mention the act, "
+        "rather than following its outbound references. Matching uses the "
+        "act's title, not its identifier, so title variants and line breaks "
+        "can be missed. Read matchBasis and treat results as a floor. total "
+        "counts distinct citing provisions across all pages. "
+    ),
+    "india_act_definitions": (
+        "Extracted defined terms and their defining provisions, plus a "
+        "separate definitionSections list. Use when a question turns on an "
+        "act's own meaning of a term. Extraction covers only a minority of "
+        "acts, so an empty result does not mean the act defines nothing. "
+        "definitionSections identifies provisions to read even without "
+        "extracted terms. terms is paged, but definitionSections is not. "
+    ),
+    "india_act_subordinate": (
+        "Paged rules, regulations, notifications and orders the publisher "
+        "records as made under an act. Use when looking beyond the parent "
+        "statute to its subordinate instruments. Matching uses the parent's "
+        "title, not parent_act_id, which is an India Code identifier that "
+        "does not address this corpus. Check matchBasis. total counts "
+        "distinct instruments across all pages, while returned counts rows on "
+        "this page. "
+    ),
+    "india_section_references": (
+        "Outbound citations from a provision to other enactments and sections "
+        "of its own act. Use when following references outwards, not finding "
+        "citations to the act. actId identifies served targets, while "
+        "resolved false marks coverage gaps rather than parse failures. "
+        "Results are not paged. totalActs and totalSections give full counts, "
+        "so check truncated before treating returned references as complete. "
+    ),
+    "resolve_india_citation": (
+        "The provision named by an Indian legal citation, accepting common "
+        "abbreviations and flexible element order. Use when a user provides a "
+        "citation rather than a research topic, such as s.302 IPC, O. 39 R. 1 "
+        "CPC or Art. 21 of the Constitution. Subsection and clause references "
+        "are supported. Malformed citations are rejected rather than reported "
+        "as not found. "
+    ),
+    "resolve_india_citations_batch": (
+        "Provision resolutions for a list of Indian legal citations, using "
+        "the same resolver as resolve_india_citation. Use when several "
+        "citations need resolving without individual calls. Accepts up to 50 "
+        "distinct citations and 500 entries before deduplication. One "
+        "citation failing does not invalidate the others. Unknown request "
+        "fields are rejected rather than ignored. "
+    ),
     # ------------------------------------------------------------------
     # US statutes, regulations, constitutions and court rules
     # ------------------------------------------------------------------
@@ -256,6 +391,81 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
 # on search, a board selector on create_watch, and a resolution constraint on
 # resolve_statute_citation, and one shared entry would be wrong on two of them.
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
+    # --- Added 2026-09-19 -------------------------------------------------
+    # Thirteen parameters the API had been publishing with descriptions of 262
+    # to 513 characters and no curated entry, riding in every agent's context on
+    # every turn. Each keeps the one fact a CALLER cannot guess and drops the
+    # background; the API reference is the right place for the long version.
+    ("count_statute_sections", "excludeRepealed"): (
+        "Only sections with an affirmatively dead status are excluded. "
+        "Sections with no recorded status are kept. US Code uses a stored "
+        "annual edition, so sections repealed after that edition closed are "
+        "still counted."
+    ),
+    ("get_act_amendments", "type"): (
+        "Action classes are returned in nominal form, but filters accept "
+        "both nominal and stored verbal spellings. For example, "
+        "`substitution` and `substituted` are both accepted."
+    ),
+    ("get_corresponding_provisions", "act_code"): (
+        "`ipc` and `bns` return the same mapping, as do `crpc` and `bnss`. "
+        "Case-insensitive. `iea` and `bsa` are accepted but return 404 "
+        "until their mapping is available."
+    ),
+    ("get_pricing", "region"): (
+        "Defaults to the jurisdiction of the documentation you are reading. "
+        "If omitted, returns pricing only for that jurisdiction's "
+        "endpoints, not prices across jurisdictions."
+    ),
+    ("get_pricing_in", "region"): (
+        "Defaults to the jurisdiction of the documentation you are reading. "
+        "If omitted, returns pricing only for that jurisdiction's "
+        "endpoints, not prices across jurisdictions."
+    ),
+    ("get_sections_batch", "includeBody"): (
+        "Adds the ordinary body price for each row that returns text. "
+        "Unresolved text returns `body: null` with no body charge. Use "
+        "`creditsConsumed` for the total rather than calculating from the "
+        "number of IDs."
+    ),
+    ("list_acts", "department"): (
+        "Accepts both regulator slugs such as `sebi` and `rbi` and "
+        "free-text state department names such as `Law Department`. Values "
+        "are not limited to a fixed enum or a uniform slug format."
+    ),
+    ("list_statute_divisions", "excludeRepealed"): (
+        "Only sections with an affirmatively dead status, including "
+        "repealed, superseded or renumbered, are excluded. Sections with no "
+        "recorded status are kept, not treated as repealed."
+    ),
+    ("list_watch_changes", "since"): (
+        "Strictly after the ISO-8601 timestamp. Rows from one refresh can "
+        "share a timestamp, so this skips all rows at that instant. Prefer "
+        "a change item's `id` as `sinceId` if available. Both filters may "
+        "be combined."
+    ),
+    ("resolve_statute_citations_batch", "corpusType"): (
+        "Restricts every citation to one corpus: `STATE`, `REGULATION`, "
+        "`STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`. `STATE` "
+        "covers federal and state statutes, and the two constitution values "
+        "are synonyms here, with `state` distinguishing the jurisdiction."
+    ),
+    ("search_acts", "department"): (
+        "Accepts both regulator slugs such as `sebi` and `rbi` and "
+        "free-text state department names such as `Law Department`. Values "
+        "are not limited to a fixed enum or a uniform slug format."
+    ),
+    ("search_acts", "legalSubject"): (
+        "Accepts one value or a list, matched against subject "
+        "classifications assigned at ingest."
+    ),
+    ("search_acts", "matchType"): (
+        "One of `any`, `all`, `phrase`. Filters ranked candidates rather "
+        "than re-querying the index, so `phrase` matches only within the "
+        "top candidates and not every corpus match. Narrow with structured "
+        "filters first when you need exhaustive phrase results. Defaults to "
+        "`any`."
+    ),
     # Three parameters the API added in early September 2026 that had no curated
     # entry, found 2026-09-03 when the OpenAPI fixtures were regenerated: their
     # inherited prose was 865 + 656 + 1,147 = 2,668 characters riding in every
@@ -271,10 +481,11 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     ("get_us_statute_section_text", "format"): (
         "Which representations to return. The default `both` carries a long "
-        "section's text twice, so `plain` or `html` roughly halves the payload at "
-        "the same price. `content` returns only the operative text, about 1 KB "
-        "instead of 30 KB on a long section, but ONLY United States Code sections "
-        "can be split: on any other corpus it returns no text, so check for null."
+        "section's text twice, so `plain` or `html` roughly halves the "
+        "payload at the same price. `content` and `operative` return only "
+        "the operative text, about 1 KB instead of 30 KB on a long section, "
+        "but ONLY United States Code sections can be split: on any other "
+        "corpus they return no text, so check for null."
     ),
     ("search_us_statutes", "includeBody"): (
         "Return each hit's full text inline on `body`, instead of one "
@@ -303,14 +514,17 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # test_a_description_that_lists_enum_values_lists_all_of_them` now fails on
     # exactly that, so the next token cannot drift the same way.
     ("search_us_statutes", "corpusType"): (
-        "Restrict to one corpus, or several as a list. Federal: `USC`, `CFR`, "
-        "`CONSTITUTION`, `FEDERAL_RULES`, `FEDERAL_REGISTER`, `EXECUTIVE_ACTION`, "
-        "`AGENCY_GUIDANCE`, `SENTENCING_GUIDELINES`, `US_TAX_TREATY`, `SESSION_LAW` "
-        "(Statutes at Large, as enacted), `STATUTE_COMPILATION` (an act as amended "
-        "through a stated later law), `AGENCY_ADJUDICATION` (federal administrative "
-        "adjudication: DOJ Office of Legal Counsel opinions and MSPB decisions). "
-        "Pair with `state`: `STATE`, `REGULATION`, `STATE_RULES`, "
-        "`STATE_CONSTITUTION`, `STATE_AGENCY_GUIDANCE`. Omit for all."
+        "Restrict to one corpus, or several as a list. Federal: `USC`, "
+        "`USC_ANNUAL` (published past editions), `CFR`, `CFR_ANNUAL` (same, "
+        "superseded by construction), `CONSTITUTION`, `FEDERAL_RULES`, "
+        "`FEDERAL_REGISTER`, `FEDERAL_REGISTER_NOTICE` (a curated slice, "
+        "not the whole series), `EXECUTIVE_ACTION`, `AGENCY_GUIDANCE`, "
+        "`SENTENCING_GUIDELINES`, `US_TAX_TREATY`, `SESSION_LAW` (Statutes "
+        "at Large, as enacted), `STATUTE_COMPILATION` (an act as amended "
+        "through a stated later law), `AGENCY_ADJUDICATION` (DOJ Office of "
+        "Legal Counsel opinions and MSPB decisions). Pair with `state`: "
+        "`STATE`, `REGULATION`, `STATE_RULES`, `STATE_CONSTITUTION`, "
+        "`STATE_AGENCY_GUIDANCE`, `STATE_AG_OPINION`. Omit for all."
     ),
     ("search_us_statutes", "changedSince"): (
         "Only sections we OBSERVED changing on or after this date (`YYYY-MM-DD`). "
@@ -523,6 +737,9 @@ TOOL_TITLES: dict[str, str] = {
     "update_watch": "Update Law Change Watch",
     "test_watch": "Send Test Alert",
     "delete_watch": "Delete Law Change Watch",
+    # --- US: sizing and account ---------------------------------------------
+    "count_statute_sections": "Count Sections in a Scope",
+    "get_credit_balance": "Credit Balance",
     # --- Shared -------------------------------------------------------------
     "get_pricing": "Credit Pricing",
     # --- India --------------------------------------------------------------
@@ -538,4 +755,18 @@ TOOL_TITLES: dict[str, str] = {
     "get_act_text": "Act Text",
     "get_act_amendments": "Act Amendment History",
     "get_corresponding_provisions": "IPC/CrPC to BNS/BNSS Mapping",
+    "get_coverage": "India Corpus Coverage",
+    "get_pricing_in": "India Credit Pricing",
+    "get_india_credit_balance": "Credit Balance",
+    "get_act_structure": "Act Table of Contents",
+    "get_act_section": "Act Section Metadata",
+    "get_act_section_body": "Act Section Text",
+    "get_act_status": "Act Status and Repeal Record",
+    "get_section_history": "Section Amendment History",
+    "india_section_references": "Citations From a Section",
+    "india_act_cited_by": "Acts Citing This One",
+    "india_act_definitions": "Defined Terms in an Act",
+    "india_act_subordinate": "Rules Made Under an Act",
+    "resolve_india_citation": "Resolve Indian Citation",
+    "resolve_india_citations_batch": "Resolve Indian Citations (Batch)",
 }

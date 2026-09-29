@@ -84,15 +84,26 @@ def test_annotations_are_derivable_for_every_route(
     jur: str, method: str, path: str, codes: set[str]
 ) -> None:
     annotations = _annotations_for(_route(method, path, codes))
+
+    # ALL THREE, ALWAYS, on every route.
+    #
+    # This used to assert `destructive_hint is None` on a read, on the reasoning
+    # that the field is only meaningful when `readOnlyHint` is false and an
+    # extra key is noise. That reasoning is about the MCP spec; the ChatGPT Apps
+    # review reads a missing or null hint as a BLOCKER rather than a default,
+    # and 22 of 27 tools were shipping with no destructiveHint at all.
+    #
+    # Emitting it costs one boolean and removes the ambiguity a consumer cannot
+    # otherwise resolve: an absent key does not say whether anyone checked.
     assert annotations.read_only_hint is not None
+    assert annotations.destructive_hint is not None
+    assert annotations.open_world_hint is not None
+
+    # A read is never destructive, and a write must say either way: the MCP
+    # default for destructiveHint is TRUE, so a non-destructive write that stays
+    # silent lets a client treat create_watch like delete_watch.
     if annotations.read_only_hint:
-        # destructiveHint is defined as meaningful only when readOnlyHint is
-        # false, so emitting one here would be noise a client must ignore.
-        assert annotations.destructive_hint is None
-    else:
-        # It defaults to TRUE, so a non-destructive write has to say so or a
-        # client is entitled to treat create_watch like delete_watch.
-        assert annotations.destructive_hint is not None
+        assert annotations.destructive_hint is False
 
 
 def test_the_three_post_reads_are_read_only() -> None:
@@ -167,7 +178,11 @@ def test_annotations_serialize_as_camel_case_on_the_wire() -> None:
     def wire(annotations) -> dict:
         return annotations.model_dump(mode="json", exclude_none=True, by_alias=True)
 
-    assert wire(_READ_ONLY) == {"readOnlyHint": True, "openWorldHint": False}
+    assert wire(_READ_ONLY) == {
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "openWorldHint": False,
+    }
     assert wire(_WRITE) == {
         "readOnlyHint": False,
         "destructiveHint": False,
@@ -255,6 +270,19 @@ def test_every_tool_has_a_title_and_no_mangled_acronym(jurisdiction: str) -> Non
         # title" when only the top-level field is set, and then displays a
         # name-derived label instead. Asserting only `mcp_tool.title` passed
         # while the live submission portal flagged all 25 tools.
+        # All three hints, on a BUILT server, so the code-registered `search`
+        # and `fetch` aliases are covered too. The route-derived test above
+        # cannot see them: they never appear in an OpenAPI document, and they
+        # were exactly the two tools still shipping with no destructiveHint
+        # after the derived path was fixed.
+        ann = mcp_tool.annotations
+        assert ann is not None, f"{jurisdiction}/{tool.name} has no annotations"
+        for hint in ("read_only_hint", "destructive_hint", "open_world_hint"):
+            assert getattr(ann, hint) is not None, (
+                f"{jurisdiction}/{tool.name} leaves {hint} unset; a null hint is a "
+                "submission blocker and a client cannot tell it from 'not checked'"
+            )
+
         assert mcp_tool.title, f"{jurisdiction}/{tool.name} has no Tool.title"
         assert mcp_tool.annotations is not None, f"{jurisdiction}/{tool.name} has no annotations"
         assert mcp_tool.annotations.title, (

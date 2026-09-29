@@ -4,6 +4,9 @@
       "inputSchema": {
         "properties": {
           "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
             "maxLength": 200,
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
@@ -11,11 +14,17 @@
           },
           "page": {
             "default": 1,
+            "examples": [
+              1
+            ],
             "minimum": 1.0,
             "type": "integer"
           },
           "pageSize": {
             "default": 100,
+            "examples": [
+              100
+            ],
             "maximum": 200.0,
             "minimum": 1.0,
             "type": "integer"
@@ -23,11 +32,16 @@
           "section": {
             "anyOf": [
               {
+                "maxLength": 40,
+                "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
                 "type": "string"
               },
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "23"
             ]
           },
           "type": {
@@ -38,6 +52,21 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "substitution",
+              "insertion",
+              "omission",
+              "renumbering",
+              "addition",
+              "repeal",
+              "deletion",
+              "adaptation",
+              "amendment",
+              "note"
+            ],
+            "examples": [
+              "substitution"
             ]
           }
         },
@@ -49,10 +78,117 @@
       "method": "GET",
       "path": "/api/v1/in/acts/{act_id}/amendments"
     },
+    "get_act_section": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "section_number": {
+            "examples": [
+              "23"
+            ],
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id",
+          "section_number"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/sections/{section_number}"
+    },
+    "get_act_section_body": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "section_number": {
+            "examples": [
+              "23"
+            ],
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id",
+          "section_number"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/sections/{section_number}/body"
+    },
+    "get_act_status": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/status"
+    },
+    "get_act_structure": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/structure"
+    },
     "get_act_text": {
       "inputSchema": {
         "properties": {
           "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
             "maxLength": 200,
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
@@ -71,6 +207,17 @@
       "inputSchema": {
         "properties": {
           "act_code": {
+            "enum": [
+              "ipc",
+              "crpc",
+              "iea",
+              "bns",
+              "bnss",
+              "bsa"
+            ],
+            "examples": [
+              "ipc"
+            ],
             "pattern": "^(?i:ipc|crpc|iea|bns|bnss|bsa)$",
             "type": "string"
           }
@@ -82,6 +229,318 @@
       },
       "method": "GET",
       "path": "/api/v1/in/acts/corresponding-provisions/{act_code}"
+    },
+    "get_coverage": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/coverage"
+    },
+    "get_india_credit_balance": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/credits/balance"
+    },
+    "get_pricing_in": {
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "anyOf": [
+              {
+                "enum": [
+                  "US",
+                  "IN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/api-credits/pricing"
+    },
+    "get_section_history": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "asOf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2019-03-12"
+            ],
+            "format": "date"
+          },
+          "limit": {
+            "default": 100,
+            "examples": [
+              50
+            ],
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              0
+            ],
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "section_number": {
+            "examples": [
+              "23"
+            ],
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id",
+          "section_number"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/sections/{section_number}/history"
+    },
+    "india_act_cited_by": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_17068"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              25
+            ]
+          },
+          "page": {
+            "default": 1,
+            "examples": [
+              1
+            ],
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              25
+            ]
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/cited-by"
+    },
+    "india_act_definitions": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_central_2114"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              25
+            ]
+          },
+          "page": {
+            "default": 1,
+            "examples": [
+              1
+            ],
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              25
+            ]
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/definitions"
+    },
+    "india_act_subordinate": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_17068"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              25
+            ]
+          },
+          "page": {
+            "default": 1,
+            "examples": [
+              1
+            ],
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageSize": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              25
+            ]
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/subordinate"
+    },
+    "india_section_references": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "IND_state_17068"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "type": "string"
+          },
+          "section_number": {
+            "examples": [
+              "79"
+            ],
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id",
+          "section_number"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}/sections/{section_number}/references"
     },
     "list_act_filters": {
       "inputSchema": {
@@ -103,6 +562,16 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "central",
+              "state",
+              "regulatory",
+              "repealed",
+              "spent"
+            ],
+            "examples": [
+              "central"
             ]
           },
           "department": {
@@ -113,15 +582,24 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "sebi"
             ]
           },
           "page": {
             "default": 1,
+            "examples": [
+              1
+            ],
             "minimum": 1.0,
             "type": "integer"
           },
           "pageSize": {
             "default": 50,
+            "examples": [
+              50
+            ],
             "maximum": 100.0,
             "minimum": 1.0,
             "type": "integer"
@@ -136,10 +614,23 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "income tax"
             ]
           },
           "sort": {
             "default": "year_desc",
+            "enum": [
+              "year_desc",
+              "year_asc",
+              "title_asc",
+              "title_desc",
+              "popular"
+            ],
+            "examples": [
+              "title_asc"
+            ],
             "type": "string"
           },
           "state": {
@@ -150,6 +641,51 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "andaman-and-nicobar-islands",
+              "andaman-nicobar",
+              "andhra-pradesh",
+              "arunachal-pradesh",
+              "assam",
+              "bihar",
+              "central",
+              "chandigarh",
+              "chhattisgarh",
+              "dadra-and-nagar-haveli-and-daman-and-diu",
+              "dadra-nagar-haveli",
+              "delhi",
+              "goa",
+              "gujarat",
+              "haryana",
+              "himachal-pradesh",
+              "jammu-and-kashmir",
+              "jammu-kashmir",
+              "jharkhand",
+              "karnataka",
+              "kerala",
+              "ladakh",
+              "lakshadweep",
+              "madhya-pradesh",
+              "maharashtra",
+              "manipur",
+              "meghalaya",
+              "mizoram",
+              "nagaland",
+              "odisha",
+              "puducherry",
+              "punjab",
+              "rajasthan",
+              "sikkim",
+              "tamil-nadu",
+              "telangana",
+              "tripura",
+              "uttar-pradesh",
+              "uttarakhand",
+              "west-bengal"
+            ],
+            "examples": [
+              "maharashtra"
             ]
           },
           "status": {
@@ -160,26 +696,43 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "in_force",
+              "repealed",
+              "superseded",
+              "spent"
+            ],
+            "examples": [
+              "repealed"
             ]
           },
           "yearFrom": {
             "anyOf": [
               {
+                "maximum": 2100.0,
                 "type": "integer"
               },
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              2015
             ]
           },
           "yearTo": {
             "anyOf": [
               {
+                "maximum": 2100.0,
                 "type": "integer"
               },
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              2024
             ]
           }
         },
@@ -189,9 +742,218 @@
       "method": "GET",
       "path": "/api/v1/in/acts/list"
     },
+    "resolve_india_citation": {
+      "inputSchema": {
+        "properties": {
+          "asAtDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2019-05-01"
+            ],
+            "format": "date"
+          },
+          "cite": {
+            "examples": [
+              "u/s 302 IPC"
+            ],
+            "maxLength": 200,
+            "minLength": 2,
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "andaman-and-nicobar-islands",
+              "andaman-nicobar",
+              "andhra-pradesh",
+              "arunachal-pradesh",
+              "assam",
+              "bihar",
+              "central",
+              "chandigarh",
+              "chhattisgarh",
+              "dadra-and-nagar-haveli-and-daman-and-diu",
+              "dadra-nagar-haveli",
+              "delhi",
+              "goa",
+              "gujarat",
+              "haryana",
+              "himachal-pradesh",
+              "jammu-and-kashmir",
+              "jammu-kashmir",
+              "jharkhand",
+              "karnataka",
+              "kerala",
+              "ladakh",
+              "lakshadweep",
+              "madhya-pradesh",
+              "maharashtra",
+              "manipur",
+              "meghalaya",
+              "mizoram",
+              "nagaland",
+              "odisha",
+              "puducherry",
+              "punjab",
+              "rajasthan",
+              "sikkim",
+              "tamil-nadu",
+              "telangana",
+              "tripura",
+              "uttar-pradesh",
+              "uttarakhand",
+              "west-bengal"
+            ],
+            "examples": [
+              "maharashtra"
+            ]
+          }
+        },
+        "required": [
+          "cite"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/resolve"
+    },
+    "resolve_india_citations_batch": {
+      "inputSchema": {
+        "properties": {
+          "asAtDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2019-05-01"
+            ],
+            "format": "date"
+          },
+          "citations": {
+            "examples": [
+              [
+                "u/s 302 IPC",
+                "Section 138 of the Negotiable Instruments Act",
+                "Art. 21 Constitution"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "andaman-and-nicobar-islands",
+              "andaman-nicobar",
+              "andhra-pradesh",
+              "arunachal-pradesh",
+              "assam",
+              "bihar",
+              "central",
+              "chandigarh",
+              "chhattisgarh",
+              "dadra-and-nagar-haveli-and-daman-and-diu",
+              "dadra-nagar-haveli",
+              "delhi",
+              "goa",
+              "gujarat",
+              "haryana",
+              "himachal-pradesh",
+              "jammu-and-kashmir",
+              "jammu-kashmir",
+              "jharkhand",
+              "karnataka",
+              "kerala",
+              "ladakh",
+              "lakshadweep",
+              "madhya-pradesh",
+              "maharashtra",
+              "manipur",
+              "meghalaya",
+              "mizoram",
+              "nagaland",
+              "odisha",
+              "puducherry",
+              "punjab",
+              "rajasthan",
+              "sikkim",
+              "tamil-nadu",
+              "telangana",
+              "tripura",
+              "uttar-pradesh",
+              "uttarakhand",
+              "west-bengal"
+            ],
+            "examples": [
+              "maharashtra"
+            ]
+          }
+        },
+        "required": [
+          "citations"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/in/acts/resolve"
+    },
     "search_acts": {
       "inputSchema": {
         "properties": {
+          "actStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "in_force",
+              "repealed",
+              "superseded",
+              "spent"
+            ],
+            "examples": [
+              "repealed"
+            ]
+          },
           "actTitle": {
             "anyOf": [
               {
@@ -200,6 +962,9 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "Bharatiya Nyaya Sanhita"
             ]
           },
           "category": {
@@ -210,6 +975,16 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "central",
+              "state",
+              "regulatory",
+              "repealed",
+              "spent"
+            ],
+            "examples": [
+              "central"
             ]
           },
           "department": {
@@ -220,21 +995,127 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "sebi"
             ]
+          },
+          "excludeRepealed": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "isSubordinate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              false
+            ]
+          },
+          "legalSubject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "administrative_law",
+              "banking_finance",
+              "civil_procedure",
+              "constitutional_law",
+              "corporate_law",
+              "criminal_law",
+              "environmental_law",
+              "family_law",
+              "general",
+              "information_technology",
+              "intellectual_property",
+              "labour_law",
+              "property_law",
+              "tax_law"
+            ],
+            "examples": [
+              "tax_law"
+            ]
+          },
+          "matchType": {
+            "default": "any",
+            "enum": [
+              "any",
+              "all",
+              "phrase"
+            ],
+            "examples": [
+              "phrase"
+            ],
+            "type": "string"
           },
           "page": {
             "default": 1,
+            "examples": [
+              1
+            ],
             "minimum": 1.0,
             "type": "integer"
           },
           "pageSize": {
             "default": 10,
+            "examples": [
+              10
+            ],
             "maximum": 50.0,
             "minimum": 1.0,
             "type": "integer"
           },
+          "provisionType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "mandatory",
+              "general",
+              "prohibitory",
+              "overriding",
+              "discretionary",
+              "declaratory"
+            ],
+            "examples": [
+              "mandatory"
+            ]
+          },
           "query": {
-            "maxLength": 10000,
+            "examples": [
+              "assessment of a registered dealer"
+            ],
+            "maxLength": 1000,
             "minLength": 2,
             "type": "string"
           },
@@ -246,6 +1127,42 @@
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              "498A"
+            ]
+          },
+          "sectionType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "amendment_provision",
+              "article",
+              "body",
+              "chapter_heading",
+              "definition_clause",
+              "definitions",
+              "part_heading",
+              "preamble",
+              "schedule",
+              "section",
+              "short_title",
+              "sub_section"
+            ],
+            "examples": [
+              "definitions"
             ]
           },
           "state": {
@@ -256,26 +1173,79 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "andaman-and-nicobar-islands",
+              "andaman-nicobar",
+              "andhra-pradesh",
+              "arunachal-pradesh",
+              "assam",
+              "bihar",
+              "central",
+              "chandigarh",
+              "chhattisgarh",
+              "dadra-and-nagar-haveli-and-daman-and-diu",
+              "dadra-nagar-haveli",
+              "delhi",
+              "goa",
+              "gujarat",
+              "haryana",
+              "himachal-pradesh",
+              "jammu-and-kashmir",
+              "jammu-kashmir",
+              "jharkhand",
+              "karnataka",
+              "kerala",
+              "ladakh",
+              "lakshadweep",
+              "madhya-pradesh",
+              "maharashtra",
+              "manipur",
+              "meghalaya",
+              "mizoram",
+              "nagaland",
+              "odisha",
+              "puducherry",
+              "punjab",
+              "rajasthan",
+              "sikkim",
+              "tamil-nadu",
+              "telangana",
+              "tripura",
+              "uttar-pradesh",
+              "uttarakhand",
+              "west-bengal"
+            ],
+            "examples": [
+              "maharashtra"
             ]
           },
           "yearFrom": {
             "anyOf": [
               {
+                "maximum": 2100.0,
                 "type": "integer"
               },
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              2015
             ]
           },
           "yearTo": {
             "anyOf": [
               {
+                "maximum": 2100.0,
                 "type": "integer"
               },
               {
                 "type": "null"
               }
+            ],
+            "examples": [
+              2024
             ]
           }
         },
@@ -289,6 +1259,251 @@
     }
   },
   "US": {
+    "count_statute_sections": {
+      "inputSchema": {
+        "properties": {
+          "actStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "repealed"
+            ]
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "554"
+            ]
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "tx_26"
+            ]
+          },
+          "corpusType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "USC",
+                  "CFR",
+                  "STATE",
+                  "CONSTITUTION",
+                  "FEDERAL_RULES",
+                  "STATE_CONSTITUTION",
+                  "STATE_RULES",
+                  "EXECUTIVE_ACTION",
+                  "REGULATION",
+                  "FEDERAL_REGISTER",
+                  "FEDERAL_REGISTER_NOTICE",
+                  "AGENCY_GUIDANCE",
+                  "SENTENCING_GUIDELINES",
+                  "US_TAX_TREATY",
+                  "STATE_AGENCY_GUIDANCE",
+                  "STATE_AG_OPINION",
+                  "SESSION_LAW",
+                  "STATUTE_COMPILATION",
+                  "AGENCY_ADJUDICATION",
+                  "CFR_ANNUAL",
+                  "USC_ANNUAL"
+                ],
+                "type": "string"
+              },
+              {
+                "items": {
+                  "enum": [
+                    "USC",
+                    "CFR",
+                    "STATE",
+                    "CONSTITUTION",
+                    "FEDERAL_RULES",
+                    "STATE_CONSTITUTION",
+                    "STATE_RULES",
+                    "EXECUTIVE_ACTION",
+                    "REGULATION",
+                    "FEDERAL_REGISTER",
+                    "FEDERAL_REGISTER_NOTICE",
+                    "AGENCY_GUIDANCE",
+                    "SENTENCING_GUIDELINES",
+                    "US_TAX_TREATY",
+                    "STATE_AGENCY_GUIDANCE",
+                    "STATE_AG_OPINION",
+                    "SESSION_LAW",
+                    "STATUTE_COMPILATION",
+                    "AGENCY_ADJUDICATION",
+                    "CFR_ANNUAL",
+                    "USC_ANNUAL"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "REGULATION"
+            ]
+          },
+          "excludeRepealed": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "part": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "240"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "enum": [
+              "federal",
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
+            ],
+            "examples": [
+              "tx"
+            ]
+          },
+          "titleNumber": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              42
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/statutes/count"
+    },
     "create_watch": {
       "inputSchema": {
         "$defs": {
@@ -497,9 +1712,33 @@
       "method": "DELETE",
       "path": "/api/v1/watches/{watch_id}"
     },
-    "get_pricing": {
+    "get_credit_balance": {
       "inputSchema": {
         "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/credits/balance"
+    },
+    "get_pricing": {
+      "inputSchema": {
+        "properties": {
+          "region": {
+            "anyOf": [
+              {
+                "enum": [
+                  "US",
+                  "IN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
         "required": [],
         "type": "object"
       },
@@ -706,6 +1945,13 @@
             "maxItems": 50,
             "minItems": 1,
             "type": "array"
+          },
+          "includeBody": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
           }
         },
         "required": [
@@ -759,7 +2005,8 @@
             ],
             "examples": [
               "2026-01-15"
-            ]
+            ],
+            "format": "date"
           },
           "format": {
             "default": "both",
@@ -767,10 +2014,11 @@
               "both",
               "html",
               "plain",
-              "content"
+              "content",
+              "operative"
             ],
             "examples": [
-              "content"
+              "operative"
             ],
             "type": "string"
           },
@@ -914,6 +2162,16 @@
     "list_statute_divisions": {
       "inputSchema": {
         "properties": {
+          "actStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "chapter": {
             "anyOf": [
               {
@@ -951,6 +2209,20 @@
               "USC"
             ],
             "type": "string"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "excludeRepealed": {
+            "default": false,
+            "type": "boolean"
           },
           "part": {
             "anyOf": [
@@ -1208,6 +2480,13 @@
                 "type": "null"
               }
             ],
+            "enum": [
+              "CONSTITUTION",
+              "REGULATION",
+              "STATE",
+              "STATE_CONSTITUTION",
+              "STATE_RULES"
+            ],
             "examples": [
               "REGULATION"
             ]
@@ -1222,6 +2501,60 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
             ],
             "examples": [
               "tx"
@@ -1250,6 +2583,7 @@
             "items": {
               "type": "string"
             },
+            "maxItems": 500,
             "minItems": 1,
             "type": "array"
           },
@@ -1261,6 +2595,13 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "CONSTITUTION",
+              "REGULATION",
+              "STATE",
+              "STATE_CONSTITUTION",
+              "STATE_RULES"
             ],
             "examples": [
               "REGULATION"
@@ -1276,6 +2617,60 @@
               {
                 "type": "null"
               }
+            ],
+            "enum": [
+              "al",
+              "ak",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
             ],
             "examples": [
               "ca"
@@ -1314,6 +2709,7 @@
               "expired",
               "in_force",
               "inactive",
+              "non_precedential",
               "not_funded",
               "not_yet_effective",
               "omitted",
@@ -1333,6 +2729,7 @@
               "transferred",
               "unconstitutional",
               "vacant",
+              "vacated",
               "vetoed",
               "withdrawn"
             ],
@@ -1371,7 +2768,8 @@
             ],
             "examples": [
               "2026-08-01"
-            ]
+            ],
+            "format": "date"
           },
           "chapter": {
             "anyOf": [
@@ -1425,13 +2823,17 @@
                   "EXECUTIVE_ACTION",
                   "REGULATION",
                   "FEDERAL_REGISTER",
+                  "FEDERAL_REGISTER_NOTICE",
                   "AGENCY_GUIDANCE",
                   "SENTENCING_GUIDELINES",
                   "US_TAX_TREATY",
                   "STATE_AGENCY_GUIDANCE",
+                  "STATE_AG_OPINION",
                   "SESSION_LAW",
                   "STATUTE_COMPILATION",
-                  "AGENCY_ADJUDICATION"
+                  "AGENCY_ADJUDICATION",
+                  "CFR_ANNUAL",
+                  "USC_ANNUAL"
                 ],
                 "type": "string"
               },
@@ -1448,13 +2850,17 @@
                     "EXECUTIVE_ACTION",
                     "REGULATION",
                     "FEDERAL_REGISTER",
+                    "FEDERAL_REGISTER_NOTICE",
                     "AGENCY_GUIDANCE",
                     "SENTENCING_GUIDELINES",
                     "US_TAX_TREATY",
                     "STATE_AGENCY_GUIDANCE",
+                    "STATE_AG_OPINION",
                     "SESSION_LAW",
                     "STATUTE_COMPILATION",
-                    "AGENCY_ADJUDICATION"
+                    "AGENCY_ADJUDICATION",
+                    "CFR_ANNUAL",
+                    "USC_ANNUAL"
                   ],
                   "type": "string"
                 },
@@ -1543,6 +2949,7 @@
               "citationShort",
               "committeeNote",
               "corpusType",
+              "court",
               "crossReferencesCfr",
               "crossReferencesUsc",
               "currencyNote",
@@ -1557,10 +2964,13 @@
               "docxUrl",
               "edition",
               "effectiveDate",
+              "effectiveDateRaw",
               "excerpt",
               "expirationDate",
+              "expirationDateRaw",
               "externalUrl",
               "federalRegisterCitations",
+              "forum",
               "frCommentsCloseOn",
               "frCorrectionOf",
               "frCorrections",
@@ -1581,6 +2991,7 @@
               "htmlUrl",
               "implementingRegulations",
               "issueDate",
+              "issueDateRaw",
               "issuingAgency",
               "languageCode",
               "lastAmendedDate",
@@ -1588,6 +2999,7 @@
               "lawImplemented",
               "licenseNote",
               "originalEnactmentDate",
+              "originalEnactmentDateRaw",
               "packageId",
               "parent",
               "part",
@@ -1603,11 +3015,14 @@
               "publisherKey",
               "referencedShortTitles",
               "relatedCitations",
+              "relatedDocuments",
               "releaseDate",
               "relevanceScore",
               "renumberedTo",
+              "renumberedToLabel",
               "requesters",
               "rescindedOn",
+              "rescindedOnRaw",
               "reviewDate",
               "ruleSet",
               "ruleSetCode",
@@ -1615,6 +3030,7 @@
               "sectionTitle",
               "settlementAmount",
               "signingDate",
+              "signingDateRaw",
               "source",
               "sourceCharEnd",
               "sourceCharStart",
@@ -1643,6 +3059,7 @@
               "topLevelTitle",
               "topics",
               "transferredTo",
+              "transferredToLabel",
               "versionId",
               "volume",
               "wordCount",
@@ -1719,7 +3136,8 @@
             ],
             "examples": [
               "2024-01-01"
-            ]
+            ],
+            "format": "date"
           },
           "publishedTo": {
             "anyOf": [
@@ -1733,7 +3151,8 @@
             ],
             "examples": [
               "2024-12-31"
-            ]
+            ],
+            "format": "date"
           },
           "query": {
             "examples": [
@@ -1760,10 +3179,17 @@
             ],
             "enum": [
               "administrative_guidance",
+              "ag_precedent",
               "agency_guidance",
+              "bia_precedent",
               "bis_advisory_opinion",
+              "cfpb_circular",
+              "cfpb_enforcement_action",
+              "cfpb_supervisory_guidance",
               "cftc_staff_letter",
+              "cms_iom",
               "copyright_circular",
+              "copyright_compendium",
               "cpsc_advisory_opinion",
               "cpsc_secg",
               "ddtc_commodity_jurisdiction",
@@ -1771,12 +3197,18 @@
               "dfars",
               "dfars_pgi",
               "doe_appliance_guidance",
+              "doj_business_review",
               "doj_justice_manual",
               "doj_leniency",
+              "eeoc_guidance",
               "far",
               "fcc_declaratory_ruling",
               "fdic_fil",
               "ferc_policy_statement",
+              "fincen_amla_material",
+              "fincen_boi_compliance_guide",
+              "fincen_boi_faq",
+              "fincen_boi_rule_qa",
               "fincen_guidance",
               "fincen_ruling",
               "frap",
@@ -1785,32 +3217,46 @@
               "frcp",
               "frcrp",
               "fre",
+              "ftc_administrative_decision",
+              "ftc_advisory_opinion",
+              "ftc_advocacy_filing",
+              "ftc_hsr_interpretation",
+              "ftc_policy_statement",
               "hhs_ocr_hipaa_faq",
               "hhs_ocr_hipaa_guidance",
               "hhs_ocr_resolution_agreement",
+              "immigration_admin_precedent",
               "irs_announcement",
+              "irs_irm",
               "irs_notice",
               "irs_rev_proc",
               "irs_rev_rul",
+              "irs_written_determination",
               "merger_guidelines",
               "mpep",
               "mspb_nonprecedential",
               "mspb_precedential",
               "nlrb_advice_memo",
+              "nlrb_board_decision",
               "nlrb_gc_memo",
               "occ_bulletin",
               "occ_interpretive_letter",
+              "ofac_faq",
               "olc_opinion",
               "sct",
+              "sec_commission_opinion",
               "senate_treaty",
               "senate_treaty_document",
               "senate_treaty_resolution",
               "ssa_ruling",
+              "state_financial_bulletin",
               "state_insurance_bulletin",
               "tmep",
               "us_tax_treaty",
               "us_tax_treaty_technical_explanation",
-              "uscis_policy_manual"
+              "uscis_policy_manual",
+              "whd_foh",
+              "whd_opinion_letter"
             ],
             "examples": [
               "sct"

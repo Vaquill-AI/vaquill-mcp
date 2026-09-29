@@ -178,5 +178,8 @@ async def test_prompts_do_not_inflate_the_tool_budget(
     deliberately. Adding six prompts must not have added six tools.
     """
     server = _server(jurisdiction, monkeypatch, respx_mock)
-    expected = 25 if jurisdiction == "US" else 8
+    # 27 US and 22 IN as of 2026-09-19. The India figure jumped from 8 when
+    # the September India redesign landed and the committed fixtures were
+    # finally refreshed to match the live document.
+    expected = 27 if jurisdiction == "US" else 22
     assert len(await server.list_tools()) == expected

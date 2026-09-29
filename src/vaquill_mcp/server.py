@@ -33,6 +33,7 @@ from mcp.types import ToolAnnotations
 
 from vaquill_mcp import __version__
 from vaquill_mcp.aliases import register_aliases
+from vaquill_mcp.client_identity import make_client_stamp
 from vaquill_mcp.config import (
     get_api_key,
     get_base_url,
@@ -396,7 +397,14 @@ _READ_ONLY_POSTS: frozenset[str] = frozenset(
         "/us/statutes/search",
         "/us/statutes/sections",
         "/us/statutes/resolve",
+        # Returns a COUNT for a scope and changes nothing. POST only because the
+        # filter set is too large for a query string, the same reason /search is.
+        # Absent here it fell to the write default, so a client that gates writes
+        # asked for approval before counting rows.
+        "/us/statutes/count",
         "/in/acts/search",
+        # POST-as-query: resolves a batch of citations and writes nothing.
+        "/in/acts/resolve",
     }
 )
 
@@ -431,7 +439,15 @@ _ACKNOWLEDGED_WRITE_POSTS: frozenset[str] = frozenset({"/watches/test"})
 # clients that vet a server also expect all three hints present rather than
 # inferred, and two of the three were already set, so leaving this one to its
 # default understated the server on the one field it gets wrong by default.
-_READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
+# `destructive_hint=False` is EXPLICIT, not redundant. An unset hint is
+# omitted from the wire payload entirely, and a client cannot tell "unset"
+# from "checked, and false". The ChatGPT Apps review treats a missing or
+# null hint as a submission blocker rather than a default, so all three are
+# always emitted. Measured 2026-09-19: 22 of 27 tools were shipping with no
+# destructiveHint at all.
+_READ_ONLY = ToolAnnotations(
+    read_only_hint=True, destructive_hint=False, open_world_hint=False
+)
 _WRITE = ToolAnnotations(
     read_only_hint=False, destructive_hint=False, open_world_hint=False
 )
@@ -627,12 +643,17 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
     # The auth header is set on the client so ALL requests carry it.
     # The pricing endpoint ignores the extra header (it's unauthenticated).
     # Timeout is generous (120s default) because /ask in deep mode can take 90s.
+    user_agent = f"vaquill-mcp/{__version__}"
     client = httpx2.AsyncClient(
         base_url=base_url,
         headers={
             "Authorization": f"Bearer {api_key}",
-            "User-Agent": f"vaquill-mcp/{__version__}",
+            "User-Agent": user_agent,
         },
+        # As on the remote server: name the MCP client on each outbound
+        # request. One process serves one user here, but it still serves them
+        # from whichever client they launched it in. See client_identity.py.
+        event_hooks={"request": [make_client_stamp(user_agent)]},
         timeout=httpx2.Timeout(timeout, connect=10.0),
     )
 

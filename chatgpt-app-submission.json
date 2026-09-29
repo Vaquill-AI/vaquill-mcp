@@ -1,0 +1,404 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "Vaquill AI Primary Law",
+    "subtitle": "US statutes and regulations",
+    "description": "Vaquill AI gives ChatGPT direct access to United States primary law, ingested from official government publishers and cited back to them. It covers the US Code and the Code of Federal Regulations, all 50 state statutory codes plus DC and Puerto Rico, state administrative regulations, federal and state court rules and constitutions, agency guidance from 51 named sources, agency adjudications, the Statutes at Large and the Federal Register: roughly 5.8 million sections, including repealed and historical provisions kept with their status.\n\nSearch every corpus at once or scope to one jurisdiction, body of law or status. Resolve a citation such as 42 U.S.C. 1983 to the exact provision it names. Read a section's operative text, or read it as it stood on a past date and see what changed. Walk a code's hierarchy, find the sections that cite a provision, the terms it defines, its neighbours and the equivalent rule in other states. Optionally watch a body of law and be told when it changes.\n\nEvery legal-record result carries its official source URL and the publisher's own status for that section. The derived good-law verdict reports what the PUBLISHER records about repeal or supersession; it is not a judicial-validity check, and where currency cannot be vouched for it reports unknown rather than over-claiming. Coverage is self-describing, so an empty result can be told apart from an absence of law.",
+    "category": "PRODUCTIVITY"
+  },
+  "tools": {
+    "count_statute_sections": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Counts the sections inside a requested scope and returns a number without reading or altering any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "create_watch": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a law-change subscription in the caller's own Vaquill account and writes nothing elsewhere.",
+        "open_world_justification": "Writes only inside the caller's own bounded Vaquill account and does not reach an open-ended set of external entities.",
+        "destructive_justification": "Creates or updates a subscription the caller owns and performs no irreversible action."
+      }
+    },
+    "delete_watch": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Deletes a law-change subscription the caller owns, which cannot be recovered afterwards.",
+        "open_world_justification": "Writes only inside the caller's own bounded Vaquill account and does not reach an open-ended set of external entities.",
+        "destructive_justification": "Deletes the caller's law-change subscription, which cannot be recovered."
+      }
+    },
+    "fetch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves the stored text of one law section by identifier, URL or citation and does not modify data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_credit_balance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Reads the caller's current credit balance and does not spend, grant or alter it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_pricing": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the published per-endpoint credit prices and does not change any account state.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_section_changes": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the recorded amendment timeline for a section without modifying it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_section_cited_by": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the sections whose text cites a given section and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_section_cross_state": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns equivalent provisions in other states and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_section_definitions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the defined terms governing a section and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_section_neighbors": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the sections adjacent to a given one and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_sections_batch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns stored records for several sections in one request without modifying them.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_statute_section": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns stored metadata for one section and does not change it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_statute_section_text": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the stored text of one section and does not change it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_watch_change_diff": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the stored before-and-after text for one recorded change and does not modify it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_boards": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the corpora that can be watched, with their refresh cadence, and changes nothing.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_statute_divisions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the divisions inside a code and returns them without modifying data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_statutes_coverage": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns counts describing what the corpus holds and does not change any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_watch_changes": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the change events recorded against a subscription without altering it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_watch_deliveries": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the delivery attempts for a subscription without altering it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_watches": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the caller's existing law-change subscriptions without altering them.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "resolve_statute_citation": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Looks up the provision a citation names and returns it without modifying data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "resolve_statute_citations_batch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Looks up several citations in one request and returns the matches without modifying data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "search": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs a ranked query over Vaquill's own corpus of United States primary law and returns matching records without changing anything.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "search_us_statutes": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs a filtered search over the stored statute corpus and returns matching sections without writing.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "test_watch": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Sends a test delivery for the caller's own subscription and records that attempt against it.",
+        "open_world_justification": "Writes only inside the caller's own bounded Vaquill account and does not reach an open-ended set of external entities.",
+        "destructive_justification": "Creates or updates a subscription the caller owns and performs no irreversible action."
+      }
+    },
+    "update_watch": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Updates the settings of a subscription the caller already owns and writes nothing elsewhere.",
+        "open_world_justification": "Writes only inside the caller's own bounded Vaquill account and does not reach an open-ended set of external entities.",
+        "destructive_justification": "Creates or updates a subscription the caller owns and performs no irreversible action."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Confirm the connection and check what the corpus holds for a state.",
+      "user_prompt": "What does Vaquill hold for California law?",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_statutes_coverage",
+      "expected_output": "Per-corpus section counts for California across statutes, regulations, court rules, the state constitution and agency guidance, with the date they were measured.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Resolve a citation the user supplies rather than a research topic.",
+      "user_prompt": "Resolve the citation 42 U.S.C. 1983.",
+      "file_attachment_urls": null,
+      "tools_triggered": "resolve_statute_citation",
+      "expected_output": "The exact provision, its title, its publisher status and an official government source URL, plus the identifier other tools accept.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Read the operative wording of a known section.",
+      "user_prompt": "Show me the full text of 42 U.S.C. 1983.",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_us_statute_section_text",
+      "expected_output": "The operative text of the section with the source credit separated out, and the date the publisher states the text is current through.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Answer a substantive question by searching the corpus.",
+      "user_prompt": "What federal law creates a civil action for deprivation of rights under color of law?",
+      "file_attachment_urls": null,
+      "tools_triggered": "search_us_statutes",
+      "expected_output": "Ranked sections with citations, corpus, status and official source URLs, with the controlling provision near the top and quoted only from the returned text.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Compare how several states word the same rule.",
+      "user_prompt": "How do Texas, Florida and New York each word their non-compete rule?",
+      "file_attachment_urls": null,
+      "tools_triggered": "get_section_cross_state",
+      "expected_output": "The equivalent provision in each named state with its own citation and source URL, and an explicit note for any state where no equivalent is held.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not trigger for the law of another country.",
+      "user_prompt": "What does Ontario's Employment Standards Act say about termination notice?",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked. The corpus is United States only, and a US provision must not be returned as though it answered a Canadian question.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for an unrelated language task.",
+      "user_prompt": "Translate this paragraph into French: the quick brown fox jumps over the lazy dog.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked. Nothing about the request is legal research, and calling a metered legal API would charge the user for nothing.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for real-time market data.",
+      "user_prompt": "What is Apple's share price right now?",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked. Market data is outside the corpus entirely and the app holds no pricing or securities data.",
+      "expected_output_url": null
+    }
+  ]
+}
