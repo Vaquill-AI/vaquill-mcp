@@ -45,7 +45,10 @@ Each server is built for exactly one jurisdiction and derives every tool from
 that jurisdiction's OpenAPI document. The two documents are disjoint by
 construction (see the backend's `test_jurisdiction_openapi_separation.py`), so
 the US app cannot expose an Indian tool: there is no India path in the spec it
-read. Nothing filters anything, which is why nothing can be filtered wrongly.
+read. Nothing filters by jurisdiction, which is why nothing can be filtered
+wrongly. (The one filter that does exist, `_ROUTE_MAPS` in server.py, drops
+routes by PRODUCT decision, such as the law-change alert routes, and applies
+identically to both jurisdictions and to the stdio server.)
 
 `remote_main` mounts both apps in one process, at `/s/{api_key}` and
 `/in/s/{api_key}`. That is a routing decision, not an isolation one: a caller

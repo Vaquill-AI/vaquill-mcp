@@ -130,6 +130,19 @@ async def test_the_hosted_catalogue_matches_the_stdio_one(
         assert hosted == stdio, jurisdiction
 
 
+async def test_the_hosted_us_app_publishes_no_alert_tools(_live_api: None) -> None:
+    """`/mcp` and `/s/{api_key}` serve the same app, built here, and it must not
+    publish the law-change alert tools any more than stdio does. India is built
+    too, to prove the exclusion leaves its catalogue untouched."""
+    from vaquill_mcp.remote import create_remote_server
+
+    us = {t.name for t in await create_remote_server("US").list_tools()}
+    india = {t.name for t in await create_remote_server("IN").list_tools()}
+    assert not [n for n in us if "watch" in n or "board" in n], sorted(us)
+    assert len(us) == 18, sorted(us)
+    assert len(india) == 22, sorted(india)
+
+
 async def test_every_mounted_app_sorts_and_annotates(_live_api: None) -> None:
     """The two optimisations have to hold on the hosted path too, which is the
     one nearly every customer actually uses."""

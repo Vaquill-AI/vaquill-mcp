@@ -18,6 +18,8 @@ from vaquill_mcp.server import (
     _make_customize_component,
     _pricing_endpoint_for_route,
     create_server,
+    is_excluded_route,
+    published_tool_names,
 )
 
 # A synthetic OpenAPI spec exercising the real operationId shapes: FastAPI's
@@ -78,25 +80,15 @@ def _load_prod_operations() -> dict[str, str]:
 
 _PROD_OPERATIONS: dict[str, str] = _load_prod_operations()
 
-# Methods matter only for building a spec-shaped dict; one op per (path, method).
-_METHOD_BY_OP = {
-    "create_watch_api_v1_watches_post": "post",
-    "update_watch_api_v1_watches__watch_id__patch": "patch",
-    "delete_watch_api_v1_watches__watch_id__delete": "delete",
-    "search_statutes_api_v1_us_statutes_search_post": "post",
-    "get_sections_batch_api_v1_us_statutes_sections_post": "post",
-    "test_watch_api_v1_watches__watch_id__test_post": "post",
-}
-
-
 def _prod_spec() -> dict:
     """The published US document itself, not a reconstruction of it.
 
     This used to rebuild a synthetic spec from `_PROD_OPERATIONS` plus a
     hand-kept `_METHOD_BY_OP`, and the reconstruction lost information: two
     operations share `/us/statutes/resolve` (GET resolve_statute_citation and
-    POST resolve_statute_citations_batch), an operation missing from the method
-    map defaulted to "get", and the second one silently overwrote the first.
+    POST resolve_statute_citations_batch), an operation missing from a hand-kept
+    method map defaulted to "get", and the second one silently overwrote the
+    first.
     Reading the real document removes both the second hand-kept list and the
     class of bug where the fixture disagrees with production.
     """
@@ -108,12 +100,12 @@ def _prod_spec() -> dict:
 
 
 def _production_tool_names() -> set[str]:
-    """Tool names FastMCP will publish for the production spec."""
-    spec = _prod_spec()
-    names = _derive_mcp_names(spec)
-    # An explicit operation_id has no `_api_v1_` marker, so it is absent from
-    # the derived map and FastMCP uses the raw id as the tool name.
-    return {names.get(op_id, op_id) for op_id in _PROD_OPERATIONS}
+    """Tool names FastMCP will publish for the production spec.
+
+    Routes `_ROUTE_MAPS` excludes (the law-change alert routes) are in the
+    document but not in the catalogue, so they are not counted here.
+    """
+    return published_tool_names(_prod_spec())
 
 
 def _india_tool_names() -> set[str]:
@@ -131,13 +123,7 @@ def _india_tool_names() -> set[str]:
     spec = json.loads(
         (pathlib.Path(__file__).parent / "fixtures" / "openapi_in.json").read_text()
     )
-    names = _derive_mcp_names(spec)
-    out: set[str] = set()
-    for item in spec["paths"].values():
-        for op in item.values():
-            if isinstance(op, dict) and (oid := op.get("operationId")):
-                out.add(names.get(oid, oid))
-    return out
+    return published_tool_names(spec)
 
 
 # The production pricing matrix, as endpoint -> credits. Mirrors
@@ -158,12 +144,7 @@ _PROD_PRICING_ENDPOINTS = {
     "/us/statutes/divisions",
     "/us/statutes/coverage",
     "/us/statutes/laws",
-    "/boards",
-    "/watches",
-    "/watches/test",
-    "/watches/changes",
-    "/watches/deliveries",
-    "/watches/changes/diff",
+    "/credits/balance",
 }
 
 
@@ -228,22 +209,83 @@ class TestMCPNames:
 
 
 class TestRouteExclusion:
-    """Verify the streaming endpoint is excluded."""
+    """Verify exactly the intended routes are excluded, and nothing else."""
+
+    # The nine law-change alert operations, as (method, path). Written out on
+    # purpose: the exclusion patterns are the thing under test, so deriving the
+    # expectation from them would make this check agree with itself.
+    _ALERT_ROUTES = {
+        ("GET", "/api/v1/boards"),
+        ("GET", "/api/v1/watches"),
+        ("POST", "/api/v1/watches"),
+        ("PATCH", "/api/v1/watches/{watch_id}"),
+        ("DELETE", "/api/v1/watches/{watch_id}"),
+        ("GET", "/api/v1/watches/{watch_id}/changes"),
+        ("GET", "/api/v1/watches/{watch_id}/changes/{change_id}/diff"),
+        ("GET", "/api/v1/watches/{watch_id}/deliveries"),
+        ("POST", "/api/v1/watches/{watch_id}/test"),
+    }
+
+    @staticmethod
+    def _routes(jurisdiction: str) -> set[tuple[str, str]]:
+        import json
+
+        spec = json.loads(
+            (
+                pathlib.Path(__file__).parent
+                / "fixtures"
+                / f"openapi_{jurisdiction.lower()}.json"
+            ).read_text()
+        )
+        return {
+            (method.upper(), path)
+            for path, item in spec["paths"].items()
+            for method, op in item.items()
+            if isinstance(op, dict) and op.get("operationId")
+        }
 
     def test_stream_route_excluded(self) -> None:
-        assert len(_ROUTE_MAPS) == 1
-        route_map = _ROUTE_MAPS[0]
-        assert route_map.pattern is not None
+        assert is_excluded_route("POST", "/api/v1/ask/stream")
+        assert not is_excluded_route("POST", "/api/v1/ask")
 
-        pattern = re.compile(route_map.pattern)
-        assert pattern.search("/api/v1/ask/stream") is not None
-        assert pattern.search("/api/v1/ask") is None
+    def test_every_route_map_excludes(self) -> None:
+        """Nothing here re-types a route; each map exists only to drop one."""
+        from fastmcp.server.providers.openapi import MCPType
 
-    def test_non_stream_routes_not_excluded(self) -> None:
-        """Regular endpoints should not match the exclusion pattern."""
-        pattern = re.compile(_ROUTE_MAPS[0].pattern)
-        assert pattern.search("/api/v1/research/search") is None
-        assert pattern.search("/api/v1/citations/resolve") is None
+        assert _ROUTE_MAPS
+        for route_map in _ROUTE_MAPS:
+            assert route_map.mcp_type == MCPType.EXCLUDE
+            assert route_map.methods == "*"
+            assert not route_map.tags
+
+    def test_us_exclusions_are_exactly_the_alert_routes(self) -> None:
+        """Both directions against the real document: every alert route is
+        dropped, and no other US route is."""
+        routes = self._routes("US")
+        assert self._ALERT_ROUTES <= routes, (
+            "the US fixture no longer carries every alert route, so this check "
+            f"would pass vacuously: missing {sorted(self._ALERT_ROUTES - routes)}"
+        )
+        excluded = {r for r in routes if is_excluded_route(*r)}
+        assert excluded == self._ALERT_ROUTES
+
+    def test_no_india_route_is_excluded(self) -> None:
+        routes = self._routes("IN")
+        assert routes
+        assert not {r for r in routes if is_excluded_route(*r)}
+
+    def test_exclusions_are_anchored(self) -> None:
+        """A route that merely contains the word must survive."""
+        for path in (
+            "/api/v1/us/statutes/watches",
+            "/api/v1/watchesx",
+            "/api/v1/us/boards",
+            "/api/v1/boardsx",
+            "/api/v1/research/search",
+            "/api/v1/citations/resolve",
+            "/api/v1/us/statutes/section/{act_id}/changes",
+        ):
+            assert not is_excluded_route("GET", path), path
 
 
 class TestDescriptions:
@@ -399,10 +441,11 @@ class TestCostInjection:
             "/api/v1/us/statutes/section/{act_id}": "/us/statutes/section",
             "/api/v1/us/statutes/section/{act_id}/body": "/us/statutes/section/body",
             "/api/v1/us/statutes/section/{act_id}/cited-by": "/us/statutes/section/cited-by",
-            "/api/v1/watches": "/watches",
-            "/api/v1/watches/{watch_id}/test": "/watches/test",
-            "/api/v1/watches/{watch_id}/changes": "/watches/changes",
-            "/api/v1/watches/{watch_id}/changes/{change_id}/diff": "/watches/changes/diff",
+            "/api/v1/us/statutes/section/{act_id}/changes": "/us/statutes/section/changes",
+            "/api/v1/credits/balance": "/credits/balance",
+            "/api/v1/in/acts/{act_id}/sections/{section_number}/body": (
+                "/in/acts/sections/body"
+            ),
         }
         for path, expected in cases.items():
             assert _pricing_endpoint_for_route(path) == expected
@@ -427,34 +470,38 @@ class TestCostInjection:
             for op_id, path in _PROD_OPERATIONS.items()
             if _pricing_endpoint_for_route(path) in _PROD_PRICING_ENDPOINTS
             for name in [_derive_mcp_names(spec).get(op_id, op_id)]
-        }
+        } & _production_tool_names()
         missing = sorted(priced_tools - set(costs))
         assert not missing, f"priced routes with no injected cost line: {missing}"
 
-    def test_the_metered_alerts_route_is_priced_and_the_rest_are_free(self) -> None:
-        """Law-change alerts are free except the diff, which serves section text."""
+    def test_a_priced_route_the_server_does_not_publish_gets_no_cost_line(self) -> None:
+        """The alert routes are still priced by the API but are not MCP tools.
+
+        A cost line keyed to an excluded operation would be a description for a
+        tool that does not exist, so the builder must skip it rather than emit
+        one under the raw operationId.
+        """
         spec = _prod_spec()
+        excluded_ops = {
+            op_id
+            for op_id, path in _PROD_OPERATIONS.items()
+            for method, op in spec["paths"][path].items()
+            if isinstance(op, dict)
+            and op.get("operationId") == op_id
+            and is_excluded_route(method, path)
+        }
+        assert excluded_ops, "the fixture no longer carries an excluded route"
         entries = [
-            {"endpoint": "/boards", "operation": "Boards", "credits": 0, "regions": ["US"]},
-            {"endpoint": "/watches", "operation": "Watches", "credits": 0, "regions": ["US"]},
             {
-                "endpoint": "/watches/changes",
-                "operation": "Change List",
-                "credits": 0,
-                "regions": ["US"],
-            },
-            {
-                "endpoint": "/watches/changes/diff",
-                "operation": "Change Diff",
+                "endpoint": _pricing_endpoint_for_route(_PROD_OPERATIONS[op_id]),
+                "operation": "X",
                 "credits": 4,
                 "regions": ["US"],
-            },
+            }
+            for op_id in excluded_ops
         ]
         costs = _build_tool_costs(spec, entries)
-        assert costs["get_watch_change_diff"] == "Cost: 4 credits."
-        assert costs["list_watch_changes"] == "Free."
-        assert costs["list_boards"] == "Free."
-        assert costs["create_watch"] == "Free."
+        assert costs == {}, sorted(costs)
 
     def test_explicit_operation_id_route_still_gets_its_cost(self) -> None:
         """`resolve_statute_citation` has a hand-set operation_id.

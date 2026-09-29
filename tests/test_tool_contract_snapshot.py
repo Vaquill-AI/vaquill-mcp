@@ -109,7 +109,7 @@ async def test_published_contract_matches_the_golden_snapshot(jurisdiction: str)
 def test_the_snapshot_is_not_empty() -> None:
     """A truncated golden file would make the parametrized tests vacuous."""
     golden = json.loads(_GOLDEN.read_text())
-    assert len(golden["US"]) >= 20 and len(golden["IN"]) >= 5
+    assert len(golden["US"]) >= 15 and len(golden["IN"]) >= 5
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ from vaquill_mcp.schema_slim import (
     slim_input_schema,
     uncurated_overruns,
 )
-from vaquill_mcp.server import _derive_mcp_names
+from vaquill_mcp.server import _derive_mcp_names, is_excluded_route
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 
@@ -44,15 +44,17 @@ def _tool_schemas(jurisdiction: str) -> dict[str, dict]:
     """tool name -> the request/parameter schemas the document declares.
 
     Built from the raw document rather than from a live provider so the guard
-    keeps working with no network and no FastMCP internals in the way.
+    keeps working with no network and no FastMCP internals in the way. Routes
+    `_ROUTE_MAPS` excludes are skipped: they are never published, so their
+    parameters cost no caller anything.
     """
     spec = _spec(jurisdiction)
     names = _derive_mcp_names(spec)
     components = spec.get("components", {}).get("schemas", {})
     out: dict[str, dict] = {}
-    for item in spec["paths"].values():
-        for op in item.values():
-            if not isinstance(op, dict):
+    for path, item in spec["paths"].items():
+        for method, op in item.items():
+            if not isinstance(op, dict) or is_excluded_route(method, path):
                 continue
             op_id = op.get("operationId")
             if not op_id:
@@ -108,7 +110,7 @@ def _contract_only(node: Any) -> Any:
 
 def test_the_guard_has_something_to_guard() -> None:
     """A catalogue that silently emptied would make every test below vacuous."""
-    assert len(_CATALOGUES["US"]) >= 20, _CATALOGUES["US"].keys()
+    assert len(_CATALOGUES["US"]) >= 15, _CATALOGUES["US"].keys()
     assert len(_CATALOGUES["IN"]) >= 5, _CATALOGUES["IN"].keys()
 
 
@@ -194,10 +196,10 @@ def test_no_curated_entry_describes_a_parameter_that_does_not_exist() -> None:
 
 
 def test_a_tool_scoped_entry_beats_a_bare_name_entry() -> None:
-    """`corpusType` means three different things on three tools, so the scoped
-    entry has to win or two of them get a description that is simply wrong."""
+    """`corpusType` means different things on different tools, so the scoped
+    entry has to win or one of them gets a description that is simply wrong."""
     assert curated_description("search_us_statutes", "corpusType") != curated_description(
-        "create_watch", "corpusType"
+        "resolve_statute_citation", "corpusType"
     )
     # `act_id` is the shared case: identical on all seven tools that take it.
     assert curated_description("get_section_changes", "act_id") == PARAM_DESCRIPTIONS[

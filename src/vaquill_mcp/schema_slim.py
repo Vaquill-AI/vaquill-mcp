@@ -142,8 +142,9 @@ def curated_description(tool_name: str, param_name: str) -> str | None:
 
     A tool-scoped entry wins over a bare parameter-name entry. Both exist
     because the same name means different things on different tools
-    (`corpusType` is a 15-value filter on `search_us_statutes` and a board
-    selector on `create_watch`) while others are genuinely identical everywhere
+    (`corpusType` is a 15-value filter on `search_us_statutes` and a resolution
+    constraint on `resolve_statute_citation`) while others are genuinely
+    identical everywhere
     (`act_id` carries the same 340-char description on seven tools, so one entry
     collapses all seven).
     """
@@ -193,10 +194,10 @@ def uncurated_overruns(tool_name: str, schema: dict[str, Any]) -> list[tuple[str
     The drift guard reads this. A parameter with a curated entry is skipped
     however long that entry is, and deliberately: the budget exists to catch
     prose arriving unreviewed from the OpenAPI, not to cap a decision somebody
-    made on purpose. `create_watch.scope` is the case that proves it. Three
-    mutually exclusive scope forms cannot be explained in 260 characters, and a
-    watch created with the wrong one is a subscription that can never fire, so
-    the right length there is longer than the budget rather than shorter.
+    made on purpose. A parameter whose correct use needs several mutually
+    exclusive forms spelled out cannot always be explained in 260 characters,
+    and where getting it wrong produces a call that silently does nothing, the
+    right length is longer than the budget rather than shorter.
 
     Returns `(param_name, length)` for each offender, so a newly bloated
     parameter fails the suite instead of quietly costing every caller tokens on

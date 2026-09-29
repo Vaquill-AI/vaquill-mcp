@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 
 import httpx
 import pytest
@@ -18,7 +19,7 @@ from fastmcp import FastMCP
 
 from vaquill_mcp.aliases import _coerce_act_id, register_aliases
 from vaquill_mcp.ordering import DeterministicToolOrder
-from vaquill_mcp.server import create_server, published_tool_names
+from vaquill_mcp.server import _FUNC_OVERRIDES, create_server, published_tool_names
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 _BASE = "https://api.vaquill.ai"
@@ -89,17 +90,79 @@ async def test_every_tool_carries_a_read_or_write_annotation(
         assert tool.annotations.read_only_hint is not None, tool.name
 
 
-async def test_the_write_tools_are_the_only_non_read_tools(
-    monkeypatch: pytest.MonkeyPatch, respx_mock
+@pytest.mark.parametrize("jurisdiction", ["US", "IN"])
+async def test_every_published_tool_is_a_read(
+    jurisdiction: str, monkeypatch: pytest.MonkeyPatch, respx_mock
 ) -> None:
-    """The annotation split a client uses to auto-approve reads safely."""
-    server = _mount("US", monkeypatch, respx_mock)
+    """The annotation split a client uses to auto-approve reads safely.
+
+    The only writes this server ever published were the law-change alert tools,
+    and they left the catalogue on 2026-09-29. A write appearing here is a new
+    endpoint that needs a deliberate decision, not a default.
+    """
+    server = _mount(jurisdiction, monkeypatch, respx_mock)
     writes = {
         tool.name
         for tool in await server.list_tools()
         if not tool.annotations.read_only_hint
     }
-    assert writes == {"create_watch", "update_watch", "delete_watch", "test_watch"}
+    assert writes == set()
+
+
+# The nine alert tools, by name, as a CROSS-CHECK on the derivation below rather
+# than as the thing the test relies on.
+_ALERT_TOOLS = {
+    "list_boards",
+    "list_watches",
+    "create_watch",
+    "update_watch",
+    "delete_watch",
+    "list_watch_changes",
+    "get_watch_change_diff",
+    "list_watch_deliveries",
+    "test_watch",
+}
+
+# Identified by PATH, independently of `_ROUTE_MAPS`, so this guard does not
+# simply agree with the exclusion it is guarding.
+_ALERT_PATH_RE = re.compile(r"^/api/v1/(?:boards|watches)(?:/|$)")
+
+
+def _alert_tool_names_in_document() -> set[str]:
+    """The names the alert operations WOULD publish under, from the document."""
+    names: set[str] = set()
+    for path, item in _spec("US")["paths"].items():
+        if not _ALERT_PATH_RE.match(path):
+            continue
+        for op in item.values():
+            if isinstance(op, dict) and (op_id := op.get("operationId")):
+                func = op_id.split("_api_v1_", 1)[0]
+                names.add(_FUNC_OVERRIDES.get(func, func))
+    return names
+
+
+async def test_law_change_alert_tools_are_absent_from_the_us_catalogue(
+    monkeypatch: pytest.MonkeyPatch, respx_mock
+) -> None:
+    """The MCP server does not publish board or watch tools.
+
+    A product decision (2026-09-29): the REST API and the web console keep
+    law-change alerts, the MCP catalogue does not. The US document still
+    carries all nine operations, so the derivation must find them there (or
+    this test proves nothing) and the BUILT server must publish none of them.
+    """
+    in_document = _alert_tool_names_in_document()
+    assert in_document == _ALERT_TOOLS, (
+        "the US document's alert operations no longer match the expected nine: "
+        f"extra={sorted(in_document - _ALERT_TOOLS)}, "
+        f"missing={sorted(_ALERT_TOOLS - in_document)}"
+    )
+
+    server = _mount("US", monkeypatch, respx_mock)
+    published = {tool.name for tool in await server.list_tools()}
+    assert not (published & in_document), sorted(published & in_document)
+    assert not [n for n in published if "watch" in n or "board" in n], sorted(published)
+    assert len(published) == 18, sorted(published)
 
 
 # ---------------------------------------------------------------------------

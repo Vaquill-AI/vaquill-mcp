@@ -12,11 +12,14 @@ startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
-SCOPE: both jurisdictions. US (23 tools, statutes, regulations, constitutions,
-court rules, agency guidance and watches) and India (6 tools, Central and State
-Acts). India was retired on 2026-08-20 and RESTORED on 2026-09-01, so an
-instruction to strip "Indian" descriptions is obsolete: the IN entries below are
-live and shipping.
+SCOPE: both jurisdictions. US (18 published tools: statutes, regulations,
+constitutions, court rules and agency guidance) and India (22 published tools:
+Central and State Acts plus regulator instruments). Both counts include the
+`search` / `fetch` aliases, which are titled here but described in aliases.py.
+The law-change alert tools (boards and watches) were removed from the MCP
+catalogue on 2026-09-29 and have no entries here. India was retired on
+2026-08-20 and RESTORED on 2026-09-01, so an instruction to strip "Indian"
+descriptions is obsolete: the IN entries below are live and shipping.
 
 Every tool in BOTH catalogues must have an entry in ``TOOL_DESCRIPTIONS`` and in
 ``TOOL_TITLES``. ``tests/test_derived_catalogue.py`` asserts that in both
@@ -236,63 +239,6 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "searching a corpus that does not exist."
     ),
     # ------------------------------------------------------------------
-    # Law-change alerts (boards and watches)
-    # ------------------------------------------------------------------
-    "list_boards": (
-        "List every watchable board: a tracked corpus source such as the Federal Register, the "
-        "CFR, or one state's statutes, with its refresh cadence. A board is identified by "
-        "corpusType plus state (state is null for federal). Use to discover what can be "
-        "subscribed to before calling create_watch."
-    ),
-    "create_watch": (
-        "Subscribe to a board so a change to that source notifies you. Delivery is by webhook "
-        "(HMAC-SHA256 signed) or email, fired when the source's existing refresh finds real "
-        "changes -- nothing is crawled on your behalf and there is no real-time trigger. "
-        "channel is immutable once set; to change it, delete and recreate."
-    ),
-    "list_watches": (
-        "List the board watches you own, with their board, channel, destination, active state "
-        "and the outcome of the last delivery attempt. Use to find a watchId for the other "
-        "watch tools."
-    ),
-    "update_watch": (
-        "Change a watch's destination, signing secret, outbound auth, or active state. Set "
-        "isActive false to pause notifications while keeping the watch's config and history. "
-        "The channel itself cannot be changed."
-    ),
-    "delete_watch": (
-        "Delete a watch you own. Immediate and permanent, and its delivery history goes with "
-        "it. To stop notifications without losing the config or history, prefer update_watch "
-        "with isActive false."
-    ),
-    "test_watch": (
-        "Send a synthetic notification to a watch's destination to verify signing, outbound "
-        "auth and reachability before relying on it. Test deliveries are deliberately not "
-        "persisted, so they never appear in list_watch_deliveries and never move the watch's "
-        "last-notified timestamp. Rate limited by a short cooldown."
-    ),
-    "list_watch_changes": (
-        "What a watched source added, amended or removed: section identifier, citation, title "
-        "and detection time, newest first. Metadata only, never section text. Covers the "
-        "board's whole captured history, not just since you subscribed. Safe to poll: it "
-        "writes nothing and cannot suppress or double-fire a delivery. Page with sinceId and "
-        "the returned cursor."
-    ),
-    "get_watch_change_diff": (
-        "The full text of a changed section BEFORE and AFTER one specific change, as whole "
-        "documents ready to diff. Only meaningful where hasDiff is true on the change list. A "
-        "missing side is not an error: hasBefore and hasAfter say which text is present, so "
-        "render 'diff unavailable' rather than treating null as a failure. Unlike the rest of "
-        "the law-change tools this one returns section text, so check its cost before looping "
-        "over a change list."
-    ),
-    "list_watch_deliveries": (
-        "Per-attempt delivery log for one watch: status code, error and attempt number, "
-        "retained 90 days. Webhook watches only -- an email-only watch always returns an empty "
-        "list, because email sends are not logged per attempt. Use to debug a webhook that is "
-        "not arriving."
-    ),
-    # ------------------------------------------------------------------
     # Meta
     # ------------------------------------------------------------------
     "get_pricing": (
@@ -388,11 +334,11 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
 
 # Keyed by (tool_name, parameter_name). Preferred, because the same name means
 # different things on different tools: `corpusType` is a 15-value corpus filter
-# on search, a board selector on create_watch, and a resolution constraint on
-# resolve_statute_citation, and one shared entry would be wrong on two of them.
+# on search and a resolution constraint on resolve_statute_citation, and one
+# shared entry would be wrong on one of them.
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # --- Added 2026-09-19 -------------------------------------------------
-    # Thirteen parameters the API had been publishing with descriptions of 262
+    # Twelve parameters the API had been publishing with descriptions of 262
     # to 513 characters and no curated entry, riding in every agent's context on
     # every turn. Each keeps the one fact a CALLER cannot guess and drops the
     # background; the API reference is the right place for the long version.
@@ -437,12 +383,6 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "Only sections with an affirmatively dead status, including "
         "repealed, superseded or renumbered, are excluded. Sections with no "
         "recorded status are kept, not treated as repealed."
-    ),
-    ("list_watch_changes", "since"): (
-        "Strictly after the ISO-8601 timestamp. Rows from one refresh can "
-        "share a timestamp, so this skips all rows at that instant. Prefer "
-        "a change item's `id` as `sinceId` if available. Both filters may "
-        "be combined."
     ),
     ("resolve_statute_citations_batch", "corpusType"): (
         "Restricts every citation to one corpus: `STATE`, `REGULATION`, "
@@ -621,62 +561,6 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "corpora share; like `state`, a citation belonging to another corpus resolves "
         "to nothing instead."
     ),
-    # --- law-change alerts ---------------------------------------------------
-    # `scope` runs past the budget on purpose. Three mutually exclusive forms,
-    # and the wrong one creates a watch that can never fire. See
-    # `schema_slim.uncurated_overruns`.
-    ("create_watch", "scope"): (
-        "Narrow the alert to one citation instead of a whole source. Three mutually "
-        'exclusive forms. Hierarchy prefix: `{"title": "21", "part": "314"}`, where '
-        "every level set must match and `title` is required whenever a narrower level "
-        'is set. Exact section: `{"actId": "CFR_T21_P314_S314_50"}`, validated at '
-        "create time and the only form EVERY source accepts, including flat ones. "
-        'Named source: `{"source": "fdic_fil"}`, accepted on `agency_guidance`, '
-        "`agency_manuals` and `cfr` only. Omit to watch the whole source."
-    ),
-    ("create_watch", "corpusType"): (
-        "Board's corpus_type (e.g. `state`, `state_regulation`, `federal_register`, "
-        "`agency_guidance`), matched case-insensitively so `USC` / `CFR` work too. "
-        "Call list_boards for the authoritative list: this is a growing set, not a "
-        "fixed enum, and not every corpus is a watchable board."
-    ),
-    ("create_watch", "state"): (
-        "Board's state, 2-letter and case-insensitive. For a federal board (USC, "
-        "eCFR, the Federal Register) pass `federal` or omit entirely; the two are "
-        "equivalent. Must otherwise match the `state` list_boards returned for this "
-        "corpusType."
-    ),
-    ("create_watch", "webhookSecret"): (
-        "Optional signing secret, stored encrypted and never returned. Every delivery "
-        "then carries `X-Vaquill-Signature: sha256=<hex>`, an HMAC-SHA256 of the raw "
-        "request body bytes keyed with this secret. Verify over the raw body before "
-        "parsing JSON, constant-time."
-    ),
-    # The published document gives `scope` the SAME text on create and update,
-    # and that text ends "omit entirely to watch the whole source". True of the
-    # POST; false of the PATCH, where omitting a field leaves it unchanged.
-    # Curating them separately fixes an inaccuracy rather than just shortening
-    # one, which is why this is not a single shared entry.
-    ("update_watch", "scope"): (
-        "Replace the alert's narrowing. Three mutually exclusive forms. Hierarchy "
-        'prefix: `{"title": "21", "part": "314"}`, where every level set must '
-        "match and `title` is required whenever a narrower level is set. Exact "
-        'section: `{"actId": "CFR_T21_P314_S314_50"}`, the only form EVERY source '
-        'accepts. Named source: `{"source": "fdic_fil"}`, on `agency_guidance`, '
-        "`agency_manuals` and `cfr` only. Omitting the field leaves the current "
-        "scope unchanged."
-    ),
-    ("update_watch", "webhookAuth"): (
-        "Replace the outbound credential config, sent as a WHOLE object rather than "
-        "field by field: a scheme without a credential is not a partial edit, it is a "
-        'broken config. `{"scheme": "none"}` removes auth. Keeping the scheme and '
-        "omitting `secret` retains the stored credential."
-    ),
-    ("list_watch_changes", "beforeId"): (
-        "Return only changes with an `id` below this: the cursor for walking BACK "
-        "through history, where `sinceId` walks forward into new ones. Pass the "
-        "smallest `id` on your last page."
-    ),
 }
 
 # Keyed by parameter name alone, applying wherever that name appears. Reserved
@@ -727,16 +611,6 @@ TOOL_TITLES: dict[str, str] = {
     "get_section_definitions": "Defined Terms in Section",
     "get_section_neighbors": "Adjacent Sections",
     "get_section_changes": "Section Change History",
-    # --- US: law-change alerts ---------------------------------------------
-    "list_boards": "Alert Boards",
-    "list_watches": "Law Change Watches",
-    "list_watch_changes": "Changes on a Watch",
-    "list_watch_deliveries": "Watch Deliveries",
-    "get_watch_change_diff": "Change Diff",
-    "create_watch": "Create Law Change Watch",
-    "update_watch": "Update Law Change Watch",
-    "test_watch": "Send Test Alert",
-    "delete_watch": "Delete Law Change Watch",
     # --- US: sizing and account ---------------------------------------------
     "count_statute_sections": "Count Sections in a Scope",
     "get_credit_balance": "Credit Balance",

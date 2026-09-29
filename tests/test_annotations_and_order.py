@@ -1,7 +1,7 @@
 """Tool annotations and deterministic `tools/list` ordering.
 
 Both are cheap changes guarding expensive failures. Without annotations a client
-must auto-approve `delete_watch` to auto-approve `search_us_statutes`. Without
+must auto-approve any delete to auto-approve `search_us_statutes`. Without
 sorting, a reordered catalogue invalidates the provider prompt-prefix cache on
 every call, which costs more than the schema optimisation saves.
 """
@@ -20,18 +20,27 @@ from vaquill_mcp.server import (
     _annotations_for,
     _is_read_only,
     _pricing_endpoint_for_route,
+    is_excluded_route,
 )
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 
 
 def _routes(jurisdiction: str) -> list[tuple[str, str, set[str]]]:
-    """(method, path, response codes) for every operation in a document."""
+    """(method, path, response codes) for every operation the server PUBLISHES.
+
+    Routes `_ROUTE_MAPS` excludes (the law-change alert routes) are in the
+    document but never become tools, so they have nothing to classify.
+    """
     spec = json.loads((_FIXTURES / f"openapi_{jurisdiction.lower()}.json").read_text())
     out = []
     for path, item in spec["paths"].items():
         for method, op in item.items():
-            if isinstance(op, dict) and op.get("operationId"):
+            if (
+                isinstance(op, dict)
+                and op.get("operationId")
+                and not is_excluded_route(method, path)
+            ):
                 out.append((method.upper(), path, set(op.get("responses") or {})))
     return sorted(out)
 
@@ -58,9 +67,9 @@ def test_every_post_route_is_classified(
 ) -> None:
     """A new POST must be decided by a human, not defaulted by accident.
 
-    POST is genuinely ambiguous in REST: three of this API's READ tools are POST
-    because their input is too large for a query string, and two of its WRITES
-    are POST as well. There is no signal in the document that separates them
+    POST is genuinely ambiguous in REST: several of this API's READ tools are
+    POST because their input is too large for a query string, and a WRITE can
+    be POST as well. There is no signal in the document that separates them
     beyond a 201, so an unrecognized POST fails here until somebody classifies
     it. The runtime default is the safe one (treat it as a write), so this test
     failing costs a decision, never a wrongly auto-approved mutation.
@@ -101,7 +110,7 @@ def test_annotations_are_derivable_for_every_route(
 
     # A read is never destructive, and a write must say either way: the MCP
     # default for destructiveHint is TRUE, so a non-destructive write that stays
-    # silent lets a client treat create_watch like delete_watch.
+    # silent lets a client treat a create like a delete.
     if annotations.read_only_hint:
         assert annotations.destructive_hint is False
 
@@ -122,23 +131,27 @@ def test_the_three_post_reads_are_read_only() -> None:
         assert _is_read_only(_route("POST", path, {"200"})), path
 
 
+# No published tool writes today; the last writes were the law-change alert
+# tools, excluded on 2026-09-29. These two tests therefore exercise the
+# derivation on SYNTHETIC routes, because the derivation is what decides how
+# the next write endpoint is published.
 def test_the_writes_are_not_read_only() -> None:
-    assert not _is_read_only(_route("POST", "/api/v1/watches", {"201"}))
-    assert not _is_read_only(_route("PATCH", "/api/v1/watches/{watch_id}", {"200"}))
-    assert not _is_read_only(_route("DELETE", "/api/v1/watches/{watch_id}", {"204"}))
+    assert not _is_read_only(_route("POST", "/api/v1/things", {"201"}))
+    assert not _is_read_only(_route("PATCH", "/api/v1/things/{thing_id}", {"200"}))
+    assert not _is_read_only(_route("DELETE", "/api/v1/things/{thing_id}", {"204"}))
     # The one no rule derives: a 200-returning POST that really does act. It is
     # not on the allow-list, so the fail-closed default catches it.
-    assert not _is_read_only(_route("POST", "/api/v1/watches/{watch_id}/test", {"200"}))
+    assert not _is_read_only(_route("POST", "/api/v1/things/{thing_id}/send", {"200"}))
 
 
-def test_delete_is_the_only_destructive_tool() -> None:
-    assert _annotations_for(_route("DELETE", "/api/v1/watches/{id}", {"204"})).destructive_hint
+def test_delete_is_the_only_destructive_kind() -> None:
+    assert _annotations_for(_route("DELETE", "/api/v1/things/{id}", {"204"})).destructive_hint
     assert (
-        _annotations_for(_route("POST", "/api/v1/watches", {"201"})).destructive_hint
+        _annotations_for(_route("POST", "/api/v1/things", {"201"})).destructive_hint
         is False
     )
     assert (
-        _annotations_for(_route("POST", "/api/v1/watches/{id}/test", {"200"})).destructive_hint
+        _annotations_for(_route("POST", "/api/v1/things/{id}/send", {"200"})).destructive_hint
         is False
     )
 
@@ -216,7 +229,7 @@ def test_every_tool_declares_all_three_hints() -> None:
         assert required <= emitted, f"missing {sorted(required - emitted)}"
 
     # Nothing here reaches an open-ended external surface: every tool reads the
-    # closed Vaquill corpus or writes the caller's own watches.
+    # closed Vaquill corpus or the caller's own account.
     for annotations in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
         assert annotations.open_world_hint is False
 

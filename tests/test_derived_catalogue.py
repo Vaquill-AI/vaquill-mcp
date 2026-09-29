@@ -31,7 +31,7 @@ import pathlib
 import pytest
 
 from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
-from vaquill_mcp.server import _derive_mcp_names
+from vaquill_mcp.server import published_tool_names
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 
@@ -43,21 +43,13 @@ def _spec(jurisdiction: str) -> dict:
 def _catalogue(spec: dict) -> set[str]:
     """Every tool name the OpenAPIProvider will publish for this document.
 
-    Two sources, and the second one is easy to forget: `_derive_mcp_names`
-    returns renames only. An operation carrying an explicit `operation_id` has
-    no `_api_v1_` marker, is deliberately left out of that map, and FastMCP then
-    uses the operationId verbatim. Counting only the map under-reports the
-    catalogue by exactly those tools (`resolve_statute_citation` and
-    `resolve_statute_citations_batch` on the live US document).
+    Delegates to `published_tool_names`, which is what the servers themselves
+    use. It counts operations with an explicit `operation_id` (absent from the
+    rename map, published verbatim) and leaves out routes `_ROUTE_MAPS`
+    excludes, such as the law-change alert routes that are still in the US
+    document but are not MCP tools.
     """
-    mapped = _derive_mcp_names(spec)
-    names = set(mapped.values())
-    for item in spec["paths"].values():
-        for op in item.values():
-            if isinstance(op, dict) and (oid := op.get("operationId")):
-                if oid not in mapped:
-                    names.add(oid)
-    return names
+    return published_tool_names(spec)
 
 
 US = _catalogue(_spec("US"))

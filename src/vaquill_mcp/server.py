@@ -12,7 +12,7 @@ import logging
 import re
 import time
 from collections import Counter
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 
 # httpx2, not httpx. fastmcp 4 deprecated passing an `httpx.AsyncClient` to
 # `OpenAPIProvider` ("temporarily accepted via duck typing... will be rejected in
@@ -89,25 +89,23 @@ def _derive_mcp_names(spec: dict) -> dict[str, str]:
     ``list_statutes_coverage``). ``_FUNC_OVERRIDES`` refines a few, and genuine
     cross-router name collisions (e.g. ``resolve_citation`` under both
     ``/citations`` and ``/statutes``) are disambiguated by the resource segment.
+
+    Routes `_ROUTE_MAPS` excludes are skipped: they never become tools, so they
+    must not take part in collision disambiguation either.
     """
     entries: list[tuple[str, str, str]] = []  # (operation_id, resource, base_name)
-    for path, item in (spec.get("paths") or {}).items():
-        if not isinstance(item, dict):
-            continue
+    for path, _method, op in _published_operations(spec):
         segs = [
             s
             for s in path.strip("/").split("/")
             if s not in ("api", "v1", "us") and "{" not in s
         ]
         resource = segs[0] if segs else ""
-        for op in item.values():
-            if not isinstance(op, dict):
-                continue
-            op_id = op.get("operationId")
-            if not op_id or "_api_v1_" not in op_id:
-                continue
-            func = op_id.split("_api_v1_", 1)[0]
-            entries.append((op_id, resource, _FUNC_OVERRIDES.get(func, func)))
+        op_id = op.get("operationId")
+        if not op_id or "_api_v1_" not in op_id:
+            continue
+        func = op_id.split("_api_v1_", 1)[0]
+        entries.append((op_id, resource, _FUNC_OVERRIDES.get(func, func)))
     counts = Counter(base for _, _, base in entries)
     names: dict[str, str] = {}
     for op_id, resource, base in entries:
@@ -127,19 +125,16 @@ def published_tool_names(spec: dict) -> set[str]:
     under-reports the catalogue by exactly those tools
     (`resolve_statute_citation` and `resolve_statute_citations_batch` on the live
     US document).
+
+    Routes `_ROUTE_MAPS` excludes are left out, because the provider never
+    publishes them. Counting them here would make the alias stand-down check
+    and every catalogue test measure a tool list the server does not serve.
     """
     mapped = _derive_mcp_names(spec)
     names = set(mapped.values())
-    for item in (spec.get("paths") or {}).values():
-        if not isinstance(item, dict):
-            continue
-        for op in item.values():
-            if (
-                isinstance(op, dict)
-                and (op_id := op.get("operationId"))
-                and op_id not in mapped
-            ):
-                names.add(op_id)
+    for _path, _method, op in _published_operations(spec):
+        if (op_id := op.get("operationId")) and op_id not in mapped:
+            names.add(op_id)
     return names
 
 
@@ -148,10 +143,62 @@ def published_tool_names(spec: dict) -> set[str]:
 # ---------------------------------------------------------------------------
 # The /ask/stream endpoint uses SSE streaming which MCP tools cannot support.
 # Exclude it so only the synchronous /ask endpoint becomes a tool.
+#
+# Law-change alerts (boards and watches) are excluded as a PRODUCT decision
+# taken 2026-09-29: the MCP server is a research surface, and subscription
+# management is not something it publishes. The REST API and the web console
+# keep every one of these routes; only the MCP catalogue drops them. That took
+# the US catalogue from 27 tools to 18.
+#
+# Both patterns are anchored at the start AND the end and name the exact
+# `/api/v1/` prefix the US document serves them under, so a future route that
+# merely contains the word (say `/us/statutes/watchlist`) is not swallowed.
+# `tests/test_server.py::TestRouteExclusion` asserts the exclusions match
+# exactly the nine alert operations in the committed US document and nothing
+# in either document besides them.
 
 _ROUTE_MAPS: list[RouteMap] = [
     RouteMap(pattern=r".*/ask/stream$", mcp_type=MCPType.EXCLUDE),
+    RouteMap(pattern=r"^/api/v1/boards/?$", mcp_type=MCPType.EXCLUDE),
+    RouteMap(pattern=r"^/api/v1/watches(?:/.*)?$", mcp_type=MCPType.EXCLUDE),
 ]
+
+_HTTP_METHODS = frozenset({"get", "put", "post", "delete", "patch", "head", "options", "trace"})
+
+
+def is_excluded_route(method: str, path: str) -> bool:
+    """Whether the OpenAPI provider drops this route instead of publishing it.
+
+    Mirrors FastMCP's own `_determine_route_type` exactly: the FIRST route map
+    whose methods and pattern match decides, and `re.search` is the matcher.
+    Kept beside `_ROUTE_MAPS` so every helper that enumerates tools from the
+    document (names, costs, the alias stand-down) agrees with the provider
+    about which operations exist, rather than each re-deriving it.
+    """
+    upper = method.upper()
+    for route_map in _ROUTE_MAPS:
+        if route_map.methods != "*" and upper not in route_map.methods:
+            continue
+        if route_map.tags:
+            # No tag-scoped map exists; treat one as non-matching rather than
+            # guess at the route's tags, which this helper is not given.
+            continue
+        if re.search(route_map.pattern, path):
+            return route_map.mcp_type == MCPType.EXCLUDE
+    return False
+
+
+def _published_operations(spec: dict) -> Iterator[tuple[str, str, dict]]:
+    """(path, method, operation) for every operation the provider publishes."""
+    for path, item in (spec.get("paths") or {}).items():
+        if not isinstance(item, dict):
+            continue
+        for method, op in item.items():
+            if method.lower() not in _HTTP_METHODS or not isinstance(op, dict):
+                continue
+            if is_excluded_route(method, path):
+                continue
+            yield path, method, op
 
 
 # ---------------------------------------------------------------------------
@@ -225,9 +272,9 @@ def _format_cost(entries: list[dict]) -> str:
     e.g. 'Cost: 2 credits (1-20 results), 4 credits (21-50 results).'
 
     A priced-at-zero endpoint renders 'Free.' rather than 'Cost: 0 credits.'
-    Several endpoints are deliberately free (coverage discovery, and every
-    law-change alert route except the diff), and an agent choosing between
-    tools benefits more from knowing one is free than from parsing a zero.
+    Several endpoints are deliberately free (coverage discovery, the credit
+    balance), and an agent choosing between tools benefits more from knowing
+    one is free than from parsing a zero.
     """
     tiers: list[tuple[str, str]] = []
     seen: set[tuple[str, str]] = set()
@@ -274,25 +321,21 @@ def _build_tool_costs(spec: dict, cost_entries: list[dict]) -> dict[str, str]:
 
     names = _derive_mcp_names(spec)
     tool_costs: dict[str, str] = {}
-    for path, item in (spec.get("paths") or {}).items():
-        if not isinstance(item, dict):
-            continue
-        endpoint = _pricing_endpoint_for_route(path)
-        matches = by_endpoint.get(endpoint)
+    # Excluded routes are skipped: a priced route the server does not publish
+    # would otherwise leave a cost line keyed to a tool that does not exist.
+    for path, _method, op in _published_operations(spec):
+        matches = by_endpoint.get(_pricing_endpoint_for_route(path))
         if not matches:
             continue
         line = _format_cost(matches)
         if not line:
             continue
-        for op in item.values():
-            if not isinstance(op, dict):
-                continue
-            op_id = op.get("operationId")
-            if not op_id:
-                continue
-            # An explicit hand-set operation_id is not in `names` (it has no
-            # `_api_v1_` marker); FastMCP uses it verbatim as the tool name.
-            tool_costs[names.get(op_id, op_id)] = line
+        op_id = op.get("operationId")
+        if not op_id:
+            continue
+        # An explicit hand-set operation_id is not in `names` (it has no
+        # `_api_v1_` marker); FastMCP uses it verbatim as the tool name.
+        tool_costs[names.get(op_id, op_id)] = line
     return tool_costs
 
 
@@ -358,9 +401,15 @@ def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Tool annotations (readOnlyHint / destructiveHint)
 # ---------------------------------------------------------------------------
-# Without these a client cannot tell `search_us_statutes` from `delete_watch`,
-# so a user must either auto-approve everything including the deletes or
-# hand-approve every read. The catalogue mixes both, so neither is acceptable.
+# Without these a client cannot tell a read from a write, so a user must either
+# auto-approve everything including any delete or hand-approve every read.
+#
+# Every tool published today is a read. The last writes were the law-change
+# alert tools (`create_watch`, `delete_watch` and friends), excluded from the
+# catalogue on 2026-09-29. The classification below is KEPT anyway, because it
+# is what makes the next non-GET route safe by default: without it a new write
+# endpoint would arrive in the document and be published with whatever hints
+# happened to be set, including none.
 #
 # WHY NOT JUST THE HTTP VERB. That was the obvious rule and it is wrong on this
 # API. Three of the read tools are POST, because their input is too large for a
@@ -409,30 +458,29 @@ _READ_ONLY_POSTS: frozenset[str] = frozenset(
 )
 
 # POSTs that DO act but return 200 rather than 201, so the response-code rule
-# cannot see them. `test_watch` sends a real signed delivery to the customer's
-# endpoint: a side effect on the outside world, and nothing this server should
-# ever let a client auto-approve as a read.
+# cannot see them. EMPTY since 2026-09-29: its only entry was `/watches/test`,
+# which sent a real signed delivery to a customer endpoint and left the MCP
+# catalogue with the rest of the alert routes. The set stays, empty, because it
+# is where the next such route has to be declared.
 #
 # The runtime does not consult this set -- fail-closed already treats these as
 # writes -- and that is deliberate. It exists so the CLASSIFICATION is
 # exhaustive: `test_every_post_route_is_classified` requires every published
 # POST to be a 201, a listed read, or a listed write, so a new endpoint cannot
 # arrive and quietly inherit a default nobody looked at.
-_ACKNOWLEDGED_WRITE_POSTS: frozenset[str] = frozenset({"/watches/test"})
+_ACKNOWLEDGED_WRITE_POSTS: frozenset[str] = frozenset()
 
-# Emitted only where the value differs from the MCP default, because every
-# annotation is bytes in a definition that is resident for the whole
-# conversation. `readOnlyHint` defaults to false and `destructiveHint` to TRUE,
-# so a non-destructive write MUST say so explicitly or a client is entitled to
-# treat `create_watch` as if it were `delete_watch`.
+# `readOnlyHint` defaults to false and `destructiveHint` to TRUE in MCP, so a
+# non-destructive write MUST say so explicitly or a client is entitled to treat
+# a create as if it were a delete.
 # snake_case because MCP SDK v2 (which fastmcp 4 depends on) renamed these
 # fields; the camelCase spellings still work through a warning bridge. The WIRE
 # format is unaffected and stays camelCase, as the MCP spec requires -- verified
 # by `test_annotations_serialize_as_camel_case_on_the_wire`.
 # `open_world_hint=False` on every tool, and it is a CLAIM about this server
-# rather than a formality: each tool reads or writes only inside Vaquill's own
-# closed corpus and the caller's own watches. Nothing reaches an open-ended
-# external surface, so a client can reason about blast radius before calling.
+# rather than a formality: each tool reads only inside Vaquill's own closed
+# corpus and the caller's own account. Nothing reaches an open-ended external
+# surface, so a client can reason about blast radius before calling.
 #
 # Emitted even though it is not MCP's default (the spec defaults it to TRUE, the
 # cautious answer) because the honest value here is the narrower one. Directory
@@ -682,7 +730,7 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
         mcp_names=_derive_mcp_names(openapi_spec),
         route_maps=_ROUTE_MAPS,
         mcp_component_fn=_make_customize_component(tool_costs),
-        # Disable output validation — the live API is the source of truth.
+        # Disable output validation. The live API is the source of truth.
         # Some fields (e.g., citation network treatmentType) can be null in
         # practice even though the OpenAPI enum doesn't declare it nullable.
         validate_output=False,
@@ -706,7 +754,7 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
     )
 
     # The other two MCP primitives. `OpenAPIProvider` only ever emits tools, so
-    # a server built purely from it publishes 25 tools, 0 resources and 0
+    # a server built purely from it publishes tools, 0 resources and 0
     # prompts -- which is what "thin wrapper" means in practice. Resources carry
     # the reference data and the corpus guide; prompts carry the workflows and
     # the traps. Neither rides in the per-turn tool budget.

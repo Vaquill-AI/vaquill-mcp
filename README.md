@@ -236,7 +236,14 @@ would rather read the credential from the environment.
 Tools are generated from the live Vaquill API's OpenAPI spec at startup, so the
 set always matches the current API. For the **authoritative, up-to-date list and
 per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
-client's tool list. The main groups (representative tools shown):
+client's tool list.
+
+The US server publishes 18 tools and the India server 22, counting `search` and
+`fetch`. Law change alerts (boards and watches) are deliberately **not** MCP
+tools: the API still serves them, so create and manage alerts in the Vaquill
+console or over the REST API directly.
+
+The main groups (representative tools shown):
 
 ### US statutes & regulations
 
@@ -262,23 +269,6 @@ Register, and agency guidance.
 | `get_section_cited_by` | Which USC/CFR sections cross-reference this one (the inverse of `crossReferences`). |
 | `get_section_cross_state` | Provisions in other states addressing the same subject, ranked by similarity. |
 | `get_section_changes` | What our refreshes observed changing on this section over time. |
-
-### Law change alerts
-
-Subscribe to a corpus source and get a webhook or email when it changes.
-Subscribing, polling and inspecting deliveries are all free; only
-`get_watch_change_diff` is metered, because it is the only one that returns
-section text.
-
-| Tool | Description |
-|------|-------------|
-| `list_boards` | The watchable sources (Federal Register, CFR, a state's statutes, ...). |
-| `create_watch` | Subscribe to a board via webhook (HMAC-SHA256 signed) or email. |
-| `list_watches`, `update_watch`, `delete_watch` | Manage your subscriptions. |
-| `test_watch` | Send a synthetic delivery to verify signing, auth and reachability. |
-| `list_watch_changes` | What changed on a watched source. Metadata only, and safe to poll. |
-| `get_watch_change_diff` | Before/after text for one change, as whole documents. |
-| `list_watch_deliveries` | Per-attempt webhook delivery log (90 days). |
 
 ### Utility
 
@@ -441,7 +431,7 @@ uv run fastmcp dev src/vaquill_mcp/server.py
 
 ## How It Works
 
-This package is a thin MCP wrapper around the [Vaquill Developer API](https://www.vaquill.ai/docs/api-reference/). At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using [FastMCP](https://github.com/jlowin/fastmcp). Tool names are derived automatically from each endpoint's OpenAPI operation id, so new API endpoints show up as clean, ready-to-use tools with no package update; key descriptions are refined for optimal LLM performance.
+This package is a thin MCP wrapper around the [Vaquill Developer API](https://www.vaquill.ai/docs/api-reference/). At startup, it fetches the OpenAPI spec from the live API and auto-generates MCP tools using [FastMCP](https://github.com/jlowin/fastmcp). Tool names are derived automatically from each endpoint's OpenAPI operation id, so new API endpoints show up as clean, ready-to-use tools with no package update; key descriptions are refined for optimal LLM performance. The one exception is a short exclusion list in `server.py` (`_ROUTE_MAPS`): the SSE streaming route, and the law change alert routes, which are a product decision rather than a technical limit.
 
 Because the spec is fetched at startup (not bundled), tools automatically reflect any API changes without a package update.
 

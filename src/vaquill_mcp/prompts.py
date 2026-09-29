@@ -123,8 +123,9 @@ Report what changed since **{since}**.
 1. `search_us_statutes` with `changedSince: "{since}"` (format `YYYY-MM-DD`).{hint}
 2. For each hit worth reporting, `get_section_changes` on its `act_id` for the
    per-section history, newest first.
-3. Where a diff matters and you have a board watch, `get_watch_change_diff`
-   returns the before/after text.
+3. Where the wording matters, `get_us_statute_section_text` with `asOf` set to
+   a date before the change returns the text as it stood then, to compare with
+   the current text. Read `asOf.isBounded` before relying on it.
 
 State the caveat explicitly in your answer, because the obvious reading is wrong:
 these are dates we OBSERVED a difference between the publisher and the copy we
