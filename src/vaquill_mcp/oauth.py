@@ -270,6 +270,13 @@ def _durable_storage() -> tuple[object | None, str | None]:
     return storage, values["VAQUILL_OAUTH_JWT_SIGNING_KEY"]
 
 
+def _allowed_redirect_uris() -> list[str] | None:
+    """Operator-set client redirect allowlist, or None (accept any, as before)."""
+    raw = os.environ.get("VAQUILL_OAUTH_ALLOWED_REDIRECT_URIS", "")
+    patterns = [p.strip() for p in raw.split(",") if p.strip()]
+    return patterns or None
+
+
 def build_auth_provider():
     """The auth provider for the `/mcp` mounts, or None when unconfigured.
 
@@ -351,6 +358,10 @@ def build_auth_provider():
     client_storage, jwt_signing_key = _durable_storage()
 
     proxy = OAuthProxy(
+        # OPT-IN redirect allowlist, unset by default so no connecting client
+        # changes behaviour. Comma-separated FastMCP patterns, e.g.
+        # `https://claude.ai/api/mcp/auth_callback,http://localhost:*`.
+        allowed_client_redirect_uris=_allowed_redirect_uris(),
         client_storage=client_storage,
         jwt_signing_key=jwt_signing_key,
         upstream_authorization_endpoint=required["VAQUILL_OAUTH_AUTHORIZE_URL"],

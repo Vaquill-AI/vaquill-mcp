@@ -101,6 +101,7 @@ def build_app() -> Starlette:
         build_auth_provider,
         build_connector_key_resolver,
     )
+    from vaquill_mcp.registration_guard import RegistrationRateLimit
     from vaquill_mcp.remote import create_remote_server
 
     auth = build_auth_provider()
@@ -158,7 +159,7 @@ def build_app() -> Starlette:
         mcp_app = mcp_server.http_app(
             path="/mcp",
             transport="streamable-http",
-            middleware=[Middleware(BrandSkinMiddleware)],
+            middleware=[Middleware(RegistrationRateLimit), Middleware(BrandSkinMiddleware)],
         )
         sub_apps.extend((key_app, mcp_app))
 

@@ -759,3 +759,50 @@ def test_the_help_link_swap_bails_on_markup_it_does_not_recognise() -> None:
     assert "vendor copy" not in swapped
     assert swapped.startswith("<head></head>")
     assert swapped.endswith("<footer>tail</footer>")
+
+
+async def _register(raw: httpx2.AsyncClient, redirect: str) -> httpx2.Response:
+    return await raw.post(
+        "/register",
+        json={"client_name": "probe", "redirect_uris": [redirect]},
+    )
+
+
+async def test_register_still_works_and_is_rate_limited(
+    _live_api: None, _oauth_on: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Open DCR stays open (clients without CIMD need it) but is bounded."""
+    monkeypatch.setenv("VAQUILL_OAUTH_REGISTER_LIMIT", "2")
+    async with _serving() as app:
+        async with httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=app), base_url="https://mcp.vaquill.ai"
+        ) as raw:
+            codes = [
+                (await _register(raw, "https://claude.ai/api/mcp/auth_callback")).status_code
+                for _ in range(3)
+            ]
+    assert codes[0] == 201 and codes[1] == 201
+    assert codes[2] == 429
+
+
+async def test_redirect_allowlist_is_opt_in(
+    _live_api: None, _oauth_on: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async with _serving() as app:
+        async with httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=app), base_url="https://mcp.vaquill.ai"
+        ) as raw:
+            assert (await _register(raw, "https://evil.example/cb")).status_code == 201
+
+    monkeypatch.setenv(
+        "VAQUILL_OAUTH_ALLOWED_REDIRECT_URIS",
+        "https://claude.ai/api/mcp/auth_callback",
+    )
+    async with _serving() as app:
+        async with httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=app), base_url="https://mcp.vaquill.ai"
+        ) as raw:
+            assert (await _register(raw, "https://evil.example/cb")).status_code == 400
+            assert (
+                await _register(raw, "https://claude.ai/api/mcp/auth_callback")
+            ).status_code == 201
