@@ -806,3 +806,61 @@ async def test_redirect_allowlist_is_opt_in(
             assert (
                 await _register(raw, "https://claude.ai/api/mcp/auth_callback")
             ).status_code == 201
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Invalid or expired consent token",
+        "Invalid or expired transaction",
+        "Invalid redirect URI",
+        "Invalid action",
+        "Authorization session mismatch. Please try again.",
+    ],
+)
+def test_a_dead_sign_in_page_says_how_to_recover(message: str) -> None:
+    """The refusal page must tell a person what to DO, not only that it failed.
+
+    Observed 2026-10-02: a repeated consent-form submit (Back button, double
+    click) lands on FastMCP's `Invalid or expired consent token`, which names the
+    problem and offers no way out. The only recovery is to start the connection
+    again from the AI app, because the sign-in the page belongs to is finished.
+    Every error FastMCP emits here is a dead sign-in session, so one instruction
+    is true for all of them.
+    """
+    from vaquill_mcp.oauth import _skin_html
+
+    fragment = f"<h1>Error</h1><p>{message}</p>"
+    wrapped = _skin_html(fragment)
+    assert fragment in wrapped, "the original message must survive verbatim"
+    assert "start the connection again" in wrapped.lower()
+    assert "AI app" in wrapped
+
+
+def test_the_recovery_text_is_added_only_to_error_fragments() -> None:
+    """A bare fragment that is not an error must not be told to restart anything."""
+    from vaquill_mcp.oauth import _skin_html
+
+    wrapped = _skin_html("<p>Signed in. You can close this tab.</p>")
+    assert "start the connection again" not in wrapped.lower()
+
+
+def test_the_recovery_text_is_static_and_does_not_repeat_the_message_twice() -> None:
+    """Static copy only: nothing from the fragment is echoed into the new paragraph.
+
+    The fragment is already inserted verbatim by design; a second, derived
+    paragraph built from it would be a second place for reflected content.
+    """
+    from vaquill_mcp.oauth import _skin_html
+
+    marker = "UNIQUE-MARKER-9f3a"
+    wrapped = _skin_html(f"<h1>Error</h1><p>{marker}</p>")
+    assert wrapped.count(marker) == 1
+
+
+def test_wrapping_twice_does_not_repeat_the_recovery_text() -> None:
+    from vaquill_mcp.oauth import _skin_html
+
+    once = _skin_html("<h1>Error</h1><p>Invalid or expired consent token</p>")
+    assert _skin_html(once) == once
+    assert once.lower().count("start the connection again") == 1

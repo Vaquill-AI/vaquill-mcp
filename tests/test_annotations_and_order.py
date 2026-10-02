@@ -222,16 +222,14 @@ def test_every_tool_declares_all_three_hints() -> None:
     from vaquill_mcp.server import _DESTRUCTIVE, _READ_ONLY, _WRITE
 
     required = {"readOnlyHint", "openWorldHint"}
-    for annotations in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
-        emitted = set(
-            annotations.model_dump(mode="json", exclude_none=True, by_alias=True)
-        )
+    for hints in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
+        emitted = set(hints.model_dump(mode="json", exclude_none=True, by_alias=True))
         assert required <= emitted, f"missing {sorted(required - emitted)}"
 
     # Nothing here reaches an open-ended external surface: every tool reads the
     # closed Vaquill corpus or the caller's own account.
-    for annotations in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
-        assert annotations.open_world_hint is False
+    for hints in (_READ_ONLY, _WRITE, _DESTRUCTIVE):
+        assert hints.open_world_hint is False
 
 
 def _built_tools(jurisdiction: str):

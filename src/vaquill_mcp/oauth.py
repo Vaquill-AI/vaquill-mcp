@@ -708,6 +708,25 @@ def _inject_brand_css(html: str) -> str:
     return html.replace(marker, _BRAND_CSS_WIRE + marker, 1)
 
 
+#: What to do on FastMCP's bare error page. Every message it can put there
+#: (`Invalid or expired consent token`, `... transaction`, `Invalid redirect
+#: URI`, `Invalid action`, `Authorization session mismatch`) means the sign-in
+#: this page belongs to is finished, typically a Back-button resubmit or a double
+#: click, and the only way forward is a new one from the AI app. The page used to
+#: say what failed and nothing about what to do, on the screen a person reaches
+#: when they are least able to guess (observed 2026-10-02).
+#:
+#: STATIC on purpose: nothing from the fragment is echoed into it.
+_ERROR_RECOVERY_HTML = (
+    "<p>This sign-in link has expired or was already used, for example after "
+    "pressing Back and submitting again. Close this tab, return to your AI app "
+    "and start the connection again to begin a fresh sign-in.</p>"
+)
+
+#: The shape of every bare error FastMCP renders in this flow.
+_ERROR_FRAGMENT_MARKER = "<h1>Error</h1>"
+
+
 def _wrap_bare_fragment(fragment: str) -> str:
     """Put a document and a stylesheet around a fragment that has neither.
 
@@ -717,10 +736,12 @@ def _wrap_bare_fragment(fragment: str) -> str:
     Roman on white: a page that reads as a crash rather than as a refusal, on
     the one screen a user reaches when their sign-in has already gone wrong.
 
-    The fragment is inserted verbatim. This adds presentation and never content,
-    so it cannot change what the page says, and it carries no CSP of its own
-    because these responses ship none.
+    The fragment is inserted verbatim and its message is never altered. An error
+    fragment also gets one STATIC paragraph saying how to recover
+    (`_ERROR_RECOVERY_HTML`); any other fragment gets presentation only. It
+    carries no CSP of its own because these responses ship none.
     """
+    recovery = _ERROR_RECOVERY_HTML if _ERROR_FRAGMENT_MARKER in fragment else ""
     return (
         "<!DOCTYPE html>\n"
         '<html lang="en">\n'
@@ -734,7 +755,7 @@ def _wrap_bare_fragment(fragment: str) -> str:
         + "</style>\n"
         "</head>\n"
         "<body>\n"
-        f'<div class="container">{fragment}</div>\n'
+        f'<div class="container">{fragment}{recovery}</div>\n'
         "</body>\n"
         "</html>\n"
     )

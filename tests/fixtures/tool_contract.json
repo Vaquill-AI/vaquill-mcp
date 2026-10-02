@@ -9,7 +9,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "page": {
@@ -87,7 +87,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "section_number": {
@@ -96,7 +96,7 @@
             ],
             "maxLength": 40,
             "minLength": 1,
-            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
             "type": "string"
           }
         },
@@ -118,7 +118,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "section_number": {
@@ -127,7 +127,7 @@
             ],
             "maxLength": 40,
             "minLength": 1,
-            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
             "type": "string"
           }
         },
@@ -149,7 +149,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           }
         },
@@ -170,7 +170,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           }
         },
@@ -191,7 +191,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           }
         },
@@ -281,7 +281,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "asOf": {
@@ -321,7 +321,7 @@
             ],
             "maxLength": 40,
             "minLength": 1,
-            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
             "type": "string"
           }
         },
@@ -343,7 +343,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "limit": {
@@ -402,7 +402,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "limit": {
@@ -461,7 +461,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "limit": {
@@ -520,7 +520,7 @@
             ],
             "maxLength": 200,
             "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
           "section_number": {
@@ -529,7 +529,7 @@
             ],
             "maxLength": 40,
             "minLength": 1,
-            "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+            "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
             "type": "string"
           }
         },
@@ -1281,6 +1281,25 @@
               "repealed"
             ]
           },
+          "article": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Amendment XIV"
+            ]
+          },
           "chapter": {
             "anyOf": [
               {
@@ -1487,6 +1506,7 @@
           "titleNumber": {
             "anyOf": [
               {
+                "minimum": 1.0,
                 "type": "integer"
               },
               {
@@ -1803,8 +1823,10 @@
           "format": {
             "default": "both",
             "enum": [
+              "all",
               "both",
               "html",
+              "markdown",
               "plain",
               "content",
               "operative"
@@ -1843,6 +1865,19 @@
               }
             ]
           },
+          "article": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Article III"
+            ]
+          },
           "chapter": {
             "anyOf": [
               {
@@ -1874,7 +1909,10 @@
               "USC",
               "CFR",
               "STATE",
-              "REGULATION"
+              "REGULATION",
+              "CONSTITUTION",
+              "STATE_CONSTITUTION",
+              "FEDERAL_RULES"
             ],
             "examples": [
               "USC"
@@ -2041,7 +2079,7 @@
           "state": {
             "anyOf": [
               {
-                "maxLength": 2,
+                "maxLength": 7,
                 "minLength": 2,
                 "type": "string"
               },
@@ -2050,6 +2088,7 @@
               }
             ],
             "enum": [
+              "federal",
               "al",
               "ak",
               "az",
@@ -2157,7 +2196,7 @@
           "state": {
             "anyOf": [
               {
-                "maxLength": 2,
+                "maxLength": 7,
                 "minLength": 2,
                 "type": "string"
               },
@@ -2166,6 +2205,7 @@
               }
             ],
             "enum": [
+              "federal",
               "al",
               "ak",
               "az",
@@ -2301,6 +2341,25 @@
             ],
             "examples": [
               "environmental-protection-agency"
+            ]
+          },
+          "article": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Amendment XIV"
             ]
           },
           "changedSince": {
@@ -2476,6 +2535,7 @@
               "actId",
               "actStatus",
               "action",
+              "adoptedAfterCurrentThrough",
               "adoptingCitations",
               "agencies",
               "agencySlugs",
@@ -2535,6 +2595,7 @@
               "govInfoPdfUrl",
               "granuleId",
               "history",
+              "historyEffectiveDate",
               "htmlUrl",
               "implementingRegulations",
               "issueDate",
@@ -2542,6 +2603,7 @@
               "issuingAgency",
               "languageCode",
               "lastAmendedDate",
+              "lastAmendedDateRaw",
               "lastAmendedYear",
               "lawImplemented",
               "licenseNote",
@@ -2552,6 +2614,7 @@
               "part",
               "partName",
               "pdfUrl",
+              "pendingAdoptions",
               "popularName",
               "president",
               "priorEffectiveDates",
@@ -2559,11 +2622,13 @@
               "publicLawCites",
               "publicLaws",
               "publicationDate",
+              "publicationDateRaw",
               "publisherKey",
               "referencedShortTitles",
               "relatedCitations",
               "relatedDocuments",
               "releaseDate",
+              "releaseDateRaw",
               "relevanceScore",
               "renumberedTo",
               "renumberedToLabel",
@@ -2571,6 +2636,7 @@
               "rescindedOn",
               "rescindedOnRaw",
               "reviewDate",
+              "reviewDateRaw",
               "ruleSet",
               "ruleSetCode",
               "sectionNumber",
@@ -2585,6 +2651,7 @@
               "sourceNote",
               "sourcePageEnd",
               "sourcePageStart",
+              "sourceUrl",
               "state",
               "stateHtmlUrl",
               "statutoryAuthority",
@@ -2886,6 +2953,7 @@
           "titleNumber": {
             "anyOf": [
               {
+                "minimum": 1.0,
                 "type": "integer"
               },
               {

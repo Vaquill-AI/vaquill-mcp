@@ -129,7 +129,7 @@
         "type": "object"
       },
       "ApiDetailError": {
-        "description": "Error envelope the API actually returns.\n\nAll errors (401/402/403/404/422/429/5xx) come back as a single\n`detail` string (FastAPI default), e.g. `{\"detail\": \"Insufficient API\ncredits.\"}`. Documenting the real shape so client code can rely on it.",
+        "description": "Error envelope the API actually returns.\n\nEvery error (400/401/402/403/404/405/422/429/5xx) carries a `detail`\nstring, e.g. `{\"detail\": \"Insufficient API credits.\"}`, on every mount of\nthe API. A 422 adds `errors`, one entry per rejected field. Some 404s add\nendpoint-specific diagnosis beside `detail` (the statutes section routes\nadd `actId`, `reason` and `didYouMean`); treat unknown keys as optional.",
         "properties": {
           "detail": {
             "description": "Human-readable reason, safe to surface to an end user. Branch on the HTTP status rather than on this string: the wording is not part of the contract and may be reworded, but 401 (bad key), 402 (out of credits), 403 (missing scope), 404 (no such resource) and 429 (rate limited) are stable.",
@@ -138,12 +138,76 @@
             ],
             "title": "Detail",
             "type": "string"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ApiFieldError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present on 422 only: every field that failed validation.",
+            "title": "Errors"
           }
         },
         "required": [
           "detail"
         ],
         "title": "ApiDetailError",
+        "type": "object"
+      },
+      "ApiFieldError": {
+        "description": "One rejected field in a 422 response.",
+        "properties": {
+          "loc": {
+            "description": "Where the bad value is: `body`, `query` or `path`, then the parameter name exactly as you send it (camelCase), then list indexes. A bare `[\"body\"]` means the body as a whole was not a JSON object.",
+            "examples": [
+              [
+                "body",
+                "corpusType"
+              ]
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Loc",
+            "type": "array"
+          },
+          "msg": {
+            "description": "What is wrong with the value, in plain English.",
+            "examples": [
+              "Input should be 'USC', 'CFR' or 'STATE'"
+            ],
+            "title": "Msg",
+            "type": "string"
+          },
+          "type": {
+            "description": "Machine-readable error kind, e.g. `missing`, `literal_error`, `json_invalid`.",
+            "examples": [
+              "literal_error"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ApiFieldError",
         "type": "object"
       },
       "AsOfProvenance": {
@@ -302,6 +366,306 @@
           "coverage"
         ],
         "title": "AsOfProvenance",
+        "type": "object"
+      },
+      "BodyFigure": {
+        "description": "One figure, equation or form image inside a rendered section body.",
+        "properties": {
+          "alt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Alternative text for the image.",
+            "title": "Alt"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The publisher's caption, when it prints one.",
+            "title": "Caption"
+          },
+          "figureId": {
+            "description": "Stable id for this figure, also carried on the `<figure data-figure-id>` element in `html`. Deterministic, so it does not change between renders of the same source.",
+            "examples": [
+              "fig_3f2a9c0d1e4b5a67"
+            ],
+            "title": "Figureid",
+            "type": "string"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pixel height of the hosted image.",
+            "title": "Height"
+          },
+          "kind": {
+            "default": "figure",
+            "description": "What the image is. `equation` renders inline in the text.",
+            "enum": [
+              "figure",
+              "equation",
+              "image",
+              "form"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "mimeType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "image/gif"
+            ],
+            "title": "Mimetype"
+          },
+          "offsetMarkdown": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Character offset of this figure's placeholder in `markdown`, so a client can splice the image into its own layout.",
+            "title": "Offsetmarkdown"
+          },
+          "offsetPlain": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Character offset of this figure's `[Figure N: ...]` placeholder in `plain`.",
+            "title": "Offsetplain"
+          },
+          "order": {
+            "default": 0,
+            "description": "1-based position among the section's figures.",
+            "title": "Order",
+            "type": "integer"
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The image as the government publisher serves it. Use it for a \"view at source\" link, especially when `status` is `unavailable`. Null when we hold no publishable link.",
+            "examples": [
+              "https://www.ecfr.gov/graphics/er13my11.020.gif"
+            ],
+            "title": "Sourceurl"
+          },
+          "status": {
+            "default": "hosted",
+            "description": "`unavailable` means the publisher's image could not be fetched. The figure is still listed, and its caption and placeholder stay in the text, so a missing figure is never silently dropped.",
+            "enum": [
+              "hosted",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where the image is hosted, always on `statutes-us.vaquill.ai`. A format a browser cannot display (TIFF, EPS, PDF) is served as a PNG. Null when `status` is `unavailable`.",
+            "examples": [
+              "https://statutes-us.vaquill.ai/figures/9b2e...c41.gif"
+            ],
+            "title": "Url"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pixel width of the hosted image.",
+            "title": "Width"
+          }
+        },
+        "required": [
+          "figureId"
+        ],
+        "title": "BodyFigure",
+        "type": "object"
+      },
+      "BodyTable": {
+        "description": "One table inside a rendered section body.",
+        "properties": {
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The table's caption, when it has one.",
+            "title": "Caption"
+          },
+          "cols": {
+            "default": 0,
+            "description": "Column count.",
+            "title": "Cols",
+            "type": "integer"
+          },
+          "order": {
+            "default": 0,
+            "description": "1-based position among the section's tables.",
+            "title": "Order",
+            "type": "integer"
+          },
+          "rows": {
+            "default": 0,
+            "description": "Row count, header rows included.",
+            "title": "Rows",
+            "type": "integer"
+          },
+          "tableId": {
+            "examples": [
+              "t1"
+            ],
+            "title": "Tableid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tableId"
+        ],
+        "title": "BodyTable",
+        "type": "object"
+      },
+      "CitationOutsideFilters": {
+        "description": "A citation that names a real section the caller's own filters exclude.\n\nBoth `/search` and `/resolve` treat a filter as a promise: a citation outside\nit is not forced into the results. This says so, instead of leaving a caller\nto read an unrelated top hit (or `resolved: false`) as \"no such section\".",
+        "properties": {
+          "actId": {
+            "description": "The section the citation names. Pass it to `/section/{actId}` to read it.",
+            "examples": [
+              "USC_T42_C21_S1983"
+            ],
+            "title": "Actid",
+            "type": "string"
+          },
+          "citation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "That section's citation, as it appears in results.",
+            "examples": [
+              "42 U.S.C. \u00a7 1983 (2026)"
+            ],
+            "title": "Citation"
+          },
+          "corpusType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "That section's corpus, e.g. `USC`, `CFR`, `STATE`.",
+            "examples": [
+              "USC"
+            ],
+            "title": "Corpustype"
+          },
+          "excludedBy": {
+            "description": "The request filters that exclude the section, by their public names (`state`, `corpusType`, `code`, `article`, `titleNumber`, `chapter`, `part`, `yearFrom`, `yearTo`). Empty when the exclusion comes from a condition only the index can attribute (`excludeRepealed`, `actStatus`, `source`, `changedSince` and the Federal Register facets): then any of the filters you set may be responsible.",
+            "examples": [
+              [
+                "state"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Excludedby",
+            "type": "array"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "That section's jurisdiction: `federal` or a two-letter state code.",
+            "examples": [
+              "federal"
+            ],
+            "title": "State"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "That section's heading.",
+            "examples": [
+              "Civil action for deprivation of rights"
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "actId"
+        ],
+        "title": "CitationOutsideFilters",
         "type": "object"
       },
       "CreateWatchRequest": {
@@ -731,11 +1095,66 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "SectionIdentifierResolution": {
+        "description": "How the identifier you sent was matched, when it was not an exact act_id.\n\nPresent only when the input did NOT match as sent. Absent (null) means the\nsection is exactly the act_id in your request.",
+        "properties": {
+          "actId": {
+            "description": "The act_id it matched. Send this next time to skip resolution.",
+            "examples": [
+              "USC_T26_C1_S1"
+            ],
+            "title": "Actid",
+            "type": "string"
+          },
+          "input": {
+            "description": "The identifier exactly as you sent it.",
+            "examples": [
+              "26 U.S.C. \u00a7 1"
+            ],
+            "title": "Input",
+            "type": "string"
+          },
+          "subsection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The pincite your citation carried, e.g. `(h)(11)` for `26 U.S.C. \u00a7 1(h)(11)`. The WHOLE section is served; use `structured=true` on `/body` to address the subsection.",
+            "examples": [
+              "(h)(11)"
+            ],
+            "title": "Subsection"
+          },
+          "via": {
+            "description": "`citation` -- your input was a citation, resolved with the same resolver as `GET /us/statutes/resolve`. Check it the way you would check a `/resolve` answer. `normalized_id` -- your input was an act_id carrying surrounding whitespace, quotes, a trailing period or double percent-encoding, which were removed.",
+            "enum": [
+              "normalized_id",
+              "citation"
+            ],
+            "examples": [
+              "citation"
+            ],
+            "title": "Via",
+            "type": "string"
+          }
+        },
+        "required": [
+          "input",
+          "actId",
+          "via"
+        ],
+        "title": "SectionIdentifierResolution",
+        "type": "object"
+      },
       "StatuteBodyResponse": {
         "description": "Full text of a statute section in HTML and/or plain text.",
         "properties": {
           "actId": {
-            "description": "The section this body belongs to, echoed back from the request.",
+            "description": "The act_id of the section served. Equal to your request unless `resolvedFrom` is set, in which case it is the id your citation or cleaned-up input resolved to.",
             "examples": [
               "USC_T42_C21_S1983"
             ],
@@ -783,6 +1202,45 @@
             "title": "Creditsconsumed",
             "type": "number"
           },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BodyFigure"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The figures, equations and form images in the body, in document order, with hosted image urls and each one's offset into `markdown` and `plain`. An empty list means the section has none. Null means not known: the section's corpus has no structured rendering yet.",
+            "title": "Figures"
+          },
+          "hasFigures": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True when the body contains at least one figure, equation or form image, false when it contains none. Null when not known, because the section's corpus has no structured rendering yet.",
+            "title": "Hasfigures"
+          },
+          "hasTables": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True when the body contains at least one table, false when it contains none. Null when not known, because the section's corpus has no structured rendering yet.",
+            "title": "Hastables"
+          },
           "html": {
             "anyOf": [
               {
@@ -792,7 +1250,7 @@
                 "type": "null"
               }
             ],
-            "description": "HTML-formatted statute text.",
+            "description": "The section text as HTML. When `source` is `r2_render` this is our structured rendering of the publisher's source: real `<table>` elements (with `<caption>`, `colspan` and `rowspan`) and `<figure>` / `<img>` elements at the position the publisher prints them, with images hosted on `statutes-us.vaquill.ai`. When `source` is `r2_s3` this is the publisher's own markup (tables, paragraph structure, history lines), cut to the section's own content where we recognise the publisher's page layout. For any other `source` the text was not held as per-section HTML, and `html` carries the same text as `plain` with no markup.",
             "title": "Html"
           },
           "markdown": {
@@ -804,7 +1262,7 @@
                 "type": "null"
               }
             ],
-            "description": "The body rendered as nested Markdown lists. Present only when `structured=true`.",
+            "description": "The body as GitHub-flavoured Markdown. When `source` is `r2_render` this is the structured rendering: tables as GFM pipe tables (a caption line above, footnotes below, multi-level headers joined as `Parent / Child`) and figures as `![alt](url)` at their position in the text. Returned only when `format` is `all` or `markdown`, not on the default `both`, where it would be a third full copy.\n\nFor a section with no structured rendering, `markdown` is null unless you pass `structured=true`, in which case it is the body as nested Markdown lists (the pre-existing behaviour). When both exist the structured rendering wins, because it is the one that keeps the tables; `subsections` is returned either way.",
             "title": "Markdown"
           },
           "note": {
@@ -855,6 +1313,17 @@
             "title": "Processingtimems",
             "type": "number"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
+          },
           "source": {
             "anyOf": [
               {
@@ -864,7 +1333,7 @@
                 "type": "null"
               }
             ],
-            "description": "Data source identifier.",
+            "description": "Which copy the text came from: `r2_render` (our structured rendering, carrying `markdown`, `tables` and `figures`), `r2_s3` (the publisher's page for this section), `r2_text` (our per-section text extraction), `qdrant_reconstructed` (reassembled from indexed passages), and on `asOf` requests `stored_edition` or `corpus_change_history`. A storage identifier, not a citation: cite `sourceUrl`.",
             "title": "Source"
           },
           "sourceCredit": {
@@ -911,6 +1380,21 @@
             ],
             "description": "The section broken into its lettered and numbered subsections, nested as they appear in the text. Use it to quote or link a single clause rather than the whole section. Present only when `structured=true`.",
             "title": "Subsections"
+          },
+          "tables": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BodyTable"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tables in the body, in document order, with their size. An empty list means the section has none. Null means not known: the section's corpus has no structured rendering yet, so a table may still be present in `html`.",
+            "title": "Tables"
           }
         },
         "required": [
@@ -1039,7 +1523,7 @@
         "description": "Response for `GET /us/statutes/section/{act_id}/changes`.",
         "properties": {
           "actId": {
-            "description": "The section identifier you asked about, echoed back.",
+            "description": "The act_id of the section served. Equal to your request unless `resolvedFrom` is set, in which case it is the id your citation or cleaned-up input resolved to.",
             "examples": [
               "CFR_T21_P314_S314_50"
             ],
@@ -1116,6 +1600,17 @@
             "title": "Processingtimems",
             "type": "number"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
+          },
           "section": {
             "anyOf": [
               {
@@ -1185,6 +1680,17 @@
             "title": "Processingtimems",
             "type": "number"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
+          },
           "section": {
             "$ref": "#/components/schemas/StatuteResult",
             "description": "The section you asked about."
@@ -1236,6 +1742,27 @@
             ],
             "title": "Actstatus"
           },
+          "article": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Article label (`Amendment XIV`) on CONSTITUTION / STATE_CONSTITUTION, or article number (`2-A`) on a STATE / REGULATION code divided by article. Same values and pairing rules as `article` on `/search`.",
+            "examples": [
+              "Amendment XIV"
+            ],
+            "title": "Article"
+          },
           "chapter": {
             "anyOf": [
               {
@@ -1272,7 +1799,7 @@
                 "type": "null"
               }
             ],
-            "description": "State code identifier, e.g. `tx_26`. Pair with `state`.",
+            "description": "State code identifier, e.g. `tx_26`. With `corpusType=FEDERAL_RULES`, a rule set instead (`frcp`, `uscapp_t28a_fre`). Same values and checks as `code` on `/search`.",
             "examples": [
               "tx_26"
             ],
@@ -1454,6 +1981,7 @@
           "titleNumber": {
             "anyOf": [
               {
+                "minimum": 1.0,
                 "type": "integer"
               },
               {
@@ -1598,6 +2126,26 @@
             "title": "Processingtimems",
             "type": "number"
           },
+          "rankingDegraded": {
+            "default": false,
+            "description": "True when the relevance model was unavailable, so the neighbors are in retrieval order and `similarity` is a retrieval score on a much smaller scale rather than the usual 0-1. The provisions are still the retrieved analogues; retry shortly for the fully ranked answer.",
+            "examples": [
+              false
+            ],
+            "title": "Rankingdegraded",
+            "type": "boolean"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
+          },
           "section": {
             "$ref": "#/components/schemas/StatuteResult",
             "description": "The section you asked about."
@@ -1701,6 +2249,17 @@
             "title": "Processingtimems",
             "type": "number"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
+          },
           "section": {
             "$ref": "#/components/schemas/StatuteResult",
             "description": "The section you asked about."
@@ -1778,6 +2337,17 @@
             "title": "Processingtimems",
             "type": "number"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
+          },
           "section": {
             "$ref": "#/components/schemas/StatuteResult",
             "description": "The section you asked about."
@@ -1792,6 +2362,17 @@
       "StatuteResolveBatchItem": {
         "description": "One citation's verdict inside a batch response.\n\nDeliberately the same field names as `StatuteResolveResponse` minus the\nper-request bookkeeping, so a caller migrating from the single route reads\neach item with the code it already has.",
         "properties": {
+          "citationOutsideFilters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CitationOutsideFilters"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set only when `resolved` is false because the batch's `state` or `corpusType` scope excludes a section this citation DOES name, e.g. a federal citation under `state: ca`. The scope is a constraint, so the verdict stays `resolved: false`; this says why. Retry without the scope named in `excludedBy` to resolve it. No extra charge."
+          },
           "inputCitation": {
             "description": "The citation string you asked to resolve, echoed back.",
             "title": "Inputcitation",
@@ -1879,7 +2460,7 @@
           "state": {
             "anyOf": [
               {
-                "maxLength": 2,
+                "maxLength": 7,
                 "minLength": 2,
                 "type": "string"
               },
@@ -1887,8 +2468,9 @@
                 "type": "null"
               }
             ],
-            "description": "Optional two-letter jurisdiction to resolve every citation WITHIN. Applies to the whole batch: a batch spanning jurisdictions should omit it and let each citation name its own. Same semantics as the single-citation route -- a constraint, not a hint.",
+            "description": "Optional jurisdiction to resolve every citation WITHIN: a two-letter state code, or `federal` for the U.S. Code, the C.F.R., federal rules and the U.S. Constitution. Applies to the whole batch: a batch spanning jurisdictions should omit it and let each citation name its own. Same semantics as the single-citation route -- a constraint, not a hint.",
             "enum": [
+              "federal",
               "al",
               "ak",
               "az",
@@ -2008,6 +2590,17 @@
       "StatuteResolveResponse": {
         "description": "Response for `GET /us/statutes/resolve`.",
         "properties": {
+          "citationOutsideFilters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CitationOutsideFilters"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set only when `resolved` is false because your `state` or `corpusType` scope excludes a section this citation DOES name, e.g. `42 U.S.C. 1983` under `state=ca`. The scope is a constraint, so the verdict stays `resolved: false`; this says why, so an unresolved result is not read as 'no such section'. Retry without the scope named in `excludedBy` to resolve it. No extra charge."
+          },
           "creditsConsumed": {
             "default": 0.0,
             "description": "Credits actually charged for this call. Read it rather than assuming the list price: failed and refunded work bills 0, and batch endpoints charge per item returned, so a partial result costs less than a full one.",
@@ -2117,6 +2710,21 @@
             ],
             "title": "Action"
           },
+          "adoptedAfterCurrentThrough": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New York only. True when `pendingAdoptions` is non-empty, i.e. the State Register records at least one adoption naming this section or its Part that post-dates the volume `currentThrough` refers to, so the text served may be out of date. Null (never false) when no such adoption is recorded; null is not a claim that the text is current.",
+            "examples": [
+              true
+            ],
+            "title": "Adoptedaftercurrentthrough"
+          },
           "adoptingCitations": {
             "anyOf": [
               {
@@ -2129,7 +2737,7 @@
                 "type": "null"
               }
             ],
-            "description": "Citations to the instrument that ADOPTED this rule: the state register notice, the Washington filing number, the adopting order. The rulemaking audit trail.\n\nUnified across four different payload spellings, so this is comparable across states in a way the underlying data is not.",
+            "description": "Citations to the instrument that ADOPTED this rule: the state register notice, the Washington filing number, the adopting order. The rulemaking audit trail.\n\nUnified across four different payload spellings, so this is comparable across states in a way the underlying data is not.\n\nThese are also the independent way to confirm a section when the publisher's own page cannot be read without a browser (see `externalUrl`): a Texas rule's `['50 TexReg 8285']` names the Texas Register issue and page that printed its adoption.",
             "examples": [
               [
                 "37 Ill. Reg. 16539"
@@ -2692,7 +3300,10 @@
                 "type": "null"
               }
             ],
-            "description": "URL on the official source website (eCFR or uscode.house.gov).",
+            "description": "The publisher's own page for this section, exactly as recorded at ingest: uscode.house.gov, ecfr.gov, a state legislature or a state register. Null when the publisher issues no per-section link, or when the link is withheld under licence (`licenseNote` says so). Prefer `sourceUrl`, which is this link when present and otherwise the best official alternative.\n\nSome official publishers serve their code only through a JavaScript application, so the link renders in a browser but returns an empty page shell to a plain HTTP client. Texas is the main case: the Secretary of State publishes the Texas Administrative Code only on its Appian portal (texas-sos.appianportalsgov.com). The link is still the correct citation. To check a section without a browser, use `adoptingCitations` (for Texas, the `NN TexReg PPPP` register citations that adopted and amended it) and read the text we captured at `textUrl`.",
+            "examples": [
+              "https://www.mass.gov/regulations/240-CMR-200-licensure-of-cosmetologists"
+            ],
             "title": "Externalurl"
           },
           "federalRegisterCitations": {
@@ -2950,6 +3561,21 @@
             "description": "The publisher's own amendment/history credit line, verbatim, e.g. `Effective 5/4/2005; Superseded 8/1/2016`. `amendmentYears` is parsed from this; keep both when you need the exact wording.",
             "title": "History"
           },
+          "historyEffectiveDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When this version took effect, as `YYYY-MM-DD`, read out of the publisher's own amendment credit line in `history`.\n\n**This is a weaker fact than `effectiveDate` and is deliberately not published as one.** `effectiveDate` is a date the publisher put in a date field; this is our reading of the publisher's prose. It is populated ONLY where `effectiveDate` is null, so the two can never be confused, and `history` is returned beside it as the evidence.\n\nIt exists because most states publish the commencement date nowhere else: measured over the live corpus on 2026-09-20, `effectiveDate` is set on 4.8% of state statutes and this answers a further 21.3%. It is the newest commencement the credit line names, and null whenever that cannot be stated without guessing: a credit line that dates only some of its entries, a date that belongs to a repeal, a sunset, an applicability rule or another section, a commencement still in the future, a date older than the section's own `lastAmendedYear`, or a state whose `history` format we have not measured. Statutes only; never set on a regulation, a court rule or a federal corpus.",
+            "examples": [
+              "2009-06-19"
+            ],
+            "title": "Historyeffectivedate"
+          },
           "htmlUrl": {
             "anyOf": [
               {
@@ -3044,11 +3670,23 @@
                 "type": "null"
               }
             ],
-            "description": "Full date of the most recent amendment, where the publisher gives one. Illinois and Colorado regulations carry their amendment provenance only here and in `amendmentNote`: neither state has a `history`, and Colorado has no `effectiveDate` either, so for Colorado this is the only date that exists.",
+            "description": "Full date of the most recent amendment, as `YYYY-MM-DD`, where the publisher gives one. See `lastAmendedDateRaw` for the wording. Illinois and Colorado regulations carry their amendment provenance only here and in `amendmentNote`: neither state has a `history`, and Colorado has no `effectiveDate` either, so for Colorado this is the only date that exists.",
             "examples": [
-              "October 4, 2013"
+              "2013-10-04"
             ],
             "title": "Lastamendeddate"
+          },
+          "lastAmendedDateRaw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The last-amended date as the publisher writes it, present only when it differs from `lastAmendedDate`, or null when it is not a date at all.",
+            "title": "Lastamendeddateraw"
           },
           "lastAmendedYear": {
             "anyOf": [
@@ -3144,7 +3782,7 @@
                 "type": "null"
               }
             ],
-            "description": "Query for `GET /us/statutes/divisions` that lists this section's siblings (its containing chapter, part, or code). Pass it straight back to walk up the hierarchy. Null when the container cannot be determined.",
+            "description": "Query for `GET /us/statutes/divisions` that lists this section's siblings (its containing chapter, part, code, article or federal rule set). Pass it straight back to walk up the hierarchy, or spread it into a `POST /us/statutes/search` body to search within that container: every key it carries is also a search filter. Null when the container cannot be determined.",
             "title": "Parent"
           },
           "part": {
@@ -3182,6 +3820,33 @@
             ],
             "description": "PDF version of the statute section.",
             "title": "Pdfurl"
+          },
+          "pendingAdoptions": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "New York only. Register ADOPTION NOTICES that post-date the print volume this section's text was taken from. They are NOTICES from the NY State Register, NOT an updated consolidated text: `text` and `body` are unchanged and still reflect `currentThrough` / `currencyNote`. Read each entry as \"the State Register announced an adoption naming this section, or the Part that contains it, after the text we serve was current\", and look the notice up in the State Register by its `idNo`.\n\nEach entry: `idNo` (the Register I.D. No., e.g. `DFS-23-26-00013-A`), `scope` (`section` when the notice names this section, `part` when it names the Part containing it and says nothing about this section alone), `effectiveDate` (ISO date the adoption takes effect, null if the notice states none), `agency`, `issueDate` (ISO date of the Register issue). We do not return a link to the notice: the Register is hosted on a commercial platform and, as with `sourceUrl` on these regulations, the link is withheld under licence. Only adoptions (`-A`, and `-AA` amended notices of adoption) are listed, never proposals, emergency rules or withdrawals.\n\nNull on every section with no such notice, which is NOT a statement that the section is current: we cover Register adoptions for NYCRR Titles 3, 19 and 23 only.",
+            "examples": [
+              [
+                {
+                  "agency": "Department of Financial Services",
+                  "effectiveDate": "2026-09-23",
+                  "idNo": "DFS-23-26-00013-A",
+                  "issueDate": "2026-09-23",
+                  "scope": "part"
+                }
+              ]
+            ],
+            "title": "Pendingadoptions"
           },
           "popularName": {
             "anyOf": [
@@ -3286,6 +3951,18 @@
             ],
             "title": "Publicationdate"
           },
+          "publicationDateRaw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The publication date as the publisher writes it, present only when it differs from `publicationDate`, or null when it is not a date at all.",
+            "title": "Publicationdateraw"
+          },
           "publisherKey": {
             "anyOf": [
               {
@@ -3377,6 +4054,18 @@
             ],
             "title": "Releasedate"
           },
+          "releaseDateRaw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The release date as the publisher writes it, present only when it differs from `releaseDate`, or null when it is not a date at all.",
+            "title": "Releasedateraw"
+          },
           "relevanceScore": {
             "anyOf": [
               {
@@ -3386,7 +4075,7 @@
                 "type": "null"
               }
             ],
-            "description": "Relevance score, normalized to roughly 0-1. Higher means a better match for ranking within one response. It is a relative ranking signal, not a calibrated confidence or probability, so do not compare scores across different queries or treat a fixed value as a quality threshold. Exception: a query that resolves to an exact citation (e.g. '42 U.S.C. \u00a7 1983', 'Cal. Civ. Code \u00a7 1950.5', 'Fed. R. Civ. P. 12') always scores that section 1.0, since it is a certain match rather than a ranked one -- a natural-language or keyword query never returns 1.0 by comparison. **null on any endpoint that did not rank**: fetching a section by id, a batch fetch, or a section embedded in an intelligence response.",
+            "description": "Relevance score, normalized to roughly 0-1. Higher means a better match for ranking within one response. It is a relative ranking signal, not a calibrated confidence or probability, so do not compare scores across different queries or treat a fixed value as a quality threshold. Exception: a query that resolves to an exact citation (e.g. '42 U.S.C. \u00a7 1983', 'Cal. Civ. Code \u00a7 1950.5', 'Fed. R. Civ. P. 12') always scores that section 1.0, since it is a certain match rather than a ranked one -- a natural-language or keyword query never returns 1.0 by comparison. **null on any endpoint that did not rank**: fetching a section by id, a batch fetch, or a section embedded in an intelligence response. When the response carries `rankingDegraded: true`, the relevance model was unavailable and this is a retrieval score on a different, much smaller scale: still a valid ORDER, not a 0-1 relevance.",
             "title": "Relevancescore"
           },
           "renumberedTo": {
@@ -3480,6 +4169,18 @@
               "11/1/2028"
             ],
             "title": "Reviewdate"
+          },
+          "reviewDateRaw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The review date as the publisher writes it, present only when it differs from `reviewDate`, or null when it is not a date at all.",
+            "title": "Reviewdateraw"
           },
           "ruleSet": {
             "anyOf": [
@@ -3583,7 +4284,7 @@
                 "type": "null"
               }
             ],
-            "description": "The named source within `corpusType`, for corpora that fold several independently filterable bodies of law into one token.\n\n`FEDERAL_RULES` sources: `frcp` (Federal Rules of Civil Procedure), `frcrp` (Federal Rules of Criminal Procedure), `fre` (Federal Rules of Evidence), `frap` (Federal Rules of Appellate Procedure), `frbp` (Federal Rules of Bankruptcy Procedure), `sct` (Rules of the Supreme Court of the United States).\n\n`CFR` sources: `far` (Federal Acquisition Regulation (48 C.F.R. ch. 1)), `dfars` (Defense Federal Acquisition Regulation Supplement (48 C.F.R. ch. 2)) (both are already part of `CFR`; this only splits the existing Title 48 data by chapter, it does not add new sections).\n\n`AGENCY_GUIDANCE` sources: `administrative_guidance` (Synthesized administrative guidance (e.g. SALT cap, CTC, 401(k) limits)), `ssa_ruling` (Social Security Administration Rulings), `irs_rev_proc` (IRS Revenue Procedures), `irs_notice` (IRS Notices), `irs_rev_rul` (IRS Revenue Rulings), `irs_announcement` (IRS Announcements), `irs_irm` (Internal Revenue Manual (IRS internal procedure)), `merger_guidelines` (DOJ & FTC Merger Guidelines (2023)), `doj_leniency` (DOJ Antitrust Division Leniency Policy), `doj_business_review` (DOJ Antitrust Division Business Review Letters (1991-2021)), `cms_iom` (CMS Medicare Internet-Only Manuals (instruction to Medicare contractors, not a regulation)), `copyright_circular` (US Copyright Office Circulars), `copyright_compendium` (Compendium of U.S. Copyright Office Practices, Third Edition (2014, 2017 and 2021 editions)), `doj_justice_manual` (DOJ Justice Manual), `uscis_policy_manual` (USCIS Policy Manual), `mpep` (USPTO Manual of Patent Examining Procedure (MPEP)), `tmep` (USPTO Trademark Manual of Examining Procedure (TMEP)), `cftc_staff_letter` (CFTC Staff Letters (no-action, exemptive, interpretative; 2008-present)), `fincen_ruling` (FinCEN Administrative Rulings), `fincen_guidance` (FinCEN Guidance (alerts, advisories, notices, bulletins, fact sheets)), `fincen_boi_faq` (FinCEN Beneficial Ownership Information FAQs), `fincen_boi_rule_qa` (FinCEN BOI Rulemaking Q&As (final rule and interim final rule)), `fincen_boi_compliance_guide` (FinCEN Small Entity Compliance Guide (Beneficial Ownership Information Reporting)), `fincen_amla_material` (FinCEN Anti-Money Laundering Act of 2020 Implementation Material), `frb_sr_letter` (Federal Reserve Supervision and Regulation (SR) / Consumer Affairs (CA) Letters), `occ_bulletin` (OCC Bulletins), `occ_interpretive_letter` (OCC Interpretive Letters), `fdic_fil` (FDIC Financial Institution Letters (FILs)), `cfpb_supervisory_guidance` (CFPB Supervisory Guidance), `cfpb_circular` (CFPB Consumer Financial Protection Circulars), `dfars_pgi` (DFARS PGI (Procedures, Guidance, and Information)), `ftc_advisory_opinion` (FTC Advisory Opinions), `ftc_policy_statement` (FTC Policy Statements (1967-present)), `ftc_hsr_interpretation` (FTC HSR Premerger Notification Interpretations: the Commission's formal interpretations under 16 C.F.R. 803.30 (1978-2000, a closed series) and the Premerger Notification Office's informal interpretations (1983-present; the publisher serves none from 1997)), `ftc_advocacy_filing` (FTC Advocacy Filings: comments and letters to state legislatures, state courts, governors and other federal agencies on the competition effects of a proposed measure (1985-present). Advisory only: they bind nobody and decide no case), `nlrb_gc_memo` (NLRB General Counsel Memoranda), `nlrb_advice_memo` (NLRB Division of Advice Memoranda (rolling 10-year window, not the full archive)), `cpsc_advisory_opinion` (CPSC Office of General Counsel Advisory Opinions (historical, 1970s-2012)), `cpsc_secg` (CPSC Small Entity Compliance Guides), `whd_opinion_letter` (DOL Wage and Hour Division Opinion, Ruling and Administrator Interpretation Letters (FLSA, FMLA, DBRA, SCA, CCPA, MSPA; 1993-present)), `whd_foh` (DOL Wage and Hour Field Operations Handbook (WHD internal enforcement procedure, not law; 22 chapters)), `bis_advisory_opinion` (BIS (Bureau of Industry and Security) Advisory Opinions), `ddtc_commodity_jurisdiction` (DDTC (Directorate of Defense Trade Controls) Commodity Jurisdiction Determinations), `ddtc_guidance` (DDTC (Directorate of Defense Trade Controls) Policy Guidance Documents), `ofac_faq` (OFAC (Office of Foreign Assets Control) Frequently Asked Questions), `hhs_ocr_hipaa_faq` (HHS Office for Civil Rights HIPAA FAQs), `hhs_ocr_hipaa_guidance` (HHS Office for Civil Rights HIPAA Guidance Materials), `hhs_ocr_resolution_agreement` (HHS Office for Civil Rights HIPAA Resolution Agreements and Civil Money Penalties), `fcc_declaratory_ruling` (FCC (Federal Communications Commission) Declaratory Rulings), `ferc_policy_statement` (FERC (Federal Energy Regulatory Commission) Policy Statements), `doe_appliance_guidance` (DOE Appliance Standards Guidance and FAQs), `eeoc_guidance` (EEOC (Equal Employment Opportunity Commission) Enforcement and Policy Guidance, including Compliance Manual sections), `irs_written_determination` (IRS Written Determinations under 26 U.S.C. \u00a7 6110: Private Letter Rulings (PLR), Technical Advice Memoranda (TAM) and Chief Counsel Advice (CCA). Each is directed only to the taxpayer who requested it and, by \u00a7 6110(k)(3), may not be used or cited as precedent).\n\n`US_TAX_TREATY` sources: `us_tax_treaty` (U.S. Bilateral Income and Estate Tax Treaties), `us_tax_treaty_technical_explanation` (Treasury Technical Explanations (article-by-article commentary on a tax treaty)), `senate_treaty` (Senate Treaty Records (transmittal, parties and proceedings)), `senate_treaty_resolution` (Senate Resolutions of Advice and Consent, including the reservations, understandings and declarations that narrow a treaty's effect in US law), `senate_treaty_document` (Treaty Documents (CDOC TDOC series): the President's message transmitting a treaty to the Senate, with the instrument's text).\n\n`STATE_AGENCY_GUIDANCE` sources: `state_insurance_bulletin` (State Department of Insurance Bulletins), `state_financial_bulletin` (State Financial-Institutions Regulator Bulletins (banking, credit unions, trust companies, escrow agents, consumer lenders, money transmitters; AZ and OR only, where that regulator shares an index with the insurance regulator)).\n\n`AGENCY_ADJUDICATION` sources: `mspb_precedential` (MSPB Precedential Decisions), `mspb_nonprecedential` (MSPB Nonprecedential Orders), `olc_opinion` (DOJ Office of Legal Counsel Opinions (official bound volumes, 1933-2020)), `cfpb_enforcement_action` (CFPB Enforcement Actions), `sec_commission_opinion` (SEC Commission Opinions and Adjudicatory Orders), `bia_precedent` (BIA Precedent Decisions (I&N Dec.)), `ag_precedent` (Attorney General Immigration Decisions (I&N Dec.)), `immigration_admin_precedent` (INS and USCIS Administrative Precedent Decisions (I&N Dec.)), `nlrb_board_decision` (NLRB Board Decisions (bounded window; see coverage.mdx for the exact years covered)), `ftc_administrative_decision` (FTC Part 3 Administrative Decisions). Pass it back as the `source` search filter to scope to just this one source. Null for corpora with only one source.",
+            "description": "The named source within `corpusType`, for corpora that fold several independently filterable bodies of law into one token.\n\n`FEDERAL_RULES` sources: `frcp` (Federal Rules of Civil Procedure), `frcrp` (Federal Rules of Criminal Procedure), `fre` (Federal Rules of Evidence), `frap` (Federal Rules of Appellate Procedure), `frbp` (Federal Rules of Bankruptcy Procedure), `sct` (Rules of the Supreme Court of the United States).\n\n`CFR` sources: `far` (Federal Acquisition Regulation (48 C.F.R. ch. 1)), `dfars` (Defense Federal Acquisition Regulation Supplement (48 C.F.R. ch. 2)) (both are already part of `CFR`; this only splits the existing Title 48 data by chapter, it does not add new sections).\n\n`AGENCY_GUIDANCE` sources: `administrative_guidance` (Synthesized administrative guidance (e.g. SALT cap, CTC, 401(k) limits)), `ssa_ruling` (Social Security Administration Rulings), `irs_rev_proc` (IRS Revenue Procedures), `irs_notice` (IRS Notices), `irs_rev_rul` (IRS Revenue Rulings), `irs_announcement` (IRS Announcements), `irs_irm` (Internal Revenue Manual (IRS internal procedure)), `merger_guidelines` (DOJ & FTC Merger Guidelines (2023)), `doj_leniency` (DOJ Antitrust Division Leniency Policy), `doj_business_review` (DOJ Antitrust Division Business Review Letters (1991-2021)), `cms_iom` (CMS Medicare Internet-Only Manuals (instruction to Medicare contractors, not a regulation)), `copyright_circular` (US Copyright Office Circulars), `copyright_compendium` (Compendium of U.S. Copyright Office Practices, Third Edition (2014, 2017 and 2021 editions)), `doj_justice_manual` (DOJ Justice Manual), `uscis_policy_manual` (USCIS Policy Manual), `mpep` (USPTO Manual of Patent Examining Procedure (MPEP)), `tmep` (USPTO Trademark Manual of Examining Procedure (TMEP)), `cftc_staff_letter` (CFTC Staff Letters (no-action, exemptive, interpretative; 2008-present)), `fincen_ruling` (FinCEN Administrative Rulings), `fincen_guidance` (FinCEN Guidance (alerts, advisories, notices, bulletins, fact sheets)), `fincen_boi_faq` (FinCEN Beneficial Ownership Information FAQs), `fincen_boi_rule_qa` (FinCEN BOI Rulemaking Q&As (final rule and interim final rule)), `fincen_boi_compliance_guide` (FinCEN Small Entity Compliance Guide (Beneficial Ownership Information Reporting)), `fincen_amla_material` (FinCEN Anti-Money Laundering Act of 2020 Implementation Material), `frb_sr_letter` (Federal Reserve Supervision and Regulation (SR) / Consumer Affairs (CA) Letters), `occ_bulletin` (OCC Bulletins), `occ_interpretive_letter` (OCC Interpretive Letters), `fdic_fil` (FDIC Financial Institution Letters (FILs)), `cfpb_supervisory_guidance` (CFPB Supervisory Guidance), `cfpb_circular` (CFPB Consumer Financial Protection Circulars), `dfars_pgi` (DFARS PGI (Procedures, Guidance, and Information)), `ftc_advisory_opinion` (FTC Advisory Opinions), `ftc_policy_statement` (FTC Policy Statements (1967-present)), `ftc_hsr_interpretation` (FTC HSR Premerger Notification Interpretations: the Commission's formal interpretations under 16 C.F.R. 803.30 (1978-2000, a closed series) and the Premerger Notification Office's informal interpretations (1983-present; the publisher serves none from 1997)), `ftc_advocacy_filing` (FTC Advocacy Filings: comments and letters to state legislatures, state courts, governors and other federal agencies on the competition effects of a proposed measure (1985-present). Advisory only: they bind nobody and decide no case), `nlrb_gc_memo` (NLRB General Counsel Memoranda), `nlrb_advice_memo` (NLRB Division of Advice Memoranda (rolling 10-year window, not the full archive)), `cpsc_advisory_opinion` (CPSC Office of General Counsel Advisory Opinions (historical, 1970s-2012)), `cpsc_secg` (CPSC Small Entity Compliance Guides), `whd_opinion_letter` (DOL Wage and Hour Division Opinion, Ruling and Administrator Interpretation Letters (FLSA, FMLA, DBRA, SCA, CCPA, MSPA; 1993-present)), `whd_foh` (DOL Wage and Hour Field Operations Handbook (WHD internal enforcement procedure, not law; 22 chapters)), `bis_advisory_opinion` (BIS (Bureau of Industry and Security) Advisory Opinions), `ddtc_commodity_jurisdiction` (DDTC (Directorate of Defense Trade Controls) Commodity Jurisdiction Determinations), `ddtc_guidance` (DDTC (Directorate of Defense Trade Controls) Policy Guidance Documents), `ofac_faq` (OFAC (Office of Foreign Assets Control) Frequently Asked Questions), `hhs_ocr_hipaa_faq` (HHS Office for Civil Rights HIPAA FAQs), `hhs_ocr_hipaa_guidance` (HHS Office for Civil Rights HIPAA Guidance Materials), `hhs_ocr_resolution_agreement` (HHS Office for Civil Rights HIPAA Resolution Agreements and Civil Money Penalties), `fcc_declaratory_ruling` (FCC (Federal Communications Commission) Declaratory Rulings), `ferc_policy_statement` (FERC (Federal Energy Regulatory Commission) Policy Statements), `doe_appliance_guidance` (DOE Appliance Standards Guidance and FAQs), `eeoc_guidance` (EEOC (Equal Employment Opportunity Commission) Enforcement and Policy Guidance, including Compliance Manual sections), `irs_written_determination` (IRS Written Determinations under 26 U.S.C. \u00a7 6110: Private Letter Rulings (PLR), Technical Advice Memoranda (TAM) and Chief Counsel Advice (CCA). Each is directed only to the taxpayer who requested it and, by \u00a7 6110(k)(3), may not be used or cited as precedent).\n\n`US_TAX_TREATY` sources: `us_tax_treaty` (U.S. Bilateral Income and Estate Tax Treaties), `us_tax_treaty_technical_explanation` (Treasury Technical Explanations (article-by-article commentary on a tax treaty)), `senate_treaty` (Senate Treaty Records (transmittal, parties and proceedings)), `senate_treaty_resolution` (Senate Resolutions of Advice and Consent, including the reservations, understandings and declarations that narrow a treaty's effect in US law), `senate_treaty_document` (Treaty Documents (CDOC TDOC series): the President's message transmitting a treaty to the Senate, with the instrument's text).\n\n`STATE_AGENCY_GUIDANCE` sources: `state_insurance_bulletin` (State Department of Insurance Bulletins), `state_financial_bulletin` (State Financial-Institutions Regulator Bulletins (banking, credit unions, trust companies, escrow agents, consumer lenders, money transmitters; AZ and OR only, where that regulator shares an index with the insurance regulator)).\n\n`AGENCY_ADJUDICATION` sources: `mspb_precedential` (MSPB Precedential Decisions), `mspb_nonprecedential` (MSPB Nonprecedential Orders), `olc_opinion` (DOJ Office of Legal Counsel Opinions (official bound volumes, 1933-2020)), `cfpb_enforcement_action` (CFPB Enforcement Actions), `sec_commission_opinion` (SEC Commission Opinions and Adjudicatory Orders), `bia_precedent` (BIA Precedent Decisions (I&N Dec.)), `ag_precedent` (Attorney General Immigration Decisions (I&N Dec.)), `immigration_admin_precedent` (INS and USCIS Administrative Precedent Decisions (I&N Dec.)), `nlrb_board_decision` (NLRB Board Decisions (bounded window; see coverage.mdx for the exact years covered)), `ftc_administrative_decision` (FTC Part 3 Administrative Decisions). Pass it back as the `source` search filter to scope to just this one source. Null for corpora with only one source, which includes every state's statutes and regulations.\n\nNot a link, and not where the text came from: it is a filter token. The official link to the publisher's text is `sourceUrl`.",
             "examples": [
               "sct"
             ],
@@ -3672,6 +4373,21 @@
               114
             ],
             "title": "Sourcepagestart"
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where the government published this text: the link to cite and to verify against. The same value `/us/statutes/section/{actId}/body` returns as `sourceUrl`, on every search result, section record and batch item.\n\nIt is `externalUrl` when the publisher issued a per-section link, and otherwise falls back to the govinfo.gov page, then the state's own page, then our archived copy of the publisher's page. Null when we hold no publishable link: a third-party compiler is never served here, and where a link exists but is withheld under licence, `licenseNote` says so.",
+            "examples": [
+              "https://www.mass.gov/regulations/240-CMR-200-licensure-of-cosmetologists"
+            ],
+            "title": "Sourceurl"
           },
           "state": {
             "anyOf": [
@@ -4128,11 +4844,32 @@
                 "type": "null"
               }
             ],
-            "description": "Federal Register agency slug, e.g. `environmental-protection-agency`. Pass a list to match any of several. Applies to `FEDERAL_REGISTER` and `EXECUTIVE_ACTION`; other corpora carry no agency, so combining this with them returns nothing.",
+            "description": "Federal Register agency slug, e.g. `environmental-protection-agency`. The agency's full name (`Environmental Protection Agency`) or its Federal Register acronym (`EPA`, `e.p.a.`) resolves to the same slug; an acronym the Federal Register gives to more than one agency (`FS`) or a value naming no agency the corpus holds is a 422, never a charge. Pass a list to match any of several. Applies to `FEDERAL_REGISTER` and `EXECUTIVE_ACTION`; other corpora carry no agency, so combining this with them returns nothing.",
             "examples": [
               "environmental-protection-agency"
             ],
             "title": "Agency"
+          },
+          "article": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Scope a search to one or more articles. On `CONSTITUTION` and `STATE_CONSTITUTION` this is the article label as `GET /us/statutes/divisions` lists it (`Amendment XIV`, `Article IV`, `Preamble`). On `STATE` / `REGULATION` it is the article of a code divided by article instead of chapter, such as New York (`2-A` in `ny_jud`). This is the search side of `parent.article`: pass a hit's `parent` straight back to search within its article.\n\nPass the `identifier` exactly as the listing returned it; a case slip such as `amendment xiv` also matches. Article labels repeat, so `article` needs a `corpusType` from one of those two families, `STATE_CONSTITUTION` also needs `state`, and `STATE` / `REGULATION` need the `code`. A request missing one is refused with 422 before anything is charged. String or list.",
+            "examples": [
+              "Amendment XIV"
+            ],
+            "title": "Article"
           },
           "changedSince": {
             "anyOf": [
@@ -4187,7 +4924,7 @@
                 "type": "null"
               }
             ],
-            "description": "Restrict to specific state statutory codes, e.g. `tx_pe` for the Texas Penal Code. Values are the `actId`s returned by `GET /us/statutes/divisions?corpusType=STATE&state=XX`, so the browse output can be fed straight back in. Pass a list to search several codes, across states if you like (`[\"tx_pe\", \"ca_pen\"]`). This is the only way to scope below a whole jurisdiction: `state=tx` alone searches every Texas code at once.",
+            "description": "Restrict to specific state statutory codes, e.g. `tx_pe` for the Texas Penal Code. Values are the `identifier`s returned by `GET /us/statutes/divisions?corpusType=STATE&state=XX`, so the browse output can be fed straight back in. Pass a list to search several codes, across states if you like (`[\"tx_pe\", \"ca_pen\"]`). This is the only way to scope below a whole jurisdiction: `state=tx` alone searches every Texas code at once.\n\nWith `corpusType=FEDERAL_RULES`, a value can instead be a federal rule set as `GET /us/statutes/divisions?corpusType=FEDERAL_RULES` lists it: `frcp`, `fre`, `frcpsuppadm`, or an appendix copy such as `uscapp_t28a_fre`. Without that corpusType a bare `frcp` is refused, because it cannot be told apart from a state code missing its state.",
             "examples": [
               "tx_pe"
             ],
@@ -4322,6 +5059,7 @@
               "actId",
               "actStatus",
               "action",
+              "adoptedAfterCurrentThrough",
               "adoptingCitations",
               "agencies",
               "agencySlugs",
@@ -4381,6 +5119,7 @@
               "govInfoPdfUrl",
               "granuleId",
               "history",
+              "historyEffectiveDate",
               "htmlUrl",
               "implementingRegulations",
               "issueDate",
@@ -4388,6 +5127,7 @@
               "issuingAgency",
               "languageCode",
               "lastAmendedDate",
+              "lastAmendedDateRaw",
               "lastAmendedYear",
               "lawImplemented",
               "licenseNote",
@@ -4398,6 +5138,7 @@
               "part",
               "partName",
               "pdfUrl",
+              "pendingAdoptions",
               "popularName",
               "president",
               "priorEffectiveDates",
@@ -4405,11 +5146,13 @@
               "publicLawCites",
               "publicLaws",
               "publicationDate",
+              "publicationDateRaw",
               "publisherKey",
               "referencedShortTitles",
               "relatedCitations",
               "relatedDocuments",
               "releaseDate",
+              "releaseDateRaw",
               "relevanceScore",
               "renumberedTo",
               "renumberedToLabel",
@@ -4417,6 +5160,7 @@
               "rescindedOn",
               "rescindedOnRaw",
               "reviewDate",
+              "reviewDateRaw",
               "ruleSet",
               "ruleSetCode",
               "sectionNumber",
@@ -4431,6 +5175,7 @@
               "sourceNote",
               "sourcePageEnd",
               "sourcePageStart",
+              "sourceUrl",
               "state",
               "stateHtmlUrl",
               "statutoryAuthority",
@@ -4487,7 +5232,7 @@
           },
           "matchType": {
             "default": "any",
-            "description": "Controls exact vs. semantic matching, so there is no need for a separate keyword-only search mode. `any` (default) is hybrid semantic + keyword ranking and suits natural-language questions. Use `all` for strict keyword matching (every query term must appear in the text) or `phrase` for an exact-phrase match, e.g. a defined term or a statutory phrase, when you want lexical precision. To pull up one specific section, pass its citation as the query (e.g. `42 U.S.C. \u00a7 1983`, `Cal. Civ. Code \u00a7 1950.5`) and it resolves to that section at rank 1.",
+            "description": "Controls exact vs. semantic matching, so there is no need for a separate keyword-only search mode. `any` (default) is hybrid semantic + keyword ranking and suits natural-language questions. Use `all` for strict keyword matching (every query word must appear in the text) or `phrase` for an exact-phrase match (the query's words, contiguous and in order), e.g. a defined term or a statutory phrase, when you want lexical precision. Both match WHOLE words, case-insensitively, ignoring punctuation: `act` does not match `fact`, `10b-5` matches `10b 5`, and `\u00a7 1983` matches `section 1983`. To pull up one specific section, pass its citation as the query (e.g. `42 U.S.C. \u00a7 1983`, `Cal. Civ. Code \u00a7 1950.5`) and it resolves to that section at rank 1.",
             "enum": [
               "any",
               "all",
@@ -4753,6 +5498,7 @@
           "titleNumber": {
             "anyOf": [
               {
+                "minimum": 1.0,
                 "type": "integer"
               },
               {
@@ -4823,6 +5569,17 @@
             ],
             "title": "Changedsectioncount"
           },
+          "citationOutsideFilters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CitationOutsideFilters"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Your query is a citation to a real section that your filters exclude. To read it, retry without the filters named in `excludedBy`, or call `GET /us/statutes/resolve` without them. Null when the query is not a citation, when the citation is inside your filters (it then ranks first), or when it names no section we hold. `results` are unchanged: a filter is a promise, so the section is reported here and not forced into the results. The same on every page of a query."
+          },
           "count": {
             "default": 0,
             "description": "How many results came back in THIS response, i.e. the length of `results`. It is not a total match count: the API ranks a bounded set of candidates rather than scoring the whole corpus, so no such total exists. Use `hasMore` to decide whether to ask for another page.",
@@ -4843,6 +5600,43 @@
             "description": "Whether more results exist beyond this page.",
             "title": "Hasmore",
             "type": "boolean"
+          },
+          "matchQuality": {
+            "anyOf": [
+              {
+                "enum": [
+                  "exact",
+                  "strong",
+                  "moderate",
+                  "weak",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How strongly the evidence says result #1 answers the query. exact: a citation or section-number match. strong: the top result was correct about 94% of the time in our measurements (about 91% on questions whose answer is a statute or regulation). moderate: about 67%. weak: about 35%. none: nothing on point (same as noGoodMatch). Measured on our labelled evaluation set; tiers may be re-cut as the index changes, so treat unknown values as moderate. Null when `rankingDegraded` is true. The same on every page of a query.",
+            "examples": [
+              "strong"
+            ],
+            "title": "Matchquality"
+          },
+          "noGoodMatch": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "True when nothing in the corpus looks on point for this query. It says nothing about whether the top result is the right section; check its citation and jurisdiction. False when the top result clears the relevance bar, or when the query is a citation or a section number that matched exactly. Null when `rankingDegraded` is true, because the bar is on the relevance model's scale. The same on every page of a query.",
+            "examples": [
+              false
+            ],
+            "title": "Nogoodmatch"
           },
           "offset": {
             "default": 0,
@@ -4865,6 +5659,15 @@
             "title": "Query",
             "type": "string"
           },
+          "rankingDegraded": {
+            "default": false,
+            "description": "True when the relevance model (a cross-encoder) was unavailable and the results are in hybrid-retrieval order instead. The sections are still real matches for the query, but the ordering is coarser and `relevanceScore` is a retrieval score rather than a 0-1 relevance, so do not threshold on it. Such a ranking is never cached: retrying shortly returns the fully ranked result once the model recovers.",
+            "examples": [
+              false
+            ],
+            "title": "Rankingdegraded",
+            "type": "boolean"
+          },
           "results": {
             "description": "Matching sections, most relevant first. Ordering is by relevance, not statutory order; use `/us/statutes/section/{actId}/related` for what sits either side of a section in its code.",
             "items": {
@@ -4882,6 +5685,58 @@
           }
         },
         "title": "StatuteSearchResponse",
+        "type": "object"
+      },
+      "StatuteSectionNotFoundError": {
+        "description": "The 404 from any `/us/statutes/section/{act_id}/...` route.",
+        "properties": {
+          "actId": {
+            "description": "The identifier exactly as you sent it.",
+            "title": "Actid",
+            "type": "string"
+          },
+          "detail": {
+            "description": "Human-readable reason, safe to show a user. Branch on `reason`, not on this string.",
+            "examples": [
+              "Section not found. This id does not exist, but the section does, ..."
+            ],
+            "title": "Detail",
+            "type": "string"
+          },
+          "didYouMean": {
+            "description": "Real act_ids for the section your id pointed at, best first, at most 3.",
+            "examples": [
+              [
+                "USC_T26_C1_S1"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Didyoumean",
+            "type": "array"
+          },
+          "reason": {
+            "description": "`assembled_id` -- the id does not exist but the section does, under the ids in `didYouMean` (usually an id built by hand from a citation, or sent in the wrong case). `unresolved_citation` -- the input is a citation and resolves to nothing we hold; check it with `/us/statutes/resolve`. `not_in_corpus` -- nothing matched. `missing_act_id` -- the URL left the id out, so an endpoint name (`body`, `changes`, ...) sits where the id goes; `detail` names the path you meant. Never charged.",
+            "enum": [
+              "assembled_id",
+              "unresolved_citation",
+              "not_in_corpus",
+              "missing_act_id"
+            ],
+            "examples": [
+              "assembled_id"
+            ],
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "actId",
+          "reason"
+        ],
+        "title": "StatuteSectionNotFoundError",
         "type": "object"
       },
       "StatuteSectionResponse": {
@@ -4904,6 +5759,17 @@
             ],
             "title": "Processingtimems",
             "type": "number"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SectionIdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the section is exactly the act_id you sent. Otherwise how your input was matched: a citation, or an act_id with transport damage (whitespace, quotes, a trailing period) removed."
           },
           "section": {
             "$ref": "#/components/schemas/StatuteResult",
@@ -4938,7 +5804,7 @@
             "type": "array"
           },
           "reason": {
-            "description": "`assembled_id` -- this id does not exist, but the section does, under the ids in `didYouMean`. Almost always an id built from a citation: the chapter/article/part segments are not derivable from one, so take ids from a `/us/statutes/search` response instead. `not_in_corpus` -- nothing matching was found. Either the id is malformed beyond recovery, or the section is genuinely absent; check `/us/statutes/coverage` for the jurisdiction.",
+            "description": "`assembled_id` -- this id does not exist, but the section does, under the ids in `didYouMean`. Almost always an id built from a citation: the chapter/article/part segments are not derivable from one, so take ids from a `/us/statutes/search` response instead. `unresolved_citation` -- the input is a citation and resolves to nothing we hold; check its form with `/us/statutes/resolve`. `not_in_corpus` -- nothing matching was found. Either the id is malformed beyond recovery, or the section is genuinely absent; check `/us/statutes/coverage` for the jurisdiction.",
             "examples": [
               "assembled_id"
             ],
@@ -4963,7 +5829,7 @@
         },
         "properties": {
           "actIds": {
-            "description": "Section identifiers from a prior `/us/statutes/search` response. Up to 50 per call. Duplicates are collapsed, and order is preserved in the response. Each id encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983. DO NOT BUILD THESE FROM A CITATION: the chapter/article/part segments exist only in the data, so `Tex. Property Code \u00a7 93.005` is `STATE_TX_Cpr_C93_S93.005`, not `STATE_TX_C93_S93.005`. Assembled ids miss, and `notFoundDetail` will say so and suggest the real ones. To start from a citation, use `/us/statutes/resolve`.",
+            "description": "Section identifiers from a prior `/us/statutes/search` response. Up to 50 per call. Duplicates are collapsed, and order is preserved in the response. Each id encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983. DO NOT BUILD THESE FROM A CITATION: the chapter/article/part segments exist only in the data, so `Tex. Property Code \u00a7 93.005` is `STATE_TX_Cpr_C93_S93.005`, not `STATE_TX_C93_S93.005`. Assembled ids miss, and `notFoundDetail` will say so and suggest the real ones. A citation (`26 U.S.C. \u00a7 1`) is also accepted in place of an id: it is resolved and served, and listed in `resolved`.",
             "examples": [
               [
                 "USC_T42_C21_S1983",
@@ -5036,6 +5902,14 @@
             ],
             "title": "Processingtimems",
             "type": "number"
+          },
+          "resolved": {
+            "description": "One entry per input that did NOT match as sent: a citation resolved to its section, or an id cleaned of whitespace, quotes or a trailing period. Use it to map your inputs onto `sections`, which carry the real act_ids. Empty when every input was an exact id.",
+            "items": {
+              "$ref": "#/components/schemas/SectionIdentifierResolution"
+            },
+            "title": "Resolved",
+            "type": "array"
           },
           "sections": {
             "description": "Found sections, in the order the ids were supplied.",
@@ -5191,8 +6065,79 @@
         "title": "UpdateWatchRequest",
         "type": "object"
       },
+      "UsCorpusTypeInfo": {
+        "description": "One entry in the coverage legend: what a `corpusType` token means.",
+        "properties": {
+          "browsable": {
+            "default": false,
+            "description": "Whether `GET /us/statutes/divisions` can walk this corpus level by level (titles, chapters, parts, codes, articles, rule sets). False for dated series such as the Federal Register and executive actions, and for corpora with no shared tree such as agency guidance. Every corpus is searchable either way; this only says whether you can NAVIGATE it instead of querying it.",
+            "examples": [
+              true
+            ],
+            "title": "Browsable",
+            "type": "boolean"
+          },
+          "description": {
+            "description": "What this corpus contains.",
+            "title": "Description",
+            "type": "string"
+          },
+          "scope": {
+            "description": "`federal` corpora appear under the `federal` jurisdiction; `state` corpora are scoped per state (pair with the `state` filter).",
+            "enum": [
+              "federal",
+              "state"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "scopeNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present ONLY when we hold part of a corpus rather than all of it, and then it names both what is held and what is not. Null means no class-level exclusion applies. It is a STRUCTURED completeness claim, deliberately separate from `description` (prose a caller cannot act on). It says nothing about how recently the corpus was refreshed, a different fact: a filtered corpus can be, and `FEDERAL_REGISTER_NOTICE` is, refreshed weekly. `GET /boards` answers that one.",
+            "examples": [
+              "Held: notices withdrawing a proposed rule ... About 2.4% of Federal Register notices. Not held: Paperwork Reduction Act information collections ..."
+            ],
+            "title": "Scopenote"
+          },
+          "sourceScopeNotes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Scope statements for INDIVIDUAL sources inside this token, keyed by the `source` value you can filter on. `scopeNote` is the right unit for a token that is one corpus; it is the wrong unit for `AGENCY_GUIDANCE`, which fans out to more than thirty unrelated sources, so a partial source declares its own coverage here rather than describing every sibling. Empty when every source under this token is held whole.",
+            "examples": [
+              {
+                "cms_iom": "Held: the 204 chapter, appendix and exhibit documents ... Not held ... Pub. 100-12 (State Medicaid Manual) ... publish no chapters at all ..."
+              }
+            ],
+            "title": "Sourcescopenotes",
+            "type": "object"
+          },
+          "token": {
+            "description": "The `corpusType` value to pass to `/us/statutes/search`.",
+            "examples": [
+              "REGULATION"
+            ],
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "description",
+          "scope"
+        ],
+        "title": "UsCorpusTypeInfo",
+        "type": "object"
+      },
       "UsDivisionNode": {
-        "description": "One child division in a `GET /us/statutes/divisions` listing.\n\nInterior nodes (titles, chapters, parts, codes) carry a `sectionCount` and\n`isLeaf: false`; drill into one by passing its `identifier` back as the\nmatching filter. Leaf nodes are sections and carry an `actId` you can pass to\n`/us/statutes/section/{actId}`.",
+        "description": "One child division in a `GET /us/statutes/divisions` listing.\n\nInterior nodes (titles, chapters, parts, codes, articles) carry a\n`sectionCount` and `isLeaf: false`; drill into one by passing its\n`identifier` back as the filter its `kind` names. Leaf nodes are sections and carry an `actId` you can pass to\n`/us/statutes/section/{actId}`.",
         "properties": {
           "actId": {
             "anyOf": [
@@ -5207,7 +6152,7 @@
             "title": "Actid"
           },
           "identifier": {
-            "description": "The division's identifier within its parent, e.g. `42` (title), `21` (chapter), `240` (part), `tx_pe` (state code), or `1983` (section).",
+            "description": "The division's identifier within its parent, e.g. `42` (title), `21` (chapter), `240` (part), `tx_pe` (state code), `frcp` (federal rule set), `Article III` (article), or `1983` (section). Pass it back verbatim.",
             "title": "Identifier",
             "type": "string"
           },
@@ -5217,7 +6162,7 @@
             "type": "boolean"
           },
           "kind": {
-            "description": "Division kind: `title`, `chapter`, `part`, `code`, or `section`.",
+            "description": "Division kind, which is also the filter to drill into it with: `title` (as `titleNumber`), `chapter`, `part`, `code`, `article`, or `section` (a leaf; fetch it by `actId`).",
             "title": "Kind",
             "type": "string"
           },
@@ -5255,6 +6200,176 @@
         "title": "UsDivisionNode",
         "type": "object"
       },
+      "UsFreeCallMeta": {
+        "description": "`meta` on a free discovery endpoint.",
+        "properties": {
+          "creditsConsumed": {
+            "default": 0,
+            "description": "Always 0: this endpoint is free.",
+            "examples": [
+              0
+            ],
+            "title": "Creditsconsumed",
+            "type": "number"
+          },
+          "processingTimeMs": {
+            "description": "Server-side time to build the response, in milliseconds.",
+            "examples": [
+              142.7
+            ],
+            "title": "Processingtimems",
+            "type": "number"
+          }
+        },
+        "required": [
+          "processingTimeMs"
+        ],
+        "title": "UsFreeCallMeta",
+        "type": "object"
+      },
+      "UsJurisdictionCoverage": {
+        "description": "One row of the /us/statutes/states response.",
+        "properties": {
+          "code": {
+            "description": "2-letter state ISO code (lowercase) or `federal` for USC/CFR.",
+            "examples": [
+              "tx"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "corpora": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Per-corpusType ingested-DOCUMENT counts for this jurisdiction, keyed by the `corpusType` token (e.g. `{\"STATE\": 176778, \"REGULATION\": 51142}`). Only corpora with data are included. Pass a key as `corpusType` to `/us/statutes/search` to scope a query.",
+            "title": "Corpora",
+            "type": "object"
+          },
+          "hasData": {
+            "description": "True when section_count > 0.",
+            "title": "Hasdata",
+            "type": "boolean"
+          },
+          "kind": {
+            "description": "`federal` for USC/CFR, `state` for the 50 states, `territory` for non-state jurisdictions (DC, Puerto Rico).",
+            "enum": [
+              "federal",
+              "state",
+              "territory"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name.",
+            "examples": [
+              "Texas"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "sectionCount": {
+            "description": "Distinct sections held for this jurisdiction, summed across its `corpora`. 0 means not yet covered.\n\nOne per provision or document, NOT per retrieval passage (see `totalPassages` for those). Repealed, transferred and reserved sections ARE counted: a legal research corpus serves them and a customer researching a historical question needs them. A SUPERSEDED prior version is not counted a second time when the section it supersedes is also served, because that is the same section twice -- but one with no current counterpart IS counted, since it is the only text we hold for that provision. Read `statusBreakdown` to see the split.",
+            "minimum": 0.0,
+            "title": "Sectioncount",
+            "type": "integer"
+          },
+          "statusBreakdown": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "description": "Per-corpusType `act_status` split over the same sections `corpora` counts, e.g. `{\"REGULATION\": {\"inForce\": 12151, \"repealed\": 10640, \"transferred\": 5426}}`.\n\nPublished so a large section count can be read as maintained law plus retained history rather than as an undifferentiated total: Montana holds 28,217 regulation sections of which 12,151 are in force, and without this split that reads either as 28,217 current rules or as a coverage problem, and it is neither.\n\n\u26a0\ufe0f `inForce` is what the ingester recorded, and it is NOT a complete census of current law: a zero means the status was never determined, never that the corpus is entirely inoperative. Absent when a jurisdiction has not been measured exactly.",
+            "title": "Statusbreakdown",
+            "type": "object"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "sectionCount",
+          "hasData"
+        ],
+        "title": "UsJurisdictionCoverage",
+        "type": "object"
+      },
+      "UsStatutesCoverageEnvelope": {
+        "description": "What `GET /us/statutes/coverage` returns: the matrix under `data`.\n\nDeclared because the route used to return a hand-built dict with no\n`response_model`, so its published schema was `{}`. Every field was\ndiscoverable only if the example happened to show it, and the MCP tool and\ngenerated clients built from the document got no types at all for the one\nendpoint that exists to be read before anything else.",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UsStatutesCoverageResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/UsFreeCallMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "UsStatutesCoverageEnvelope",
+        "type": "object"
+      },
+      "UsStatutesCoverageResponse": {
+        "description": "Response for `GET /us/statutes/coverage`.\n\nA self-describing matrix: a legend of every `corpusType` token plus, for\neach jurisdiction, the per-corpusType ingested-document counts. Use it to learn\nexactly what is queryable where before calling `/us/statutes/search`.",
+        "properties": {
+          "corpusTypes": {
+            "description": "Legend of every corpusType token, its meaning, and its scope.",
+            "items": {
+              "$ref": "#/components/schemas/UsCorpusTypeInfo"
+            },
+            "title": "Corpustypes",
+            "type": "array"
+          },
+          "jurisdictions": {
+            "description": "One row per jurisdiction (federal first, then states and territories), each carrying its per-corpusType counts in `corpora`.",
+            "items": {
+              "$ref": "#/components/schemas/UsJurisdictionCoverage"
+            },
+            "title": "Jurisdictions",
+            "type": "array"
+          },
+          "measuredAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When these counts were last measured against the index, as the OLDEST per-jurisdiction measurement in this response. This is OUR measurement's age, not the publisher's currency: for what a section is current THROUGH, read `currentThrough` on the section, and for when a source was last checked, read `GET /boards`.\\n\\nIt exists because a jurisdiction whose measurement keeps failing is served from the last value we knew to be correct, which is the right trade (a stale count is accurate, a degraded one reports a real corpus as absent) and used to be indistinguishable from a fresh one. Null means nothing in this response has been successfully measured yet.",
+            "title": "Measuredat"
+          },
+          "stateCountWithData": {
+            "title": "Statecountwithdata",
+            "type": "integer"
+          },
+          "totalPassages": {
+            "default": 0,
+            "description": "Total indexed retrieval passages across the corpus. Longer sections and documents are split into several passages for retrieval, so this runs well above `totalSections`. The Federal Register (long agency rules) accounts for over half.",
+            "title": "Totalpassages",
+            "type": "integer"
+          },
+          "totalSections": {
+            "description": "Count of distinct sections (one per provision or document) across the corpus. This is the deduplicated legal-document total, not the raw index size; see `totalPassages`.",
+            "title": "Totalsections",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "corpusTypes",
+          "jurisdictions",
+          "totalSections",
+          "stateCountWithData"
+        ],
+        "title": "UsStatutesCoverageResponse",
+        "type": "object"
+      },
       "UsStatutesDivisionsResponse": {
         "description": "Response for `GET /us/statutes/divisions`.",
         "properties": {
@@ -5290,7 +6405,7 @@
             "type": "array"
           },
           "level": {
-            "description": "Kind of children returned: `titles`, `chapters`, `parts`, `codes`, or `sections`.",
+            "description": "Kind of children returned: `titles`, `chapters`, `parts`, `codes`, `articles`, or `sections`.",
             "title": "Level",
             "type": "string"
           },
@@ -5464,9 +6579,21 @@
     "securitySchemes": {
       "ApiKeyAuth": {
         "bearerFormat": "vq_key_*",
-        "description": "API key issued from the developer dashboard. Pass as `Authorization: Bearer vq_key_...`",
+        "description": "API key issued from the developer dashboard. Pass as `Authorization: Bearer vq_key_...` (preferred).",
         "scheme": "bearer",
         "type": "http"
+      },
+      "ApiKeyHeader": {
+        "description": "The same API key as a bare header value: `X-API-Key: vq_key_...`. Equivalent to the Bearer form.",
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      },
+      "ApiKeyQuery": {
+        "description": "The same API key as a query parameter: `?api_key=vq_key_...`. Use only where you cannot set a header. A URL can end up in proxy and server logs, browser history and shared links, so prefer either header form, and rotate a key that has leaked.",
+        "in": "query",
+        "name": "api_key",
+        "type": "apiKey"
       }
     }
   },
@@ -5480,7 +6607,7 @@
       "name": "Vaquill API Support",
       "url": "https://www.vaquill.ai"
     },
-    "description": "Public API for legal statutes and legislation.\n\n**Authentication**: Pass your API key via the `Authorization: Bearer vq_key_...` header.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Jurisdictions\n\n| Jurisdiction | Coverage | `countryCode` |\n|---|---|---|\n| **United States** | USC and the Statutes at Large, the CFR and its annual editions, all 52 state and territory statutory codes (50 states plus DC and Puerto Rico), state administrative regulations, court rules, federal and state constitutions, federal agency guidance and adjudications, the Federal Register, the Sentencing Guidelines and US tax treaties. | `US` |\n\nSee the full [Coverage page](https://www.vaquill.ai/docs/api-guide/coverage) for the jurisdiction-by-jurisdiction breakdown, or call `/us/statutes/coverage` for live counts. Coverage is per (jurisdiction, corpusType) pair, so treat that endpoint as the authoritative list rather than this summary.\n\n## Endpoints\n\n- **US Statutes**: Search and retrieve any of the corpora above with full text, resolve a citation to its exact section, browse the statutory hierarchy, read a section as it stood on a past date, and follow its change history, cross-references and defined terms\n- **Board Watches**: Subscribe to a corpus source and get a webhook or email when it refreshes with real changes (free, API key required)\n- **Pricing**: Credit costs per endpoint (no auth required)\n\n## Rate limits\n\nLimits are enforced per API key and scale with your plan. A `429` response includes a `Retry-After` header.\n\n| Plan | Per minute | Per hour | Per day |\n|---|---|---|---|\n| Vaquill API Pro | 60 | 1,000 | 2,000 |\n| Vaquill API Business | 150 | 2,500 | 10,000 |\n\nFor full documentation, visit the [API Reference](https://www.vaquill.ai/docs/api-reference/).",
+    "description": "Public API for legal statutes and legislation.\n\n**Authentication**: Pass your API key as `Authorization: Bearer vq_key_...` (preferred) or in the `X-API-Key` header. The `api_key` query parameter also works where a header cannot be set, but a URL ends up in logs and browser history. Sending two different keys in one request is rejected with a 401.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Jurisdictions\n\n| Jurisdiction | Coverage | `countryCode` |\n|---|---|---|\n| **United States** | USC and the Statutes at Large, the CFR and its annual editions, all 52 state and territory statutory codes (50 states plus DC and Puerto Rico), state administrative regulations, court rules, federal and state constitutions, federal agency guidance and adjudications, the Federal Register, the Sentencing Guidelines and US tax treaties. | `US` |\n\nSee the full [Coverage page](https://www.vaquill.ai/docs/api-guide/coverage) for the jurisdiction-by-jurisdiction breakdown, or call `/us/statutes/coverage` for live counts. Coverage is per (jurisdiction, corpusType) pair, so treat that endpoint as the authoritative list rather than this summary.\n\n## Endpoints\n\n- **US Statutes**: Search and retrieve any of the corpora above with full text, resolve a citation to its exact section, browse the statutory hierarchy, read a section as it stood on a past date, and follow its change history, cross-references and defined terms\n- **Board Watches**: Subscribe to a corpus source and get a webhook or email when it refreshes with real changes (free, API key required)\n- **Pricing**: Credit costs per endpoint (no auth required)\n\n## Rate limits\n\nLimits are enforced per API key and scale with your plan. A `429` response includes a `Retry-After` header.\n\n| Plan | Per minute | Per hour | Per day |\n|---|---|---|---|\n| Vaquill API Pro | 60 | 1,000 | 2,000 |\n| Vaquill API Business | 150 | 2,500 | 10,000 |\n\nFor full documentation, visit the [API Reference](https://www.vaquill.ai/docs/api-reference/).",
     "license": {
       "name": "Proprietary",
       "url": "https://www.vaquill.ai/terms"
@@ -5868,7 +6995,7 @@
     },
     "/api/v1/us/statutes/count": {
       "post": {
-        "description": "How many sections sit in a jurisdiction, corpus, code, title, chapter or part.\n\n**Cost**: 1 credit. A scope that matches nothing is refunded, because an empty\nanswer here is usually a wrong filter rather than a finding.\n\nUse it to size a job before you run it. Walking a container with\n`/us/statutes/divisions` and hydrating what you find is cheap per call and adds\nup across a whole corpus, so this is the call that tells you what you are about\nto spend before you spend it.\n\n**There is no `query` parameter, on purpose.** Search ranks over a bounded\nwindow, so \"how many sections match this query\" has no answer beyond the size of\nthat window. This counts a SCOPE, which is exact. Pair the two: count the scope\nhere, enumerate it with `/us/statutes/divisions`, then rank within it using\n`/us/statutes/search`.\n\nThe figure counts SECTIONS. Long sections are stored as several passages and are\ncounted once.",
+        "description": "How many sections sit in a jurisdiction, corpus, code, title, chapter, part,\narticle or federal rule set. The scoping filters (`code`, `article`, `chapter`,\n`part`) take the same values and pairing rules as on `/us/statutes/search`.\n\n**Cost**: 1 credit. A scope that matches nothing is refunded, because an empty\nanswer here is usually a wrong filter rather than a finding.\n\nUse it to size a job before you run it. Walking a container with\n`/us/statutes/divisions` and hydrating what you find is cheap per call and adds\nup across a whole corpus, so this is the call that tells you what you are about\nto spend before you spend it.\n\n**There is no `query` parameter, on purpose.** Search ranks over a bounded\nwindow, so \"how many sections match this query\" has no answer beyond the size of\nthat window. This counts a SCOPE, which is exact. Pair the two: count the scope\nhere, enumerate it with `/us/statutes/divisions`, then rank within it using\n`/us/statutes/search`.\n\nThe figure counts SECTIONS. Long sections are stored as several passages and are\ncounted once.",
         "operationId": "count_statute_sections_api_v1_us_statutes_count_post",
         "requestBody": {
           "content": {
@@ -5940,7 +7067,7 @@
     },
     "/api/v1/us/statutes/coverage": {
       "get": {
-        "description": "Self-describing coverage matrix. Returns a legend of every `corpusType` token (what it contains and whether it is federal or state-scoped) plus, for each jurisdiction, the per-corpusType ingested DOCUMENT counts in `corpora` (one per section or document, not per retrieval passage; `totalPassages` in the same response IS the passage count). Use it to learn exactly what is queryable where before calling /us/statutes/search: read a jurisdiction's `corpora` keys, then pass one as `corpusType` (paired with `state` for state-scoped corpora).\n\n`freshness` names STATUTE corpora that are no longer being refreshed, so a count can be read as maintained or frozen rather than just large. Each notice names a `(jurisdiction, corpusType)` pair, never a whole jurisdiction: a state can be frozen in one corpus and current in another. `paused` means the data is complete and queryable but no longer refreshed; `retired` means that corpusType is not offered there and its count is 0.\n\n**It covers statutes only, and an absent notice is not a freshness guarantee.** Regulations, court rules, constitutions and agency guidance each refresh on their own schedule and are not represented here. For those, and for the age of any source, read `GET /boards` -- it is the only complete answer to what is and is not being polled.\n\nFor per-source retrieval health, call `GET /boards`: it is free, needs no credits, and carries `lastRetrievedAt`, `cadence` and `retrievalStatus` (`current`, `stale`, `failing`, `unconfirmed`, `never_retrieved`) for every tracked source. Read it alongside the counts here so a section count carries an age. Note it records when we last CHECKED, not when the law last changed, and it is not a claim that the law is current as of that date; where a publisher states its own currency, that rides on the section itself and is summarized in `currency` below.\n\n**Free.** Requires an API key and is rate-limited, but costs no credits.",
+        "description": "Self-describing coverage matrix. Returns a legend of every `corpusType` token (what it contains and whether it is federal or state-scoped) plus, for each jurisdiction, the per-corpusType ingested DOCUMENT counts in `corpora` (one per section or document, not per retrieval passage; `totalPassages` in the same response IS the passage count). Use it to learn exactly what is queryable where before calling /us/statutes/search: read a jurisdiction's `corpora` keys, then pass one as `corpusType` (paired with `state` for state-scoped corpora). Each legend entry's `browsable` says whether `GET /us/statutes/divisions` can also walk that corpus as a tree.\n\nIt reports what we hold, not how recently it was refreshed. For the age of any source, call `GET /boards`: it is free, needs no credits, and carries `lastRetrievedAt`, `cadence` and `retrievalStatus` (`current`, `stale`, `failing`, `unconfirmed`, `never_retrieved`) for every tracked source. Read it alongside the counts here so a section count carries an age. It records when we last CHECKED, not when the law last changed, and it is not a claim that the law is current as of that date. Where a publisher states its own currency, that rides on each section as `currentThrough`.\n\n**Free.** Requires an API key and is rate-limited, but costs no credits.",
         "operationId": "list_statutes_coverage_api_v1_us_statutes_coverage_get",
         "responses": {
           "200": {
@@ -5950,16 +7077,19 @@
                   "data": {
                     "corpusTypes": [
                       {
+                        "browsable": true,
                         "description": "United States Code (federal statutes)",
                         "scope": "federal",
                         "token": "USC"
                       },
                       {
+                        "browsable": true,
                         "description": "State administrative regulations",
                         "scope": "state",
                         "token": "REGULATION"
                       },
                       {
+                        "browsable": false,
                         "description": "Sub-regulatory agency guidance across named sources",
                         "scope": "federal",
                         "sourceScopeNotes": {
@@ -6006,7 +7136,9 @@
                     "processingTimeMs": 5401.2
                   }
                 },
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UsStatutesCoverageEnvelope"
+                }
               }
             },
             "description": "Coverage legend plus per-jurisdiction corpusType counts."
@@ -6053,21 +7185,24 @@
     },
     "/api/v1/us/statutes/divisions": {
       "get": {
-        "description": "Walk the statutory tree one level at a time, in statutory order. Each call\nreturns the immediate children of wherever you are, so you can enumerate a code\ntop to bottom without searching.\n\n**Cost**: 1 credit. Failed lookups are refunded, and so is a browse that\nreturns no rows, so exploring the hierarchy never costs you anything for a\nlevel that turns out to be empty.\n\nPass the deepest level you already know; the response returns the level below it:\n\n- `corpusType=USC` -> the titles\n- `corpusType=USC&titleNumber=42` -> the chapters in Title 42\n- `corpusType=USC&titleNumber=42&chapter=21` -> the sections in Chapter 21 (leaf)\n- `corpusType=CFR&titleNumber=17&part=240` -> the sections in Part 240 (leaf)\n- `corpusType=STATE&state=tx` -> the state's codes\n- `corpusType=STATE&state=tx&code=tx_pe` -> the chapters in the Texas Penal Code\n\nInterior nodes carry a `sectionCount` and `isLeaf: false`; drill into one by\npassing its `identifier` back as the matching filter (`chapter`, `part`, or\n`code`). Leaf nodes are sections and carry an `actId` for\n`/us/statutes/section/{actId}`. Browse supports `USC`, `CFR`, `STATE`, and\n`REGULATION`; other corpora are flatter, so use `/us/statutes/search` for those.",
+        "description": "Walk the statutory tree one level at a time, in statutory order. Each call\nreturns the immediate children of wherever you are, so you can enumerate a code\ntop to bottom without searching.\n\n**Cost**: 1 credit. A request whose filters do not fit the corpus is\nrejected before anything is charged. A filter naming a container that does not\nexist is refunded, and so is a browse that returns no rows, so exploring the\nhierarchy never costs you anything for a level that turns out to be empty.\n\nPass the deepest level you already know; the response returns the level below it:\n\n- `corpusType=USC` -> the titles\n- `corpusType=USC&titleNumber=42` -> the chapters in Title 42\n- `corpusType=USC&titleNumber=42&chapter=21` -> the sections in Chapter 21 (leaf)\n- `corpusType=CFR&titleNumber=17&part=240` -> the sections in Part 240 (leaf)\n- `corpusType=STATE&state=tx` -> the state's codes\n- `corpusType=STATE&state=tx&code=tx_pe` -> the chapters in the Texas Penal Code\n- `corpusType=STATE&state=ny&code=ny_jud&article=2` -> the sections in a New York article (leaf)\n- `corpusType=CONSTITUTION` -> the articles and amendments of the US Constitution\n- `corpusType=CONSTITUTION&article=Article III` -> the sections of Article III (leaf)\n- `corpusType=STATE_CONSTITUTION&state=nm` -> the articles of the New Mexico Constitution\n- `corpusType=FEDERAL_RULES` -> the rule sets (FRCP, FRE, FRCrP, ...)\n- `corpusType=FEDERAL_RULES&code=frcp` -> the Federal Rules of Civil Procedure (leaf)\n\nInterior nodes carry a `sectionCount` and `isLeaf: false`; drill into one by\npassing its `identifier` back as the filter its `kind` names (`title` ->\n`titleNumber`, `chapter`, `part`, `code`, `article`). Leaf nodes are sections\nand carry an `actId` for `/us/statutes/section/{actId}`. Browse supports `USC`,\n`CFR`, `STATE`, `REGULATION`, `CONSTITUTION`, `STATE_CONSTITUTION` and\n`FEDERAL_RULES`, which is also what `browsable` says on each\n`GET /us/statutes/coverage` legend entry. The rest are dated series or share no\ntree, so use `/us/statutes/search` for those.\n\nFederal rules are published twice: by the Judicial Conference at uscourts.gov\n(`frcp`, `fre`, ...) and as an appendix to the U.S. Code (`uscapp_t28a_fre`,\n...). Each is its own rule set here, so neither is listed twice under one heading.",
         "operationId": "list_statute_divisions_api_v1_us_statutes_divisions_get",
         "parameters": [
           {
-            "description": "Corpus to browse: USC, CFR, STATE, or REGULATION.",
+            "description": "Corpus to browse. Case-insensitive. The browsable subset of the `corpusType` tokens on `/us/statutes/coverage`.",
             "in": "query",
             "name": "corpusType",
             "required": true,
             "schema": {
-              "description": "Corpus to browse: USC, CFR, STATE, or REGULATION.",
+              "description": "Corpus to browse. Case-insensitive. The browsable subset of the `corpusType` tokens on `/us/statutes/coverage`.",
               "enum": [
                 "USC",
                 "CFR",
                 "STATE",
-                "REGULATION"
+                "REGULATION",
+                "CONSTITUTION",
+                "STATE_CONSTITUTION",
+                "FEDERAL_RULES"
               ],
               "examples": [
                 "USC"
@@ -6077,7 +7212,7 @@
             }
           },
           {
-            "description": "2-letter jurisdiction code, required for STATE and REGULATION. Case-insensitive.",
+            "description": "2-letter jurisdiction code, required for the state-scoped corpora (STATE, REGULATION, STATE_CONSTITUTION). Case-insensitive.",
             "in": "query",
             "name": "state",
             "required": false,
@@ -6090,7 +7225,7 @@
                   "type": "null"
                 }
               ],
-              "description": "2-letter jurisdiction code, required for STATE and REGULATION. Case-insensitive.",
+              "description": "2-letter jurisdiction code, required for the state-scoped corpora (STATE, REGULATION, STATE_CONSTITUTION). Case-insensitive.",
               "enum": [
                 "al",
                 "ak",
@@ -6174,7 +7309,7 @@
             }
           },
           {
-            "description": "State code identifier, e.g. `tx_pe` (browse `/us/statutes/divisions` with `corpusType=STATE&state=<code>` to list them).",
+            "description": "Code to drill into: a state code such as `tx_pe` (list them with `corpusType=STATE&state=<state>`), or a federal rule set such as `frcp` (list them with `corpusType=FEDERAL_RULES`).",
             "in": "query",
             "name": "code",
             "required": false,
@@ -6187,7 +7322,7 @@
                   "type": "null"
                 }
               ],
-              "description": "State code identifier, e.g. `tx_pe` (browse `/us/statutes/divisions` with `corpusType=STATE&state=<code>` to list them).",
+              "description": "Code to drill into: a state code such as `tx_pe` (list them with `corpusType=STATE&state=<state>`), or a federal rule set such as `frcp` (list them with `corpusType=FEDERAL_RULES`).",
               "examples": [
                 "tx_pe"
               ],
@@ -6195,7 +7330,7 @@
             }
           },
           {
-            "description": "Chapter identifier to drill into (USC and state codes).",
+            "description": "Chapter identifier to drill into (USC and state codes). Accepted alongside `part` on CFR, where it is not needed: part numbers are unique within a title.",
             "in": "query",
             "name": "chapter",
             "required": false,
@@ -6208,7 +7343,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Chapter identifier to drill into (USC and state codes).",
+              "description": "Chapter identifier to drill into (USC and state codes). Accepted alongside `part` on CFR, where it is not needed: part numbers are unique within a title.",
               "examples": [
                 "21"
               ],
@@ -6234,6 +7369,27 @@
                 "240"
               ],
               "title": "Part"
+            }
+          },
+          {
+            "description": "Article to drill into: a constitution's article or amendment (`Article III`, `Amendment XIV`), or the article of a state code that is divided by articles rather than chapters (New York, where the listing's `kind` is `article`). Pass the `identifier` exactly as the listing returned it.",
+            "in": "query",
+            "name": "article",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Article to drill into: a constitution's article or amendment (`Article III`, `Amendment XIV`), or the article of a state code that is divided by articles rather than chapters (New York, where the listing's `kind` is `article`). Pass the `identifier` exactly as the listing returned it.",
+              "examples": [
+                "Article III"
+              ],
+              "title": "Article"
             }
           },
           {
@@ -6403,14 +7559,14 @@
             }
           },
           {
-            "description": "Optional two-letter jurisdiction to resolve WITHIN, e.g. `tx`. Some citation forms are shared: `8 CCR 1206-2` is Colorado and `22 CCR 76227` is California, and the acronym alone cannot say which. This is a constraint, not a hint -- a citation that names a different jurisdiction returns `resolved: false` rather than being forced into this one.",
+            "description": "Optional jurisdiction to resolve WITHIN: a two-letter state code, e.g. `tx`, or `federal` for the U.S. Code, the C.F.R., federal rules and the U.S. Constitution. Some citation forms are shared: `8 CCR 1206-2` is Colorado and `22 CCR 76227` is California, and the acronym alone cannot say which. This is a constraint, not a hint -- a citation that names a different jurisdiction returns `resolved: false` rather than being forced into this one, and `citationOutsideFilters` says which section it names.",
             "in": "query",
             "name": "state",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "maxLength": 2,
+                  "maxLength": 7,
                   "minLength": 2,
                   "type": "string"
                 },
@@ -6418,8 +7574,9 @@
                   "type": "null"
                 }
               ],
-              "description": "Optional two-letter jurisdiction to resolve WITHIN, e.g. `tx`. Some citation forms are shared: `8 CCR 1206-2` is Colorado and `22 CCR 76227` is California, and the acronym alone cannot say which. This is a constraint, not a hint -- a citation that names a different jurisdiction returns `resolved: false` rather than being forced into this one.",
+              "description": "Optional jurisdiction to resolve WITHIN: a two-letter state code, e.g. `tx`, or `federal` for the U.S. Code, the C.F.R., federal rules and the U.S. Constitution. Some citation forms are shared: `8 CCR 1206-2` is Colorado and `22 CCR 76227` is California, and the acronym alone cannot say which. This is a constraint, not a hint -- a citation that names a different jurisdiction returns `resolved: false` rather than being forced into this one, and `citationOutsideFilters` says which section it names.",
               "enum": [
+                "federal",
                 "al",
                 "ak",
                 "az",
@@ -6577,6 +7734,7 @@
                     "sectionNumber": "1983",
                     "sectionTitle": "Civil action for deprivation of rights",
                     "sourceCredit": "R.S. \u00a71979; Pub. L. 96\u2013170, \u00a71, Dec. 29, 1979, 93 Stat. 1284; Pub. L. 104\u2013317, title III, \u00a7309(c), Oct. 19, 1996, 110 Stat. 3853.",
+                    "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1983&num=0&edition=prelim",
                     "state": "federal",
                     "subchapter": "I",
                     "subchapterName": "GENERALLY",
@@ -6724,7 +7882,7 @@
     },
     "/api/v1/us/statutes/search": {
       "post": {
-        "description": "Search across federal and state law and get back the most relevant sections\nwith citations and links to official source documents.\n\n**Corpora (`corpusType`):**\n- `USC`: United States Code\n- `CFR`: Code of Federal Regulations\n- `STATE`: State statutory codes. Call `/us/statutes/coverage` for live coverage and `/us/statutes/divisions` (`corpusType=STATE&state=XX`) for a state's codes; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `CONSTITUTION`: U.S. Constitution (Articles I-VII + 27 Amendments)\n- `FEDERAL_RULES`: FRCP, FRCrP, FRE, FRAP, FRBP\n- `STATE_CONSTITUTION`: state constitutions. Call `/us/statutes/coverage` for live coverage.\n- `STATE_RULES`: state court rules. Call `/us/statutes/coverage` for live coverage; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `EXECUTIVE_ACTION`: Federal Register Presidential Documents (Executive Orders, Proclamations, Memos; 2015 to today, refreshed daily)\n- `REGULATION`: state administrative regulations (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `FEDERAL_REGISTER`: Federal Register agency rules, final and proposed\n- `AGENCY_GUIDANCE`: sub-regulatory federal agency guidance, 53 named sources across the tax, banking, securities, labor, immigration, health-privacy, export-control, intellectual-property, antitrust, energy and communications agencies. Scope to one with `source` (which lists every code and name), or see the [Coverage page](https://www.vaquill.ai/docs/api-guide/coverage#federal) for the per-source table.\n- `STATE_AGENCY_GUIDANCE`: state-issued regulatory guidance, currently state Department of Insurance bulletins and circular letters (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `SENTENCING_GUIDELINES`: US Sentencing Guidelines Manual\n- `US_TAX_TREATY`: US income tax treaties and protocols\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 4 credits per call (see `/api-credits/pricing`). Failed calls are not charged.\n\nSet `includeBody: true` to get each hit's full text inline on `body`, instead of\na follow-up `/section/{actId}/body` call per result. That adds the ordinary\n6-credit body price for each row that actually returns text, so it buys round\ntrips and latency rather than a discount; rows we cannot resolve come back\n`body: null` and are not charged. Read `creditsConsumed`.\n\n**Pagination**: use `limit` (page size, max 50) with `offset` (max 70); check\n`hasMore` in the response to page forward. `count` is the size of the CURRENT\npage, not a corpus-wide match total -- ranking runs over a bounded window, so no\nsuch total exists. (`total` is a deprecated alias for `count`.) Every page of a\ngiven query slices one ranking, so results never repeat or go missing across\npages.\n\nReturns relevant sections with full metadata: citation, title hierarchy, and\ndirect links to official source documents where available.\n\n**Matching (`matchType`)**: search is hybrid semantic + keyword by default\n(`any`), which suits natural-language questions. For strict keyword or\nexact-phrase lookups, use `matchType: \"all\"` or `\"phrase\"` -- there is no\nseparate keyword-only mode to reach for. To jump straight to one section, pass\nits citation as the `query` (e.g. `42 U.S.C. \u00a7 1983`) and it resolves to rank 1.\n\n## Examples\n\n```python\n# Search SEC regulations\nrequests.post(url, headers=h, json={\n    \"query\": \"insider trading material nonpublic information\",\n    \"corpusType\": \"CFR\",\n    \"titleNumber\": 17,\n    \"limit\": 5,\n})\n\n# Search California state statutes\nrequests.post(url, headers=h, json={\n    \"query\": \"shareholder derivative action standing\",\n    \"corpusType\": \"STATE\",\n    \"state\": \"ca\",\n})\n\n# Search Executive Orders on a topic\nrequests.post(url, headers=h, json={\n    \"query\": \"AI safety federal agency adoption\",\n    \"corpusType\": \"EXECUTIVE_ACTION\",\n})\n\n# Search Federal Rules of Civil Procedure\nrequests.post(url, headers=h, json={\n    \"query\": \"personal jurisdiction long-arm statute\",\n    \"corpusType\": \"FEDERAL_RULES\",\n})\n\n# Cross-corpus search (no corpusType filter)\nrequests.post(url, headers=h, json={\n    \"query\": \"due process equal protection fourteenth amendment\",\n})\n```\n\n## Parameters\n\nEvery filter below accepts a single value OR a list, so one call can span\nseveral jurisdictions or corpora.\n\n- `query` (required): natural-language or keyword query, 2 to 500 characters.\n- `corpusType` (optional, string or list): one of the corpus tokens above, e.g.\n  `\"CFR\"` or `[\"USC\", \"CFR\"]`. Case-insensitive. Omit to search every corpus.\n- `state` (optional, string or list): a 2-letter jurisdiction code (50 states +\n  DC + PR), or `federal` to scope to USC / CFR / Constitution / federal rules in\n  one call. `[\"ca\", \"ny\", \"tx\"]` searches three at once. Case-insensitive. An\n  unrecognized value is rejected with 422 rather than silently matching nothing.\n- `code` (optional, string or list): restrict to specific state statutory codes,\n  e.g. `\"tx_pe\"` for the Texas Penal Code. Values are the `code` field returned\n  by `GET /us/statutes/divisions?corpusType=STATE&state=XX`. This is the only way to scope BELOW a\n  jurisdiction: `state=tx` alone searches every Texas code.\n- `titleNumber` (optional, integer): restrict to a USC/CFR title (e.g. 17 for\n  SEC, 42 for civil rights). Applies only to `USC`/`CFR`; state titles are\n  alphabetic or collide across states, so use `code` for those.\n- `chapter` / `part` (optional, string or list): scope BELOW a title/code to a\n  chapter (USC/state) or part (CFR), e.g. `chapter=\"21\"` or `part=\"240\"`. This is\n  the search-side of the `parent` object on each result: feed a hit's `parent`\n  back to search its neighbors. Must be paired with `titleNumber` or `code`, which\n  `parent` always carries; an unpaired chapter/part is rejected with 422.\n- `matchType` (optional): `any` (default) intent-ranked hybrid, `all` requires\n  every term, `phrase` requires the exact phrase.\n- `yearFrom` / `yearTo` (optional, integer): bound results by version year. A\n  section matches on its credited amendment year, else its effective year, else\n  (for corpora dated by publication rather than amendment: Federal Register\n  proposed rules, agency guidance, adjudications, the treaty record) the\n  document's own publication year. Sections carrying none of the three are\n  excluded once either bound is set.\n- `limit` (optional, default 10, max 50): page size.\n- `offset` (optional, default 0, max 70): results to skip. See Pagination below.\n\n## Tips\n\n- Provide `corpusType` whenever you know it. Unscoped queries can surface keyword matches from unrelated corpora; a corpus filter sharply improves precision.\n- Take a returned `actId` and call `/us/statutes/section/{actId}` for metadata or `/us/statutes/section/{actId}/body` for the full text. To enrich a whole page at once, POST up to 50 ids to `/us/statutes/sections` instead of looping.\n- `relevanceScore` ranks results within one response; do not compare it across different queries. A recognized citation (e.g. `\"Cal. CIV \u00a7 1952\"`, `\"42 USC 1983\"`) always resolves its exact section to the top result at `relevanceScore: 1.0`; if you already know the citation, `GET /us/statutes/resolve` is a cheaper way to get the same section without paying for a search.",
+        "description": "Search across federal and state law and get back the most relevant sections\nwith citations and links to official source documents.\n\n**Corpora (`corpusType`):**\n- `USC`: United States Code\n- `CFR`: Code of Federal Regulations\n- `STATE`: State statutory codes. Call `/us/statutes/coverage` for live coverage and `/us/statutes/divisions` (`corpusType=STATE&state=XX`) for a state's codes; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `CONSTITUTION`: U.S. Constitution (Articles I-VII + 27 Amendments)\n- `FEDERAL_RULES`: FRCP, FRCrP, FRE, FRAP, FRBP\n- `STATE_CONSTITUTION`: state constitutions. Call `/us/statutes/coverage` for live coverage.\n- `STATE_RULES`: state court rules. Call `/us/statutes/coverage` for live coverage; see the [Coverage page](https://www.vaquill.ai/docs/coverage) for the full breakdown.\n- `EXECUTIVE_ACTION`: Federal Register Presidential Documents (Executive Orders, Proclamations, Memos; 2015 to today, refreshed daily)\n- `REGULATION`: state administrative regulations (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `FEDERAL_REGISTER`: Federal Register agency rules, final and proposed\n- `AGENCY_GUIDANCE`: sub-regulatory federal agency guidance, 53 named sources across the tax, banking, securities, labor, immigration, health-privacy, export-control, intellectual-property, antitrust, energy and communications agencies. Scope to one with `source` (which lists every code and name), or see the [Coverage page](https://www.vaquill.ai/docs/api-guide/coverage#federal) for the per-source table.\n- `STATE_AGENCY_GUIDANCE`: state-issued regulatory guidance, currently state Department of Insurance bulletins and circular letters (pair with `state`; call `/us/statutes/coverage` for coverage)\n- `SENTENCING_GUIDELINES`: US Sentencing Guidelines Manual\n- `US_TAX_TREATY`: US income tax treaties and protocols\n\n**Authentication**: API key via `Authorization: Bearer vq_key_...`\n\n**Cost**: 4 credits per call (see `/api-credits/pricing`). Failed calls are not charged.\n\nSet `includeBody: true` to get each hit's full text inline on `body`, instead of\na follow-up `/section/{actId}/body` call per result. That adds the ordinary\n6-credit body price for each row that actually returns text, so it buys round\ntrips and latency rather than a discount; rows we cannot resolve come back\n`body: null` and are not charged. Read `creditsConsumed`.\n\n**Pagination**: use `limit` (page size, max 50) with `offset` (max 70); check\n`hasMore` in the response to page forward. `count` is the size of the CURRENT\npage, not a corpus-wide match total -- ranking runs over a bounded window, so no\nsuch total exists. (`total` is a deprecated alias for `count`.) Every page of a\ngiven query slices one ranking, so results never repeat or go missing across\npages.\n\nReturns relevant sections with full metadata: citation, title hierarchy, and\ndirect links to official source documents where available.\n\n**Matching (`matchType`)**: search is hybrid semantic + keyword by default\n(`any`), which suits natural-language questions. For strict keyword or\nexact-phrase lookups, use `matchType: \"all\"` or `\"phrase\"` -- there is no\nseparate keyword-only mode to reach for. To jump straight to one section, pass\nits citation as the `query` (e.g. `42 U.S.C. \u00a7 1983`) and it resolves to rank 1.\n\n## Examples\n\n```python\n# Search SEC regulations\nrequests.post(url, headers=h, json={\n    \"query\": \"insider trading material nonpublic information\",\n    \"corpusType\": \"CFR\",\n    \"titleNumber\": 17,\n    \"limit\": 5,\n})\n\n# Search California state statutes\nrequests.post(url, headers=h, json={\n    \"query\": \"shareholder derivative action standing\",\n    \"corpusType\": \"STATE\",\n    \"state\": \"ca\",\n})\n\n# Search Executive Orders on a topic\nrequests.post(url, headers=h, json={\n    \"query\": \"AI safety federal agency adoption\",\n    \"corpusType\": \"EXECUTIVE_ACTION\",\n})\n\n# Search Federal Rules of Civil Procedure\nrequests.post(url, headers=h, json={\n    \"query\": \"personal jurisdiction long-arm statute\",\n    \"corpusType\": \"FEDERAL_RULES\",\n})\n\n# Cross-corpus search (no corpusType filter)\nrequests.post(url, headers=h, json={\n    \"query\": \"due process equal protection fourteenth amendment\",\n})\n```\n\n## Parameters\n\nEvery filter below accepts a single value OR a list, so one call can span\nseveral jurisdictions or corpora.\n\n- `query` (required): natural-language or keyword query, 2 to 500 characters.\n- `corpusType` (optional, string or list): one of the corpus tokens above, e.g.\n  `\"CFR\"` or `[\"USC\", \"CFR\"]`. Case-insensitive. Omit to search every corpus.\n- `state` (optional, string or list): a 2-letter jurisdiction code (50 states +\n  DC + PR), or `federal` to scope to USC / CFR / Constitution / federal rules in\n  one call. `[\"ca\", \"ny\", \"tx\"]` searches three at once. Case-insensitive. An\n  unrecognized value is rejected with 422 rather than silently matching nothing.\n- `code` (optional, string or list): restrict to specific state statutory codes,\n  e.g. `\"tx_pe\"` for the Texas Penal Code. Values are the `identifier`s returned\n  by `GET /us/statutes/divisions?corpusType=STATE&state=XX`. This is the only way to scope BELOW a\n  jurisdiction: `state=tx` alone searches every Texas code. With\n  `corpusType=FEDERAL_RULES`, a value can be a rule set from\n  `GET /us/statutes/divisions?corpusType=FEDERAL_RULES` instead (`\"frcp\"`, `\"uscapp_t28a_fre\"`).\n- `article` (optional, string or list): scope to an article. On `CONSTITUTION` /\n  `STATE_CONSTITUTION`, the article label browse lists (`\"Amendment XIV\"`,\n  `\"Article IV\"`); on a `STATE` / `REGULATION` code divided by article rather than\n  chapter (New York), its article number (`\"2-A\"`). Needs a `corpusType` from one\n  of those families, plus `state` on `STATE_CONSTITUTION` and `code` on\n  `STATE`/`REGULATION`; a missing pairing is a 422 before anything is charged.\n- `titleNumber` (optional, integer): restrict to a USC/CFR title (e.g. 17 for\n  SEC, 42 for civil rights). Applies only to `USC`/`CFR`; state titles are\n  alphabetic or collide across states, so use `code` for those.\n- `chapter` / `part` (optional, string or list): scope BELOW a title/code to a\n  chapter (USC/state) or part (CFR), e.g. `chapter=\"21\"` or `part=\"240\"`. This is\n  the search-side of the `parent` object on each result: feed a hit's `parent`\n  back to search its neighbors (a constitution, federal-rules or New York hit's\n  `parent` carries `article` or a rule-set `code` for the same purpose). Must be\n  paired with `titleNumber` or `code`, which `parent` always carries; an unpaired\n  chapter/part is rejected with 422.\n- `matchType` (optional): `any` (default) intent-ranked hybrid, `all` requires\n  every query word, `phrase` requires the query's words in order. Both match\n  WHOLE words, case-insensitively, ignoring punctuation (`act` does not match\n  `fact`; `10b-5` matches `10b 5`; `\u00a7 1983` matches `section 1983`).\n- `yearFrom` / `yearTo` (optional, integer): bound results by version year. A\n  section matches on its credited amendment year, else its effective year, else\n  (for corpora dated by publication rather than amendment: Federal Register\n  proposed rules, agency guidance, adjudications, the treaty record) the\n  document's own publication year. Sections carrying none of the three are\n  excluded once either bound is set.\n- `limit` (optional, default 10, max 50): page size.\n- `offset` (optional, default 0, max 70): results to skip. See Pagination below.\n\n## Tips\n\n- Provide `corpusType` whenever you know it. Unscoped queries can surface keyword matches from unrelated corpora; a corpus filter sharply improves precision.\n- Take a returned `actId` and call `/us/statutes/section/{actId}` for metadata or `/us/statutes/section/{actId}/body` for the full text. To enrich a whole page at once, POST up to 50 ids to `/us/statutes/sections` instead of looping.\n- `relevanceScore` ranks results within one response; do not compare it across different queries. A recognized citation (e.g. `\"Cal. CIV \u00a7 1952\"`, `\"42 USC 1983\"`) always resolves its exact section to the top result at `relevanceScore: 1.0`; if you already know the citation, `GET /us/statutes/resolve` is a cheaper way to get the same section without paying for a search.",
         "operationId": "search_statutes_api_v1_us_statutes_search_post",
         "requestBody": {
           "content": {
@@ -6756,6 +7914,7 @@
                       "htmlUrl": "https://statutes-us.vaquill.ai/ecfr/...",
                       "relevanceScore": 0.91,
                       "sectionNumber": "240.10b5-1",
+                      "sourceUrl": "https://www.ecfr.gov/...",
                       "state": "federal",
                       "title": "Trading on the basis of material nonpublic information in insider trading cases",
                       "titleNumber": 17,
@@ -6788,7 +7947,17 @@
             "content": {
               "application/json": {
                 "example": {
-                  "detail": "Validation error"
+                  "detail": "Invalid request parameters",
+                  "errors": [
+                    {
+                      "loc": [
+                        "body",
+                        "limit"
+                      ],
+                      "msg": "Input should be less than or equal to 50",
+                      "type": "less_than_equal"
+                    }
+                  ]
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiDetailError"
@@ -6810,12 +7979,12 @@
         "operationId": "get_section_api_v1_us_statutes_section__act_id__get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "USC_T42_C21_S1983"
               ],
@@ -6893,6 +8062,7 @@
                     "sectionNumber": "1983",
                     "sectionTitle": "Civil action for deprivation of rights",
                     "sourceCredit": "R.S. \u00a71979; Pub. L. 96\u2013170, \u00a71, Dec. 29, 1979, 93 Stat. 1284; Pub. L. 104\u2013317, title III, \u00a7309(c), Oct. 19, 1996, 110 Stat. 3853.",
+                    "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1983&num=0&edition=prelim",
                     "state": "federal",
                     "subchapter": "I",
                     "subchapterName": "GENERALLY",
@@ -6910,6 +8080,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
+                }
+              }
+            },
+            "description": "Section not found. `reason` says why and `didYouMean` what to send."
           },
           "422": {
             "content": {
@@ -6930,16 +8110,16 @@
     },
     "/api/v1/us/statutes/section/{act_id}/body": {
       "get": {
-        "description": "Get the full text of a statute section in HTML and plain text.\n\n**Cost**: 6 credits. You are only charged when text is returned:\nnot-found (404), failed fetches, and sections whose text is not yet ingested\n(`available: false`) are all refunded.\n\nWorks across USC, CFR, and state corpora. The text preserves formatting,\ncross-references, and paragraph numbering as published in the official source.\n\n**Response**: `available: true` with `html` + `plain`, or `available: false`\nwith a `note` and `creditsConsumed: 0` when the full text is not yet ingested\n(metadata is still available from `/us/statutes/section/{actId}`).\n\n`sourceUrl` is where the government published this text: cite and verify\nagainst that, not against `source`, which names our storage backend. It is null\nwhen we hold no official link for the section; we never substitute a\nthird-party compiler.\n\n## Telling the law from the apparatus (`content` / `sourceCredit` / `notes`)\n\n`plain` and `html` are the WHOLE body as the publisher prints it: the operative\ntext, then the source credit, then the notes apparatus (historical and revision\nnotes, committee reports, editorial notes, amendments, effective-date notes).\n\nFor **United States Code** sections that body is mostly not the law: measured\n2026-09-02, the operative text is a median 46% of it across USC, and as little\nas 3.4% on `17 U.S.C. \u00a7 107`.\n\nSo the granule is split into three additional fields, using the field\ndelimiters GPO publishes in the source:\n\n- `content` -- the operative text, and nothing else\n- `sourceCredit` -- the credit line, e.g. `(Pub. L. 94-553, ...)`\n- `notes` -- the apparatus, kept because it is the legislative history\n\nUse `content` if you are feeding sections to a model: the full body invites it\nto quote a 1992 amendment note as the law in force.\n\nTwo `format` values act on the split, and the difference between them is how\nmany bytes cross the wire, not what the law says:\n\n- `format=content` drops `plain`/`html` and returns all three split fields. The\n  apparatus is still on the response, because for a legislative-history or\n  effective-date question it IS the answer.\n- `format=operative` drops `notes` as well, returning `content` +\n  `sourceCredit` and nothing else. Measured on `17 U.S.C. \u00a7 107`: 95,217 bytes\n  at `both`, 61,003 at `plain`, 30,545 at `content`, 1,564 at `operative`. Same\n  6 credits either way -- the fetch is identical, so this buys bandwidth and\n  prompt budget, not a discount.\n\nReach for `operative` when you are putting the law in front of a model or a\nreader and the notes are noise. Reach for `content` when you may need to read\nthe apparatus but want to keep it clearly separated from the law.\n\n\u26a0\ufe0f USC only. CFR and the state corpora carry no equivalent structure in their\nsources, so all three fields are null there and `plain` remains the whole body.\nNull means \"we cannot split this reliably\", never \"this section is empty\".\nBoth `content` and `operative` fall back to serving `plain` with an explanatory\n`note` on a corpus that cannot be split, rather than returning a response that\nclaims to carry the text and does not.\n\nPass `structured=true` to also get `markdown` (the body as nested Markdown lists)\nand `subsections` (a tree you can address by pincite, e.g. `(b)(2)`, each node\ncarrying its pincite path and full pinpoint citation). Same cost.\n\n## Point-in-time (`asOf`)\n\nPass `asOf=YYYY-MM-DD` to get the text as it stood on that date instead of\ntoday's. Same cost.\n\n**One parameter, two engines, and `asOf.engine` says which one answered.** Read\nit before anything else in the block, because the two make different promises\nand `isBounded` does not mean the same thing under each.\n\n`engine: \"stored_edition\"` -- we hold the publisher's own printed editions for\nthis corpus and return one verbatim. CFR annual editions, the US Code, the\nCopyright Compendium and OFAC FAQs. Here `isBounded: true` means your date fell\ninside an edition we actually hold, which is a verified published printing.\n\nCoverage under this engine is ENUMERATED, not continuous, and outside the CFR\nannual editions it is currently sparse. A date in a gap between two held\neditions returns `source: \"unavailable\"`, `isBounded: false`, no text, and an\n`outOfCoverageReason` naming what we do hold. It is never answered from a\nneighbouring edition, because the text may have changed in the gap. **For the US\nCode this is the common case today: most historical dates fall between the\neditions we hold and are reported out of coverage, with `outOfCoverageReason`\nnaming the editions that are available.** Do not read the presence of this\nparameter as full US Code point-in-time coverage.\n\n`engine: \"observed_change\"` -- every other corpus. **A reconstruction, not an\narchive.** The corpus holds one current text per citation; an earlier one is\nrebuilt from the before-side of the first change we OBSERVED after your date,\nthrough the same resolver the watch diff uses. Here `isBounded: true` is the\nWEAK claim, described below.\n\nThe `asOf` block reports:\n\n- `source` -- on `observed_change`: `live` (nothing captured after your date, so\n  today's text stood then), `reconstructed`, or `unavailable`. On\n  `stored_edition`: `published` or `unavailable`\n- `outOfCoverageReason` -- why no text came back, when none did\n- `basisChangeId` -- the change event this answer rests on, readable at\n  `/us/statutes/section/{actId}/changes`\n- `observedFrom` -- how far back the evidence reaches for this section\n- `isBounded` -- **read this one, and read `engine` first.** On\n  `observed_change`, true means we observed no change affecting your date, which\n  is not the same as there having been none: capture began long after the corpus\n  did and is per-source. On `stored_edition` it is inverted and stronger, as\n  above: true means a held edition governed your date.\n\n`html` is never returned on this path: the text is plain, and synthesising markup\nthe publisher never printed would be a wrong answer on the endpoint whose job is\nfidelity.\n\nA section that did not exist on that date returns `available: false` with\n`asOf.existed: false` and IS charged, the same way an unresolved citation is\ncharged on `/resolve`: a confident negative is the answer. On `observed_change`,\na section we know changed but cannot rebuild returns `source: \"unavailable\"` and\nis refunded. On `stored_edition`, an out-of-coverage date is an ANSWER about what\nwe hold and is charged, which is the same rule the CFR annual editions have\nalways followed.",
+        "description": "Get the full text of a statute section in HTML and plain text.\n\n**Cost**: 6 credits. You are only charged when text is returned:\nnot-found (404), failed fetches, and sections whose text is not yet ingested\n(`available: false`) are all refunded.\n\nWorks across USC, CFR, and state corpora. The text preserves formatting,\ncross-references, and paragraph numbering as published in the official source.\n\n**Response**: `available: true` with `html` + `plain`, or `available: false`\nwith a `note` and `creditsConsumed: 0` when the full text is not yet ingested\n(metadata is still available from `/us/statutes/section/{actId}`).\n\n`sourceUrl` is where the government published this text: cite and verify\nagainst that, not against `source`, which names our storage backend. It is null\nwhen we hold no official link for the section; we never substitute a\nthird-party compiler.\n\n## Tables and figures (`markdown` / `tables` / `figures`)\n\nWhere a section has a structured rendering, `source` is `r2_render` and the\nbody keeps what a flat text extraction loses: tables as real tables and images\nat the position the publisher prints them.\n\n- `html` -- `<table>` elements with `<caption>`, `colspan` and `rowspan`, and\n  `<figure>` / `<img>` elements whose images are hosted on\n  `statutes-us.vaquill.ai`\n- `markdown` -- GitHub-flavoured Markdown, tables as pipe tables and figures as\n  `![alt](url)`\n- `plain` -- tables as one tab-separated line per row, figures as\n  `[Figure N: caption]` placeholders\n- `tables` / `figures` -- what the body contains, in document order. Each figure\n  carries its hosted `url` and its offset into `markdown` and `plain`, so you\n  can place images in your own layout. A figure we could not fetch is listed\n  with `status: \"unavailable\"` and keeps its caption in the text.\n- `hasTables` / `hasFigures` -- quick flags\n\nA section in a covered corpus that has no table and no figure returns\n`tables: []`, `figures: []` and both flags false, with its text in `html` and\n`plain` as before. Where a corpus has no structured rendering yet, those fields\nare null, meaning \"not known\", not \"none\": a table may still be present in\n`html`. `markdown` is returned only for `format=all` or `format=markdown`: the\ndefault `format=both` leaves it out, because it is a third full copy of the\ntext. `format=markdown` returns only `markdown`, and falls back to `plain`\nwith a `note` when the section has no structured rendering. The price is the\nsame whichever format you ask for.\n\n## Telling the law from the apparatus (`content` / `sourceCredit` / `notes`)\n\n`plain` and `html` are the WHOLE body as the publisher prints it: the operative\ntext, then the source credit, then the notes apparatus (historical and revision\nnotes, committee reports, editorial notes, amendments, effective-date notes).\n\nFor **United States Code** sections that body is mostly not the law: measured\n2026-09-02, the operative text is a median 46% of it across USC, and as little\nas 3.4% on `17 U.S.C. \u00a7 107`.\n\nSo the granule is split into three additional fields, using the field\ndelimiters GPO publishes in the source:\n\n- `content` -- the operative text, and nothing else\n- `sourceCredit` -- the credit line, e.g. `(Pub. L. 94-553, ...)`\n- `notes` -- the apparatus, kept because it is the legislative history\n\nUse `content` if you are feeding sections to a model: the full body invites it\nto quote a 1992 amendment note as the law in force.\n\nTwo `format` values act on the split, and the difference between them is how\nmany bytes cross the wire, not what the law says:\n\n- `format=content` drops `plain`/`html` and returns all three split fields. The\n  apparatus is still on the response, because for a legislative-history or\n  effective-date question it IS the answer.\n- `format=operative` drops `notes` as well, returning `content` +\n  `sourceCredit` and nothing else. Measured on `17 U.S.C. \u00a7 107`: 95,217 bytes\n  at `both`, 61,003 at `plain`, 30,545 at `content`, 1,564 at `operative`. Same\n  6 credits either way -- the fetch is identical, so this buys bandwidth and\n  prompt budget, not a discount.\n\nReach for `operative` when you are putting the law in front of a model or a\nreader and the notes are noise. Reach for `content` when you may need to read\nthe apparatus but want to keep it clearly separated from the law.\n\n\u26a0\ufe0f USC only. CFR and the state corpora carry no equivalent structure in their\nsources, so all three fields are null there and `plain` remains the whole body.\nNull means \"we cannot split this reliably\", never \"this section is empty\".\nBoth `content` and `operative` fall back to serving `plain` with an explanatory\n`note` on a corpus that cannot be split, rather than returning a response that\nclaims to carry the text and does not.\n\nPass `structured=true` to also get `markdown` (the body as nested Markdown lists)\nand `subsections` (a tree you can address by pincite, e.g. `(b)(2)`, each node\ncarrying its pincite path and full pinpoint citation). Same cost.\n\n## Point-in-time (`asOf`)\n\nPass `asOf=YYYY-MM-DD` to get the text as it stood on that date instead of\ntoday's. Same cost.\n\n**One parameter, two engines, and `asOf.engine` says which one answered.** Read\nit before anything else in the block, because the two make different promises\nand `isBounded` does not mean the same thing under each.\n\n`engine: \"stored_edition\"` -- we hold the publisher's own printed editions for\nthis corpus and return one verbatim. CFR annual editions, the US Code, the\nCopyright Compendium and OFAC FAQs. Here `isBounded: true` means your date fell\ninside an edition we actually hold, which is a verified published printing.\n\nCoverage under this engine is ENUMERATED, not continuous, and outside the CFR\nannual editions it is currently sparse. A date in a gap between two held\neditions returns `source: \"unavailable\"`, `isBounded: false`, no text, and an\n`outOfCoverageReason` naming what we do hold. It is never answered from a\nneighbouring edition, because the text may have changed in the gap. **For the US\nCode this is the common case today: most historical dates fall between the\neditions we hold and are reported out of coverage, with `outOfCoverageReason`\nnaming the editions that are available.** Do not read the presence of this\nparameter as full US Code point-in-time coverage.\n\n`engine: \"observed_change\"` -- every other corpus. **A reconstruction, not an\narchive.** The corpus holds one current text per citation; an earlier one is\nrebuilt from the before-side of the first change we OBSERVED after your date,\nthrough the same resolver the watch diff uses. Here `isBounded: true` is the\nWEAK claim, described below.\n\nThe `asOf` block reports:\n\n- `source` -- on `observed_change`: `live` (nothing captured after your date, so\n  today's text stood then), `reconstructed`, or `unavailable`. On\n  `stored_edition`: `published` or `unavailable`\n- `outOfCoverageReason` -- why no text came back, when none did\n- `basisChangeId` -- the change event this answer rests on, readable at\n  `/us/statutes/section/{actId}/changes`\n- `observedFrom` -- how far back the evidence reaches for this section\n- `isBounded` -- **read this one, and read `engine` first.** On\n  `observed_change`, true means we observed no change affecting your date, which\n  is not the same as there having been none: capture began long after the corpus\n  did and is per-source. On `stored_edition` it is inverted and stronger, as\n  above: true means a held edition governed your date.\n\n`html` is never returned on this path: the text is plain, and synthesising markup\nthe publisher never printed would be a wrong answer on the endpoint whose job is\nfidelity.\n\nA section that did not exist on that date returns `available: false` with\n`asOf.existed: false` and IS charged, the same way an unresolved citation is\ncharged on `/resolve`: a confident negative is the answer. On `observed_change`,\na section we know changed but cannot rebuild returns `source: \"unavailable\"` and\nis refunded. On `stored_edition`, an out-of-coverage date is an ANSWER about what\nwe hold and is charged, which is the same rule the CFR annual editions have\nalways followed.",
         "operationId": "get_section_body_api_v1_us_statutes_section__act_id__body_get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "CFR_T17_P240_S240_10b5_1"
               ],
@@ -6950,16 +8130,18 @@
             }
           },
           {
-            "description": "Which representations to return. A long section carries the same text twice by default, so `plain` or `html` roughly halves the payload. Cost is unchanged: the fetch is the same either way.\n\n`content` omits `html` and `plain` and returns the split fields (`content`, `sourceCredit`, `notes`).\n\n`operative` omits `notes` as well, leaving `content` + `sourceCredit`: the law and what enacted it, and nothing else. This is the smallest representation of a section, and on a note-heavy section it is the difference between a payload that fits in a prompt and one that does not. Measured on `17 U.S.C. \u00a7 107`: 95,217 bytes at `both`, 30,545 at `content`, 1,564 at `operative`, all for the same 6 credits.\n\nOnly United States Code sections can be split, so on any other corpus both values fall back to returning `plain` with a `note` saying why -- `content` will be null there, so read `note` rather than assuming the section was empty.",
+            "description": "Which representations to return. `both` (the default) returns `html` and `plain`. A long section carries the same text twice that way, so `plain` or `html` alone roughly halves the payload. Cost is unchanged: the fetch is the same either way.\n\n`all` adds `markdown` where the section has a structured rendering. It is opt-in because it is a third full copy of the text (about 600,000 extra characters on `49 CFR 172.101`), which a model-facing client would pay for in tokens without asking.\n\n`markdown` returns only `markdown`. On a section with no structured rendering it falls back to `plain` with a `note` saying so, never to an empty body. `tables` and `figures` are returned on every format, because they are small and describe the text you received.\n\n`content` omits `html` and `plain` and returns the split fields (`content`, `sourceCredit`, `notes`).\n\n`operative` omits `notes` as well, leaving `content` + `sourceCredit`: the law and what enacted it, and nothing else. This is the smallest representation of a section, and on a note-heavy section it is the difference between a payload that fits in a prompt and one that does not. Measured on `17 U.S.C. \u00a7 107`: 95,217 bytes at `both`, 30,545 at `content`, 1,564 at `operative`, all for the same 6 credits.\n\nOnly United States Code sections can be split, so on any other corpus both values fall back to returning `plain` with a `note` saying why -- `content` will be null there, so read `note` rather than assuming the section was empty.",
             "in": "query",
             "name": "format",
             "required": false,
             "schema": {
               "default": "both",
-              "description": "Which representations to return. A long section carries the same text twice by default, so `plain` or `html` roughly halves the payload. Cost is unchanged: the fetch is the same either way.\n\n`content` omits `html` and `plain` and returns the split fields (`content`, `sourceCredit`, `notes`).\n\n`operative` omits `notes` as well, leaving `content` + `sourceCredit`: the law and what enacted it, and nothing else. This is the smallest representation of a section, and on a note-heavy section it is the difference between a payload that fits in a prompt and one that does not. Measured on `17 U.S.C. \u00a7 107`: 95,217 bytes at `both`, 30,545 at `content`, 1,564 at `operative`, all for the same 6 credits.\n\nOnly United States Code sections can be split, so on any other corpus both values fall back to returning `plain` with a `note` saying why -- `content` will be null there, so read `note` rather than assuming the section was empty.",
+              "description": "Which representations to return. `both` (the default) returns `html` and `plain`. A long section carries the same text twice that way, so `plain` or `html` alone roughly halves the payload. Cost is unchanged: the fetch is the same either way.\n\n`all` adds `markdown` where the section has a structured rendering. It is opt-in because it is a third full copy of the text (about 600,000 extra characters on `49 CFR 172.101`), which a model-facing client would pay for in tokens without asking.\n\n`markdown` returns only `markdown`. On a section with no structured rendering it falls back to `plain` with a `note` saying so, never to an empty body. `tables` and `figures` are returned on every format, because they are small and describe the text you received.\n\n`content` omits `html` and `plain` and returns the split fields (`content`, `sourceCredit`, `notes`).\n\n`operative` omits `notes` as well, leaving `content` + `sourceCredit`: the law and what enacted it, and nothing else. This is the smallest representation of a section, and on a note-heavy section it is the difference between a payload that fits in a prompt and one that does not. Measured on `17 U.S.C. \u00a7 107`: 95,217 bytes at `both`, 30,545 at `content`, 1,564 at `operative`, all for the same 6 credits.\n\nOnly United States Code sections can be split, so on any other corpus both values fall back to returning `plain` with a `note` saying why -- `content` will be null there, so read `note` rather than assuming the section was empty.",
               "enum": [
+                "all",
                 "both",
                 "html",
+                "markdown",
                 "plain",
                 "content",
                 "operative"
@@ -6972,13 +8154,13 @@
             }
           },
           {
-            "description": "When true, also return `markdown` and a `subsections` tree parsed from the text for pincite addressing. Same cost.",
+            "description": "When true, also return a `subsections` tree parsed from the text for pincite addressing, and `markdown` as that tree rendered as nested Markdown lists. Same cost.\n\n`structured=true` OWNS `markdown`: on every `format`, and on every `source`, `markdown` is the nested-list rendering, never the table-preserving rendering a `r2_render` section otherwise returns for `format=all`/`markdown` (a `note` says so when that happens). Ask without `structured` for the tables. With `format=markdown` the nested lists are returned alone, without `html` or `plain`.",
             "in": "query",
             "name": "structured",
             "required": false,
             "schema": {
               "default": false,
-              "description": "When true, also return `markdown` and a `subsections` tree parsed from the text for pincite addressing. Same cost.",
+              "description": "When true, also return a `subsections` tree parsed from the text for pincite addressing, and `markdown` as that tree rendered as nested Markdown lists. Same cost.\n\n`structured=true` OWNS `markdown`: on every `format`, and on every `source`, `markdown` is the nested-list rendering, never the table-preserving rendering a `r2_render` section otherwise returns for `format=all`/`markdown` (a `note` says so when that happens). Ask without `structured` for the tables. With `format=markdown` the nested lists are returned alone, without `html` or `plain`.",
               "examples": [
                 true
               ],
@@ -7030,6 +8212,16 @@
             },
             "description": "Successful Response"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
+                }
+              }
+            },
+            "description": "Section not found. `reason` says why and `didYouMean` what to send."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -7053,12 +8245,12 @@
         "operationId": "get_section_changes_api_v1_us_statutes_section__act_id__changes_get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "CFR_T21_P314_S314_50"
               ],
@@ -7229,11 +8421,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiDetailError"
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
                 }
               }
             },
-            "description": "No such section, and no change ever captured for this act_id."
+            "description": "No such section, and no change ever captured for this act_id. `reason` says why."
           },
           "422": {
             "content": {
@@ -7268,12 +8460,12 @@
         "operationId": "get_section_cited_by_api_v1_us_statutes_section__act_id__cited_by_get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "USC_T42_C21_S1983"
               ],
@@ -7336,11 +8528,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiDetailError"
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
                 }
               }
             },
-            "description": "Section not found."
+            "description": "Section not found. `reason` says why."
           },
           "422": {
             "content": {
@@ -7375,12 +8567,12 @@
         "operationId": "get_section_cross_state_api_v1_us_statutes_section__act_id__cross_state_get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "USC_T42_C21_S1983"
               ],
@@ -7443,11 +8635,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiDetailError"
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
                 }
               }
             },
-            "description": "Section not found."
+            "description": "Section not found. `reason` says why."
           },
           "422": {
             "content": {
@@ -7482,12 +8674,12 @@
         "operationId": "get_section_definitions_api_v1_us_statutes_section__act_id__definitions_get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "USC_T42_C21_S1983"
               ],
@@ -7533,11 +8725,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiDetailError"
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
                 }
               }
             },
-            "description": "Section not found."
+            "description": "Section not found. `reason` says why."
           },
           "422": {
             "content": {
@@ -7572,12 +8764,12 @@
         "operationId": "get_section_neighbors_api_v1_us_statutes_section__act_id__related_get",
         "parameters": [
           {
-            "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+            "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Section identifier. Encodes the citation's hierarchy: `USC_T42_C21_S1983` is Title 42, Chapter 21, Section 1983, the section a lawyer writes as 42 U.S.C. \u00a7 1983. Take it from a `/us/statutes/search` result rather than assembling it: the title and section are derivable from a citation, but the CHAPTER is not, so hand-built ids usually 404.",
+              "description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, which a lawyer writes as 42 U.S.C. \u00a7 1983). Take it from a `/us/statutes/search` or `/us/statutes/resolve` result.\n\nA citation also works here: `26 U.S.C. \u00a7 1`, `42 USC 1983` or `Cal. Civ. Code \u00a7 1950.5` is resolved with the same resolver `/resolve` uses, and the section is served. A citation costs this endpoint's price PLUS the `/resolve` price (2 credits), charged as its own line whether or not it resolves, exactly as `/resolve` charges; that is the same total as calling `/resolve` and then this endpoint, in one round trip. An exact act_id costs only this endpoint's price. When a citation resolves, or when the id only matched after surrounding whitespace, quotes or a trailing period were removed, the response carries `resolvedFrom` saying what your input was matched as. Check it the way you would check a `/resolve` answer. A citation containing `/` cannot travel in a URL path segment; resolve it with `GET /us/statutes/resolve` instead.\n\nDo not assemble an id from a citation: the title and section are derivable, but the CHAPTER is not, so `USC_T26_S1` misses. A miss returns 404 with `reason` and, where the section exists under another id, `didYouMean`.",
               "examples": [
                 "USC_T42_C21_S1983"
               ],
@@ -7663,6 +8855,7 @@
                       "sectionNumber": "1984",
                       "sectionTitle": "Omitted",
                       "sourceCredit": "",
+                      "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1984&num=0&edition=prelim",
                       "state": "federal",
                       "subchapter": "I",
                       "subchapterName": "GENERALLY",
@@ -7733,6 +8926,7 @@
                       "sectionNumber": "1981",
                       "sectionTitle": "Equal rights under the law",
                       "sourceCredit": "R.S. \u00a71977; Pub. L. 102\u2013166, title I, \u00a7101, Nov. 21, 1991, 105 Stat. 1071.",
+                      "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1981&num=0&edition=prelim",
                       "state": "federal",
                       "subchapter": "I",
                       "subchapterName": "GENERALLY",
@@ -7805,6 +8999,7 @@
                     "sectionNumber": "1983",
                     "sectionTitle": "Civil action for deprivation of rights",
                     "sourceCredit": "R.S. \u00a71979; Pub. L. 96\u2013170, \u00a71, Dec. 29, 1979, 93 Stat. 1284; Pub. L. 104\u2013317, title III, \u00a7309(c), Oct. 19, 1996, 110 Stat. 3853.",
+                    "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1983&num=0&edition=prelim",
                     "state": "federal",
                     "subchapter": "I",
                     "subchapterName": "GENERALLY",
@@ -7847,11 +9042,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiDetailError"
+                  "$ref": "#/components/schemas/StatuteSectionNotFoundError"
                 }
               }
             },
-            "description": "Section not found."
+            "description": "Section not found. `reason` says why."
           },
           "422": {
             "content": {
@@ -7974,6 +9169,7 @@
                       "sectionNumber": "1983",
                       "sectionTitle": "Civil action for deprivation of rights",
                       "sourceCredit": "R.S. \u00a71979; Pub. L. 96\u2013170, \u00a71, Dec. 29, 1979, 93 Stat. 1284; Pub. L. 104\u2013317, title III, \u00a7309(c), Oct. 19, 1996, 110 Stat. 3853.",
+                      "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1983&num=0&edition=prelim",
                       "state": "federal",
                       "subchapter": "I",
                       "subchapterName": "GENERALLY",
@@ -8039,6 +9235,7 @@
                       "sectionNumber": "1981a",
                       "sectionTitle": "Damages in cases of intentional discrimination in employment",
                       "sourceCredit": "R.S. \u00a71977A, as added Pub. L. 102\u2013166, title I, \u00a7102, Nov. 21, 1991, 105 Stat. 1072.",
+                      "sourceUrl": "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section1981a&num=0&edition=prelim",
                       "state": "federal",
                       "subchapter": "I",
                       "subchapterName": "GENERALLY",
@@ -9094,6 +10291,12 @@
   "security": [
     {
       "ApiKeyAuth": []
+    },
+    {
+      "ApiKeyHeader": []
+    },
+    {
+      "ApiKeyQuery": []
     }
   ],
   "servers": [

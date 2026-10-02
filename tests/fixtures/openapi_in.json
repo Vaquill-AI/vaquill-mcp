@@ -33,6 +33,17 @@
             "title": "Pagesize",
             "type": "integer"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the act is exactly the `actId` you sent. Otherwise how your input was matched after copy damage (whitespace, quotes, a trailing period) was removed."
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -117,6 +128,17 @@
             "description": "Rows per page requested.",
             "title": "Pagesize",
             "type": "integer"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
           },
           "returned": {
             "description": "Rows in `citers` on THIS page.",
@@ -218,6 +240,17 @@
             "description": "Rows per page requested.",
             "title": "Pagesize",
             "type": "integer"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
           },
           "returned": {
             "description": "Rows in `terms` on THIS page.",
@@ -572,6 +605,17 @@
               }
             ],
             "title": "Note"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
           },
           "sectionNumber": {
             "anyOf": [
@@ -1797,6 +1841,17 @@
           "provenance": {
             "$ref": "#/components/schemas/Provenance"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
+          },
           "sectionNumber": {
             "anyOf": [
               {
@@ -1888,6 +1943,17 @@
             "title": "Offset",
             "type": "integer"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
+          },
           "sectionNumber": {
             "anyOf": [
               {
@@ -1920,6 +1986,17 @@
         "properties": {
           "meta": {
             "$ref": "#/components/schemas/Meta"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
           },
           "section": {
             "$ref": "#/components/schemas/ActSection"
@@ -2125,6 +2202,17 @@
             "description": "Acts this one repeals, as the publisher names them. The inverse of `repealClaim`, and subject to the same caveat: it is their record, and we do not verify commencement.",
             "title": "Repeals"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
+          },
           "retirement": {
             "anyOf": [
               {
@@ -2229,6 +2317,17 @@
             "title": "Nodes",
             "type": "array"
           },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
+          },
           "sectionCount": {
             "title": "Sectioncount",
             "type": "integer"
@@ -2317,6 +2416,17 @@
             "description": "Rows per page requested.",
             "title": "Pagesize",
             "type": "integer"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How your act_id or section number was matched, when it did not match exactly as sent. Null when it did."
           },
           "returned": {
             "description": "Rows in `children` on THIS page.",
@@ -2435,6 +2545,17 @@
               }
             ],
             "title": "Pdfurl"
+          },
+          "resolvedFrom": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentifierResolution"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null when the act is exactly the `actId` you sent. Otherwise how your input was matched after copy damage (whitespace, quotes, a trailing period) was removed."
           },
           "textUrl": {
             "title": "Texturl",
@@ -2719,7 +2840,7 @@
         "type": "object"
       },
       "ApiDetailError": {
-        "description": "Error envelope the API actually returns.\n\nAll errors (401/402/403/404/422/429/5xx) come back as a single\n`detail` string (FastAPI default), e.g. `{\"detail\": \"Insufficient API\ncredits.\"}`. Documenting the real shape so client code can rely on it.",
+        "description": "Error envelope the API actually returns.\n\nEvery error (400/401/402/403/404/405/422/429/5xx) carries a `detail`\nstring, e.g. `{\"detail\": \"Insufficient API credits.\"}`, on every mount of\nthe API. A 422 adds `errors`, one entry per rejected field. Some 404s add\nendpoint-specific diagnosis beside `detail` (the statutes section routes\nadd `actId`, `reason` and `didYouMean`); treat unknown keys as optional.",
         "properties": {
           "detail": {
             "description": "Human-readable reason, safe to surface to an end user. Branch on the HTTP status rather than on this string: the wording is not part of the contract and may be reworded, but 401 (bad key), 402 (out of credits), 403 (missing scope), 404 (no such resource) and 429 (rate limited) are stable.",
@@ -2728,12 +2849,76 @@
             ],
             "title": "Detail",
             "type": "string"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ApiFieldError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present on 422 only: every field that failed validation.",
+            "title": "Errors"
           }
         },
         "required": [
           "detail"
         ],
         "title": "ApiDetailError",
+        "type": "object"
+      },
+      "ApiFieldError": {
+        "description": "One rejected field in a 422 response.",
+        "properties": {
+          "loc": {
+            "description": "Where the bad value is: `body`, `query` or `path`, then the parameter name exactly as you send it (camelCase), then list indexes. A bare `[\"body\"]` means the body as a whole was not a JSON object.",
+            "examples": [
+              [
+                "body",
+                "corpusType"
+              ]
+            ],
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Loc",
+            "type": "array"
+          },
+          "msg": {
+            "description": "What is wrong with the value, in plain English.",
+            "examples": [
+              "Input should be 'USC', 'CFR' or 'STATE'"
+            ],
+            "title": "Msg",
+            "type": "string"
+          },
+          "type": {
+            "description": "Machine-readable error kind, e.g. `missing`, `literal_error`, `json_invalid`.",
+            "examples": [
+              "literal_error"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ApiFieldError",
         "type": "object"
       },
       "AsOfAnswer": {
@@ -3532,6 +3717,91 @@
           "eventsWithDate"
         ],
         "title": "HistoryCoverage",
+        "type": "object"
+      },
+      "IdentifierResolution": {
+        "description": "How the act_id or section number you sent was matched, when not as sent.\n\nPresent only when the input did NOT match exactly. Absent (null) means the\nresponse is about exactly the act_id and section number in your request.\nSame idea, and the same field name, as `resolvedFrom` on the US surface.",
+        "properties": {
+          "actId": {
+            "description": "The act_id it matched. Send this next time.",
+            "examples": [
+              "IND_central_20062"
+            ],
+            "title": "Actid",
+            "type": "string"
+          },
+          "input": {
+            "description": "The act identifier exactly as you sent it.",
+            "examples": [
+              " IND_central_20062."
+            ],
+            "title": "Input",
+            "type": "string"
+          },
+          "sectionInput": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The section number exactly as you sent it, on a section route.",
+            "examples": [
+              "s. 498-A"
+            ],
+            "title": "Sectioninput"
+          },
+          "sectionNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The section number as the publisher writes it. Send this next time.",
+            "examples": [
+              "498A"
+            ],
+            "title": "Sectionnumber"
+          },
+          "subProvision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The sub-provision your section number carried, e.g. `(1)(a)` for `302(1)(a)`. The WHOLE section is served: sub-provisions are not addressed separately.",
+            "examples": [
+              "(1)"
+            ],
+            "title": "Subprovision"
+          },
+          "via": {
+            "description": "What was done to your input, in order. `normalized_id`: the act_id carried surrounding whitespace, quotes, backticks, an invisible character, a trailing period or double percent-encoding, which were removed. `normalized_section`: the section number was written differently from the publisher (a `s.` / `Sec.` / `Section` prefix, a hyphen or space before an alphabetic suffix, a lowercase suffix, or a trailing sub-provision), and matched one stored number and only one.",
+            "examples": [
+              [
+                "normalized_section"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Via",
+            "type": "array"
+          }
+        },
+        "required": [
+          "input",
+          "actId"
+        ],
+        "title": "IdentifierResolution",
         "type": "object"
       },
       "JurisdictionCoverage": {
@@ -4481,9 +4751,21 @@
     "securitySchemes": {
       "ApiKeyAuth": {
         "bearerFormat": "vq_key_*",
-        "description": "API key issued from the developer dashboard. Pass as `Authorization: Bearer vq_key_...`",
+        "description": "API key issued from the developer dashboard. Pass as `Authorization: Bearer vq_key_...` (preferred).",
         "scheme": "bearer",
         "type": "http"
+      },
+      "ApiKeyHeader": {
+        "description": "The same API key as a bare header value: `X-API-Key: vq_key_...`. Equivalent to the Bearer form.",
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      },
+      "ApiKeyQuery": {
+        "description": "The same API key as a query parameter: `?api_key=vq_key_...`. Use only where you cannot set a header. A URL can end up in proxy and server logs, browser history and shared links, so prefer either header form, and rotate a key that has leaked.",
+        "in": "query",
+        "name": "api_key",
+        "type": "apiKey"
       }
     }
   },
@@ -4493,7 +4775,7 @@
       "name": "Vaquill API Support",
       "url": "https://www.vaquill.ai"
     },
-    "description": "Public API for Indian primary law: Central and State Acts, the instruments of the principal regulators, and their individual sections.\n\n**Authentication**: Pass your API key via the `Authorization: Bearer vq_key_...` header. The same key works against the US API; the two share one credit balance.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Coverage\n\nCentral, State and Union Territory enactments, addressable down to the individual section, plus the instruments of the principal regulators. Regulators covered include SEBI, RBI, MCA, IRDAI, TRAI, DGFT, MOEFCC and CPCB.\n\n`GET /acts/filters` is free and returns the live section count behind every `category`, `state` and `department` value, so read volumes from there rather than from this page.\n\n`sourceUrl` points at the publisher's own document where we hold a live one, and is `null` otherwise. India Code migrated hosts in August 2026 and re-minted its identifiers, so links into the old site no longer resolve; we return nothing rather than a link that 404s. `pdfUrl` and `textUrl` are served from our own mirror and are unaffected.\n\n## Scope\n\nThis document describes the **India** surface only. US statutes are a separate document at `/external/openapi.json`, so an MCP client configured here sees Indian tools and nothing else.",
+    "description": "Public API for Indian primary law: Central and State Acts, the instruments of the principal regulators, and their individual sections.\n\n**Authentication**: Pass your API key as `Authorization: Bearer vq_key_...` (preferred) or in the `X-API-Key` header. The `api_key` query parameter also works where a header cannot be set, but a URL ends up in logs and browser history. Sending two different keys in one request is rejected with a 401. The same key works against the US API; the two share one credit balance.\n\n**Credits**: Each call costs API credits. See `GET /api/v1/api-credits/pricing` for the full pricing matrix.\n\n## Coverage\n\nCentral, State and Union Territory enactments, addressable down to the individual section, plus the instruments of the principal regulators. Regulators covered include SEBI, RBI, MCA, IRDAI, TRAI, DGFT, MOEFCC and CPCB.\n\n`GET /acts/filters` is free and returns the live section count behind every `category`, `state` and `department` value, so read volumes from there rather than from this page.\n\n`sourceUrl` points at the publisher's own document where we hold a live one, and is `null` otherwise. India Code migrated hosts in August 2026 and re-minted its identifiers, so links into the old site no longer resolve; we return nothing rather than a link that 404s. `pdfUrl` and `textUrl` are served from our own mirror and are unaffected.\n\n## Scope\n\nThis document describes the **India** surface only. US statutes are a separate document at `/external/openapi.json`, so an MCP client configured here sees Indian tools and nothing else.",
     "license": {
       "name": "Proprietary",
       "url": "https://www.vaquill.ai/terms"
@@ -5896,18 +6178,18 @@
         "operationId": "get_act_amendments_api_v1_in_acts__act_id__amendments_get",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_20326"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -6120,18 +6402,18 @@
         "operationId": "india_act_cited_by",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_17068"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -6319,18 +6601,18 @@
         "operationId": "india_act_definitions",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_central_2114"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -6509,35 +6791,35 @@
         "operationId": "get_act_section_api_v1_in_acts__act_id__sections__section_number__get",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_20326"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
           },
           {
-            "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+            "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
             "in": "path",
             "name": "section_number",
             "required": true,
             "schema": {
-              "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+              "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
               "examples": [
                 "23"
               ],
               "maxLength": 40,
               "minLength": 1,
-              "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
               "title": "Section Number",
               "type": "string"
             }
@@ -6693,35 +6975,35 @@
         "operationId": "get_act_section_body_api_v1_in_acts__act_id__sections__section_number__body_get",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_20326"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
           },
           {
-            "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+            "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
             "in": "path",
             "name": "section_number",
             "required": true,
             "schema": {
-              "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+              "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
               "examples": [
                 "23"
               ],
               "maxLength": 40,
               "minLength": 1,
-              "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
               "title": "Section Number",
               "type": "string"
             }
@@ -6858,35 +7140,35 @@
         "operationId": "get_section_history_api_v1_in_acts__act_id__sections__section_number__history_get",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_20326"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
           },
           {
-            "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+            "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
             "in": "path",
             "name": "section_number",
             "required": true,
             "schema": {
-              "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+              "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
               "examples": [
                 "23"
               ],
               "maxLength": 40,
               "minLength": 1,
-              "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
               "title": "Section Number",
               "type": "string"
             }
@@ -7089,35 +7371,35 @@
         "operationId": "india_section_references",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_17068"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
           },
           {
-            "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+            "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
             "in": "path",
             "name": "section_number",
             "required": true,
             "schema": {
-              "description": "Section number exactly as the publisher writes it. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.",
+              "description": "Section number as the publisher writes it, e.g. `302` or `498A`. Alphanumeric suffixes are part of the number, not a sub-provision: `498A` is one section, not section 498 clause A.\n\nWhen the number as sent matches nothing, common spellings are tried: a `s.` / `Sec.` / `Section` prefix, `498-A` or `498 A` or `498a` for `498A`, and a trailing sub-provision such as `302(1)`, which serves the whole section. A match is served only when exactly one stored number fits, and the response carries `resolvedFrom`. A miss returns 404 with `reason` and the act's nearest numbers in `didYouMean`.",
               "examples": [
                 "79"
               ],
               "maxLength": 40,
               "minLength": 1,
-              "pattern": "^[A-Za-z0-9().\\- ]{1,40}$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
               "title": "Section Number",
               "type": "string"
             }
@@ -7248,18 +7530,18 @@
         "operationId": "get_act_status_api_v1_in_acts__act_id__status_get",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_20326"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -7375,18 +7657,18 @@
         "operationId": "get_act_structure_api_v1_in_acts__act_id__structure_get",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_20326"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -7532,18 +7814,18 @@
         "operationId": "india_act_subordinate",
         "parameters": [
           {
-            "description": "Act identifier, as returned by search, /list or /resolve.",
+            "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
             "in": "path",
             "name": "act_id",
             "required": true,
             "schema": {
-              "description": "Act identifier, as returned by search, /list or /resolve.",
+              "description": "Act identifier, as returned by /acts/search, /acts/list or /acts/resolve, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Surrounding whitespace, quotes, backticks, invisible characters, a trailing period and double percent-encoding are removed when the id as sent matches nothing; the response then carries `resolvedFrom`.\n\nAn act NAME or citation (`Indian Penal Code`, `IPC`, `The Companies Act, 2013`) is not resolved here. It returns 404 with `reason: \"act_name_or_citation\"` and `suggestedRequest`, the call that finds the id. A misspelt id returns 404 with the real ids in `didYouMean`.",
               "examples": [
                 "IND_state_17068"
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -7742,7 +8024,7 @@
               ],
               "maxLength": 200,
               "minLength": 1,
-              "pattern": "^[a-zA-Z0-9_-]+$",
+              "pattern": "^[^/\\\\\\x00-\\x1f]+$",
               "title": "Act Id",
               "type": "string"
             }
@@ -7976,6 +8258,12 @@
   "security": [
     {
       "ApiKeyAuth": []
+    },
+    {
+      "ApiKeyHeader": []
+    },
+    {
+      "ApiKeyQuery": []
     }
   ],
   "servers": [

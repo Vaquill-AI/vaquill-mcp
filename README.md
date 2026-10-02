@@ -256,7 +256,7 @@ Register, and agency guidance.
 | `get_us_statute_section` | Section metadata by `actId` (citation, hierarchy, official-source links). |
 | `get_us_statute_section_text` | Full HTML + plain text of a section. |
 | `get_sections_batch` | Metadata for up to 50 sections in one call. |
-| `resolve_statute_citation` | Resolve a Bluebook citation (e.g. `42 U.S.C. § 1983`) straight to its section. |
+| `resolve_statute_citation` | Resolve a Bluebook citation (e.g. `42 U.S.C. § 1983`) straight to its section. Optional `state` (a 2-letter code or `federal`) and `corpusType` are constraints, and a real citation they exclude comes back with `citationOutsideFilters`. |
 | `list_statute_divisions` | Browse the statutory hierarchy one level at a time. |
 | `list_statutes_coverage` | Self-describing coverage matrix: which corpora exist in which jurisdiction. |
 

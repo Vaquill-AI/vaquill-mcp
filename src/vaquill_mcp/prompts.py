@@ -151,9 +151,13 @@ Verify every US legal citation in the passage below.
 2. `resolve_statute_citations_batch` with up to 50 at once. It costs the same
    per citation as resolving them one at a time and takes one round trip instead
    of fifty. Duplicates collapse and order is preserved.
-3. For any that fail to resolve, retry the single `resolve_statute_citation`
-   with `state` or `corpusType` set. Some forms are genuinely ambiguous:
-   `8 CCR 1206-2` is Colorado and `22 CCR 76227` is California.
+3. Do not set `state` or `corpusType` unless every citation belongs to one
+   jurisdiction or corpus: a scope is a constraint, so a federal citation under
+   `state: "ca"` is unresolved by design. If an unresolved item carries
+   `citationOutsideFilters`, the section is real and your scope excluded it:
+   retry that citation without the scope. A form several states print (`CCR`,
+   `AAC`, `IAC`) can still fail unscoped; retry the single
+   `resolve_statute_citation` with the right `state`.
 4. `get_sections_batch` on the resolved `act_id`s to confirm each section says
    what the passage claims.
 

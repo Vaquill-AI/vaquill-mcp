@@ -166,12 +166,12 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     # US statutes, regulations, constitutions and court rules
     # ------------------------------------------------------------------
     "search_us_statutes": (
-        "Semantic + keyword search across US primary law: the United States Code (USC), the "
-        "Code of Federal Regulations (CFR), and all 50 states' statutes, regulations, "
-        "constitutions and court rules. Use for any 'what does the law say' question. Filter "
-        "by corpusType and titleNumber. Returns sections with citation, hierarchy and official "
-        "source links. The returned act_id (e.g. 'USC_T42_C21_S1983') feeds every other "
-        "statute tool -- do not hand-build one, they usually 404."
+        "Semantic + keyword search across US primary law: USC, CFR, and all 50 states' "
+        "statutes, regulations, constitutions and court rules. Use for any 'what does the "
+        "law say' question. Returns sections with citation, hierarchy and source links. "
+        "The returned act_id feeds every other statute tool; never hand-build one. To "
+        "look up a citation the user gave, prefer resolve_statute_citation. "
+        "`citationOutsideFilters` means the cited section exists but your filters exclude it."
     ),
     "get_us_statute_section": (
         "Metadata for one US statute, regulation or rule section by act_id: citation, title "
@@ -336,6 +336,14 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
 # different things on different tools: `corpusType` is a 15-value corpus filter
 # on search and a resolution constraint on resolve_statute_citation, and one
 # shared entry would be wrong on one of them.
+# The same `section_number` text on four India tools, so it is written once.
+_IN_SECTION_NUMBER = (
+    "Section number as the publisher writes it, e.g. `302` or `498A`; an alphanumeric "
+    "suffix is part of the number, not a sub-provision. Near spellings (`498-A`, "
+    "`Sec. 302`, `302(1)`) are tried when the exact one misses. A miss is a 404 "
+    "with the act's nearest numbers in `didYouMean`."
+)
+
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # --- Added 2026-09-19 -------------------------------------------------
     # Twelve parameters the API had been publishing with descriptions of 262
@@ -420,13 +428,48 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         'rebuild returns `source: "unavailable"` and is refunded.'
     ),
     ("get_us_statute_section_text", "format"): (
-        "Which representations to return. The default `both` carries a long "
-        "section's text twice, so `plain` or `html` roughly halves the "
-        "payload at the same price. `content` and `operative` return only "
-        "the operative text, about 1 KB instead of 30 KB on a long section, "
-        "but ONLY United States Code sections can be split: on any other "
-        "corpus they return no text, so check for null."
+        "Which representations to return. `both` (default) is `html` + `plain`, the "
+        "same text twice, so `plain` or `html` alone roughly halves the payload at the "
+        "same price. `all` adds `markdown` (a third full copy, opt-in). `markdown` "
+        "returns only `markdown`, falling back to `plain` with a `note` when the "
+        "section has no structured rendering. `content` and `operative` return only "
+        "the split text, about 1 KB instead of 30 KB on a long section, but ONLY "
+        "United States Code sections can be split: elsewhere they return `plain` with a "
+        "`note`, and `content` is null, so read `note` instead of assuming it is empty."
     ),
+    ("get_us_statute_section_text", "structured"): (
+        "When true, also returns a `subsections` tree for pincite addressing and "
+        "`markdown` as that tree in nested lists, at the same cost. It overrides the "
+        "table-preserving markdown that `format=all` or `markdown` would otherwise "
+        "give, so leave it off when you need the tables."
+    ),
+    ("list_statute_divisions", "article"): (
+        "Article to drill into: a constitution's article or amendment (`Article III`, "
+        "`Amendment XIV`), or the article of a state code divided by article rather "
+        "than chapter (New York). Pass the `identifier` exactly as the listing "
+        "returned it."
+    ),
+    ("search_us_statutes", "article"): (
+        "Article label(s) to scope to, exactly as `list_statute_divisions` returns "
+        "them (`Amendment XIV`, `Article IV`, New York's `2-A`). Needs `corpusType` "
+        "`CONSTITUTION`, `STATE_CONSTITUTION` (plus `state`), or `STATE` / "
+        "`REGULATION` (plus `code`); otherwise 422 before any charge."
+    ),
+    ("search_us_statutes", "agency"): (
+        "Federal Register agency: slug (`environmental-protection-agency`), full name "
+        "or acronym (`EPA`); a list matches any. An ambiguous acronym (`FS`) or an "
+        "unknown agency is a 422, never a charge. Only `FEDERAL_REGISTER` and "
+        "`EXECUTIVE_ACTION` carry an agency."
+    ),
+    ("resolve_statute_citations_batch", "state"): (
+        "Optional jurisdiction to resolve every citation WITHIN: a 2-letter state code, "
+        "or `federal` for USC, CFR, federal rules and the U.S. Constitution. A "
+        "constraint, not a hint. Omit it for a batch that spans jurisdictions."
+    ),
+    ("get_act_section", "section_number"): _IN_SECTION_NUMBER,
+    ("get_act_section_body", "section_number"): _IN_SECTION_NUMBER,
+    ("get_section_history", "section_number"): _IN_SECTION_NUMBER,
+    ("india_section_references", "section_number"): _IN_SECTION_NUMBER,
     ("search_us_statutes", "includeBody"): (
         "Return each hit's full text inline on `body`, instead of one "
         "`/section/{actId}/body` call per hit. Buys latency, not a discount: the "
@@ -489,13 +532,17 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "Jurisdiction. A 2-letter code for one of the 52 supported US jurisdictions "
         "(50 states + DC + PR), or `federal` for USC / CFR / Constitution / federal "
         "rules. Pass a list to search several at once. Case-insensitive. Omit to "
-        "search every jurisdiction."
+        "search every jurisdiction. Leave it unset when the query is a citation that "
+        "already names its jurisdiction (`42 U.S.C.`, `C.F.R.`, `Fed. R. Civ. P.`, "
+        "`U.S. Const.`): a state filter excludes federal law. Never carry a state over "
+        "from an earlier question."
     ),
     ("search_us_statutes", "matchType"): (
         "`any` (default) is hybrid semantic + keyword ranking, for natural-language "
         "questions. `all` requires every query term; `phrase` matches an exact "
-        "phrase, for a defined term. To pull up one section, pass its citation as "
-        "the query and it resolves to that section at rank 1."
+        "phrase, for a defined term. To pull up one section from a citation, use "
+        "resolve_statute_citation. A citation passed as the query ranks first only "
+        "when it is inside your other filters."
     ),
     ("search_us_statutes", "code"): (
         "Restrict to specific state statutory codes, e.g. `tx_pe` for the Texas Penal "
@@ -550,10 +597,16 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     # --- resolve: constraints, not hints -------------------------------------
     ("resolve_statute_citation", "state"): (
-        "Optional 2-letter jurisdiction to resolve WITHIN, e.g. `tx`. Some citation "
+        "Optional jurisdiction to resolve WITHIN: a 2-letter state code, e.g. `tx`, or "
+        "`federal` for USC, CFR, federal rules and the U.S. Constitution. Some citation "
         "forms are shared: `8 CCR 1206-2` is Colorado and `22 CCR 76227` is "
         "California. A constraint, not a hint: a citation naming a different "
-        "jurisdiction returns `resolved: false` rather than being forced into this one."
+        "jurisdiction returns `resolved: false` rather than being forced into this one, "
+        "so a federal citation (`42 U.S.C.`, `C.F.R.`, `Fed. R. Civ. P.`, `U.S. Const.`) "
+        "under a state returns `resolved: false`. Leave it unset when the citation "
+        "already names its jurisdiction, and never carry a state over from an earlier "
+        "question. When the scope is why it missed, `citationOutsideFilters` names the "
+        "section and the scope that excluded it."
     ),
     ("resolve_statute_citation", "corpusType"): (
         "Optional corpus to resolve WITHIN: `STATE`, `REGULATION`, `STATE_RULES`, "
