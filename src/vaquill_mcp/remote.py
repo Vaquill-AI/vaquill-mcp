@@ -81,6 +81,7 @@ from mcp.types import Icon
 
 from vaquill_mcp import __version__
 from vaquill_mcp.aliases import register_aliases
+from vaquill_mcp.brand_assets import square_icon
 from vaquill_mcp.client_identity import make_client_stamp
 from vaquill_mcp.config import _SPEC_PATHS, get_base_url, get_timeout
 from vaquill_mcp.oauth import ConnectorKeyResolver
@@ -291,6 +292,10 @@ def create_remote_server(
     # one naming the ACTUAL calling client, so it is the one a user checks
     # before granting access to their account, and a generic vendor logo there
     # invites exactly the "is this real?" hesitation it exists to resolve.
+    #
+    # The lockup stays FIRST because the consent screen reads only `icons[0]`.
+    # The square icon follows it for clients that list apps by a square tile;
+    # see brand_assets.py for why it is served from this host.
     server = FastMCP(
         name,
         lifespan=_lifespan,
@@ -299,7 +304,8 @@ def create_remote_server(
             Icon(
                 src="https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png",
                 mime_type="image/png",
-            )
+            ),
+            square_icon(),
         ],
         website_url="https://www.vaquill.ai",
     )

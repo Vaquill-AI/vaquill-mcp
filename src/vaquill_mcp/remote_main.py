@@ -96,6 +96,7 @@ def build_app() -> Starlette:
     from vaquill_mcp import __version__
     from starlette.middleware import Middleware
 
+    from vaquill_mcp.brand_assets import asset_routes
     from vaquill_mcp.oauth import (
         BrandSkinMiddleware,
         build_auth_provider,
@@ -237,6 +238,7 @@ def build_app() -> Starlette:
                 "/.well-known/openai-apps-challenge",
                 openai_apps_challenge,
             ),
+            *asset_routes(),
             *routes,
         ],
         lifespan=lifespan,
