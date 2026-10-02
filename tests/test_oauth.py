@@ -315,3 +315,211 @@ def test_the_consent_screen_is_remembered_never_disabled(
     proxy = auth.server  # MultiAuth wraps the OAuthProxy
     assert proxy._require_authorization_consent == "remember"
     assert proxy._require_authorization_consent is not False
+
+
+# ---------------------------------------------------------------------------
+# A refresh the upstream refuses must be an OAuth error, not a 500
+# ---------------------------------------------------------------------------
+#
+# Observed in production 2026-10-02: eight `POST /token` answered
+# `500 KeyError: 'access_token'`, and every one was followed within seconds by a
+# burst of `401 invalid_token` on /mcp from the same client. FastMCP reads
+# `token_response["access_token"]` unguarded after the upstream refresh. Supabase
+# (GoTrue) refuses a refresh with `{"code", "error_code", "msg"}`, which carries
+# no `error` key, so the OAuth client library does not raise, the body comes back
+# as a dict with no token in it, and the lookup crashes. A 500 tells a client
+# "retry"; it keeps presenting its dead access token and the log fills with
+# `invalid_token`. RFC 6749 section 5.2 says what to answer: 400 `invalid_grant`,
+# which tells it to throw the credentials away and authorize again.
+
+
+def _provider(monkeypatch: pytest.MonkeyPatch):
+    for name, value in _OAUTH_ENV.items():
+        monkeypatch.setenv(name, value)
+    auth = build_auth_provider()
+    assert auth is not None
+    # The token issuer is created when routes are built, as it is in the real app.
+    auth.get_routes(mcp_path="/mcp")
+    return auth.server
+
+
+def test_the_proxy_is_the_refresh_safe_one(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fastmcp.server.auth import OAuthProxy
+
+    proxy = _provider(monkeypatch)
+    assert isinstance(proxy, OAuthProxy)
+    assert type(proxy) is not OAuthProxy, "the stock proxy 500s on a refused refresh"
+
+
+async def test_a_refused_upstream_refresh_is_invalid_grant_not_a_crash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Drives the REAL refresh code with GoTrue's actual error shape.
+
+    The stubs sit one level below `exchange_refresh_token`, so the library's own
+    `token_response["access_token"]` line runs. That is the point: patching the
+    method itself would prove only that the wrapper wraps.
+    """
+    import contextlib
+    from types import SimpleNamespace
+
+    from mcp.server.auth.provider import TokenError
+
+    proxy = _provider(monkeypatch)
+    gotrue_error = {
+        "code": 400,
+        "error_code": "refresh_token_already_used",
+        "msg": "Invalid Refresh Token: Already Used",
+    }
+
+    class _Upstream:
+        async def refresh_token(self, **_kw):
+            return gotrue_error
+
+    @contextlib.asynccontextmanager
+    async def _client():
+        yield _Upstream()
+
+    async def _jti_get(key):
+        return SimpleNamespace(upstream_token_id="upstream-token-id")
+
+    async def _upstream_get(key):
+        return SimpleNamespace(
+            refresh_token="upstream-refresh", scope="offline_access", access_token="old"
+        )
+
+    monkeypatch.setattr(
+        proxy.jwt_issuer, "verify_token", lambda *_a, **_k: {"jti": "refresh-jti"}
+    )
+    monkeypatch.setattr(proxy._jti_mapping_store, "get", _jti_get)
+    monkeypatch.setattr(proxy._upstream_token_store, "get", _upstream_get)
+    monkeypatch.setattr(proxy, "_upstream_oauth_client", _client)
+
+    client = SimpleNamespace(client_id="https://claude.ai/oauth/mcp-oauth-client-metadata")
+    refresh = SimpleNamespace(token="fastmcp-refresh", scopes=["offline_access"])
+    with pytest.raises(TokenError) as caught:
+        await proxy.exchange_refresh_token(client, refresh, ["offline_access"])
+    assert caught.value.error == "invalid_grant"
+
+
+async def test_only_the_missing_access_token_is_translated(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Any other failure keeps its own shape: this must not become a catch-all."""
+    from fastmcp.server.auth import OAuthProxy
+    from mcp.server.auth.provider import TokenError
+
+    proxy = _provider(monkeypatch)
+
+    async def _other_key(self, *_a, **_k):
+        raise KeyError("something_else")
+
+    monkeypatch.setattr(OAuthProxy, "exchange_refresh_token", _other_key)
+    with pytest.raises(KeyError):
+        await proxy.exchange_refresh_token(object(), object(), [])
+
+    async def _already_oauth(self, *_a, **_k):
+        raise TokenError("invalid_grant", "Refresh token mapping not found")
+
+    monkeypatch.setattr(OAuthProxy, "exchange_refresh_token", _already_oauth)
+    with pytest.raises(TokenError) as caught:
+        await proxy.exchange_refresh_token(object(), object(), [])
+    assert "mapping not found" in str(caught.value.error_description)
+
+
+async def test_a_good_refresh_passes_through_untouched(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from fastmcp.server.auth import OAuthProxy
+
+    proxy = _provider(monkeypatch)
+    sentinel = object()
+
+    async def _ok(self, *_a, **_k):
+        return sentinel
+
+    monkeypatch.setattr(OAuthProxy, "exchange_refresh_token", _ok)
+    assert await proxy.exchange_refresh_token(object(), object(), []) is sentinel
+
+
+async def test_the_reason_the_upstream_refused_is_logged_without_a_token(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Eight of fifteen refreshes failed in two hours and the log said only KeyError.
+
+    The upstream's error code is what tells a rotation race from a revoked grant,
+    so it has to survive. Only the code and message are logged: the response body
+    of a SUCCESSFUL refresh holds tokens, and a refusal body is not trusted to
+    be free of them either, so it is never logged whole.
+    """
+    import logging
+    from types import SimpleNamespace
+
+    from mcp.server.auth.provider import TokenError
+
+    proxy = _provider(monkeypatch)
+
+    class _Upstream:
+        async def refresh_token(self, **_kw):
+            return {
+                "code": 400,
+                "error_code": "refresh_token_already_used",
+                "msg": "Invalid Refresh Token: Already Used",
+                "access_token_hint": "SECRET-SHOULD-NOT-APPEAR",
+            }
+
+        async def aclose(self):
+            return None
+
+    # The PARENT's factory, so our override wraps the stub exactly as it wraps the
+    # real client. Patching the instance would replace the override itself and
+    # prove nothing.
+    from fastmcp.server.auth import OAuthProxy
+
+    monkeypatch.setattr(OAuthProxy, "_create_upstream_oauth_client", lambda self: _Upstream())
+
+    async def _jti_get(key):
+        return SimpleNamespace(upstream_token_id="upstream-token-id")
+
+    async def _upstream_get(key):
+        return SimpleNamespace(
+            refresh_token="upstream-refresh", scope="offline_access", access_token="old"
+        )
+
+    monkeypatch.setattr(
+        proxy.jwt_issuer, "verify_token", lambda *_a, **_k: {"jti": "refresh-jti"}
+    )
+    monkeypatch.setattr(proxy._jti_mapping_store, "get", _jti_get)
+    monkeypatch.setattr(proxy._upstream_token_store, "get", _upstream_get)
+
+    client = SimpleNamespace(client_id="https://claude.ai/oauth/mcp-oauth-client-metadata")
+    refresh = SimpleNamespace(token="fastmcp-refresh", scopes=["offline_access"])
+    with caplog.at_level(logging.WARNING), pytest.raises(TokenError) as caught:
+        await proxy.exchange_refresh_token(client, refresh, ["offline_access"])
+
+    assert caught.value.error == "invalid_grant"
+    logged = " ".join(r.getMessage() for r in caplog.records)
+    assert "refresh_token_already_used" in logged
+    assert "Already Used" in logged
+    assert "SECRET-SHOULD-NOT-APPEAR" not in logged
+    assert "upstream-refresh" not in logged
+
+
+async def test_the_wrapped_upstream_client_still_delegates_everything_else(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The wrapper must be invisible to every call it does not care about."""
+    proxy = _provider(monkeypatch)
+    sentinel = object()
+
+    class _Upstream:
+        marker = sentinel
+
+        async def aclose(self):
+            self.closed = True
+
+    inner = _Upstream()
+    monkeypatch.setattr(type(proxy).__mro__[1], "_create_upstream_oauth_client", lambda self: inner)
+    async with proxy._upstream_oauth_client() as wrapped:
+        assert wrapped.marker is sentinel
+    assert inner.closed is True

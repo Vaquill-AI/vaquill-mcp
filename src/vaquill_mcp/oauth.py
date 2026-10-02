@@ -73,6 +73,7 @@ authorization server cannot half-enable it.
 
 from __future__ import annotations
 
+import functools
 import logging
 import os
 import re
@@ -277,6 +278,84 @@ def _allowed_redirect_uris() -> list[str] | None:
     return patterns or None
 
 
+@functools.cache
+def _refresh_safe_proxy_class():
+    """`OAuthProxy` whose refused refresh is an OAuth error and not a crash.
+
+    Observed in production 2026-10-02: `POST /token` answered
+    `500 KeyError: 'access_token'` eight times in two hours, and each was followed
+    within seconds by a burst of `401 invalid_token` on /mcp from the same client.
+
+    After the upstream refresh FastMCP reads `token_response["access_token"]`
+    unguarded. Supabase (GoTrue) refuses a refresh with
+    `{"code", "error_code", "msg"}`, which has no `error` key, so the OAuth client
+    library does not raise and hands back a dict with no token in it. The lookup
+    then crashes. A 500 tells a client to retry, so it keeps presenting its dead
+    access token (the `invalid_token` burst) and never re-authorizes.
+
+    RFC 6749 section 5.2 says what to answer: `invalid_grant`, a 400, which tells
+    the client to discard its credentials and authorize again. Only the missing
+    `access_token` is translated; any other failure keeps its own shape, because
+    a catch-all here would hide the next real bug behind a clean-looking error.
+
+    Built lazily and cached: fastmcp is imported on first use so a stdio server
+    with OAuth off never pays for it.
+    """
+    from fastmcp.server.auth import OAuthProxy
+    from mcp.server.auth.provider import TokenError
+
+    class _RefusalAwareClient:
+        """The upstream OAuth client, answering a refused refresh as `invalid_grant`.
+
+        A refusal is detected where it happens: a refresh answer with no
+        `access_token`. The upstream's `error_code` and `msg` are logged, because
+        they are what separates a rotation race from a revoked grant, and nothing
+        else from the body is: a refusal body is not trusted to be free of tokens.
+        Every other attribute is the wrapped client's own.
+        """
+
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        async def refresh_token(self, *args, **kwargs):
+            response = await self._inner.refresh_token(*args, **kwargs)
+            if isinstance(response, dict) and "access_token" not in response:
+                logger.warning(
+                    "oauth_upstream_refresh_refused error_code=%s message=%s",
+                    response.get("error_code") or response.get("error"),
+                    response.get("msg") or response.get("error_description"),
+                )
+                raise TokenError(
+                    "invalid_grant",
+                    "The refresh token is no longer valid. Authorize the connection again.",
+                )
+            return response
+
+    class VaquillOAuthProxy(OAuthProxy):
+        def _create_upstream_oauth_client(self):
+            return _RefusalAwareClient(super()._create_upstream_oauth_client())
+
+        async def exchange_refresh_token(self, client, refresh_token, scopes):
+            try:
+                return await super().exchange_refresh_token(client, refresh_token, scopes)
+            except KeyError as exc:
+                if exc.args != ("access_token",):
+                    raise
+                logger.warning(
+                    "oauth_refresh_upstream_returned_no_access_token client_id=%s",
+                    getattr(client, "client_id", None),
+                )
+                raise TokenError(
+                    "invalid_grant",
+                    "The refresh token is no longer valid. Authorize the connection again.",
+                ) from exc
+
+    return VaquillOAuthProxy
+
+
 def build_auth_provider():
     """The auth provider for the `/mcp` mounts, or None when unconfigured.
 
@@ -317,7 +396,7 @@ def build_auth_provider():
     if not oauth_enabled():
         return None
 
-    from fastmcp.server.auth import MultiAuth, OAuthProxy
+    from fastmcp.server.auth import MultiAuth
     from fastmcp.server.auth.providers.jwt import JWTVerifier
 
     required = {
@@ -357,7 +436,7 @@ def build_auth_provider():
 
     client_storage, jwt_signing_key = _durable_storage()
 
-    proxy = OAuthProxy(
+    proxy = _refresh_safe_proxy_class()(
         # OPT-IN redirect allowlist, unset by default so no connecting client
         # changes behaviour. Comma-separated FastMCP patterns, e.g.
         # `https://claude.ai/api/mcp/auth_callback,http://localhost:*`.

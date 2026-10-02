@@ -81,6 +81,8 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse, PlainTextResponse
 from starlette.routing import Mount, Route
 
+from vaquill_mcp.log_redaction import install_key_redaction
+
 logger = logging.getLogger(__name__)
 
 # Mount prefix per jurisdiction. US is at the root so the URL customers already
@@ -251,6 +253,9 @@ def main() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    # Before anything is served: `/s/{api_key}` puts a customer's key in the
+    # URL, and uvicorn's access log prints the URL.
+    install_key_redaction()
 
     import uvicorn
 
