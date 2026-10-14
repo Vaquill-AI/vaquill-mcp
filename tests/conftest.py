@@ -217,3 +217,25 @@ def sample_openapi_spec() -> dict:
             },
         },
     }
+
+
+@pytest.fixture(autouse=True)
+def _in_memory_oauth_store(monkeypatch):
+    """Keep the OAuth proxy's default store out of the filesystem.
+
+    Without durable storage configured, FastMCP keeps OAuth state in an encrypted
+    `FileTreeStore`, whose file reads go through `aiofile`. On Linux that opens a
+    kernel AIO context per store, and CI runners have a small system-wide limit, so
+    once enough tests had built a provider the next one failed with EAGAIN
+    ("Resource temporarily unavailable") on whichever test came after. macOS uses a
+    thread pool and never shows it. The tests need the proxy's behavior, not its
+    persistence, so they get a `MemoryStore`.
+    """
+    try:
+        from key_value.aio.stores.memory import MemoryStore
+
+        import fastmcp.server.auth.oauth_proxy.proxy as proxy_module
+    except ImportError:  # a layout this fixture does not know: leave the default
+        return
+    if hasattr(proxy_module, "FileTreeStore"):
+        monkeypatch.setattr(proxy_module, "FileTreeStore", lambda **_kw: MemoryStore())
