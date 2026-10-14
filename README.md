@@ -238,8 +238,8 @@ set always matches the current API. For the **authoritative, up-to-date list and
 per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
 client's tool list.
 
-The US server publishes 18 tools and the India server 22, counting `search` and
-`fetch`. Law change alerts (boards and watches) are deliberately **not** MCP
+The US server publishes 26 tools and the India server 22, counting `search` and
+`fetch`. Every one is read-only. Law change alerts (boards and watches) are deliberately **not** MCP
 tools: the API still serves them, so create and manage alerts in the Vaquill
 console or over the REST API directly.
 
@@ -428,6 +428,25 @@ up in that job and nowhere else.
 # Test with FastMCP inspector
 uv run fastmcp dev src/vaquill_mcp/server.py
 ```
+
+## Security
+
+Report a vulnerability to contact@vaquill.ai (see [SECURITY.md](SECURITY.md) and
+https://www.vaquill.ai/security/vulnerability-disclosure).
+
+Two things worth knowing before you connect this to an agent that holds other
+tools:
+
+- **The server is read-only.** Every tool carries `readOnlyHint: true` and
+  `destructiveHint: false`, and none writes, sends or deletes anything. The hints
+  describe what the tools can do; they are not a security control, and a client
+  should treat annotations from any server as untrusted unless it trusts the server.
+- **Returned text is third-party content.** Statutes, notices, agency decisions and
+  session laws come from government publishers (and, for some corpora, from vendor
+  collection and OCR). We sanitise markup and restrict source links to government
+  hosts, but we do not filter wording for instructions, and `openWorldHint: false`
+  describes reach, not provenance. The server sends an `instructions` note saying
+  so; clients that ignore it should still treat tool output as untrusted.
 
 ## How It Works
 

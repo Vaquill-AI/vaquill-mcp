@@ -73,3 +73,54 @@ def test_redirect_allowlist_is_off_unless_configured(monkeypatch: pytest.MonkeyP
     assert _allowed_redirect_uris() is None
     monkeypatch.setenv("VAQUILL_OAUTH_ALLOWED_REDIRECT_URIS", " https://a/cb , ,http://localhost:* ")
     assert _allowed_redirect_uris() == ["https://a/cb", "http://localhost:*"]
+
+
+async def _echo_len(request):
+    return JSONResponse({"n": len(await request.body())})
+
+
+def _sized_client(max_bytes: int = 1024) -> httpx.AsyncClient:
+    app = Starlette(routes=[Route("/register", _echo_len, methods=["POST"])])
+    guarded = RegistrationRateLimit(app, limit=1000, window_s=600, max_bytes=max_bytes)
+    return httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=guarded), base_url="https://mcp.test"
+    )
+
+
+async def test_oversized_registration_is_refused_with_413() -> None:
+    async with _sized_client() as c:
+        r = await c.post("/register", json={"client_name": "x" * 5000})
+        assert r.status_code == 413
+        assert r.json()["error"] == "invalid_client_metadata"
+
+
+async def test_oversized_chunked_registration_is_refused() -> None:
+    async def gen():
+        for _ in range(10):
+            yield b"x" * 512
+
+    async with _sized_client() as c:
+        r = await c.post("/register", content=gen())
+        assert r.status_code == 413
+
+
+async def test_normal_registration_body_reaches_the_app_intact() -> None:
+    payload = {"client_name": "Claude", "redirect_uris": ["https://claude.ai/cb"]}
+    async with _sized_client() as c:
+        r = await c.post("/register", json=payload)
+        assert r.status_code == 200
+        assert r.json()["n"] == len(httpx.Request("POST", "http://x", json=payload).content)
+
+
+async def test_too_many_redirect_uris_is_refused() -> None:
+    uris = [f"https://a.example/{i}" for i in range(21)]
+    async with _sized_client(max_bytes=100_000) as c:
+        assert (await c.post("/register", json={"redirect_uris": uris})).status_code == 400
+        ok = await c.post("/register", json={"redirect_uris": uris[:20]})
+        assert ok.status_code == 200
+
+
+async def test_malformed_json_is_left_to_the_library() -> None:
+    async with _sized_client() as c:
+        r = await c.post("/register", content=b"{not json")
+        assert r.status_code == 200

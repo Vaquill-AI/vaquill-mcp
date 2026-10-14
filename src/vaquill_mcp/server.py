@@ -42,6 +42,7 @@ from vaquill_mcp.config import (
     get_timeout,
 )
 from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS, TOOL_TITLES
+from vaquill_mcp.instructions import instructions_for
 from vaquill_mcp.ordering import DeterministicToolOrder
 from vaquill_mcp.prompts import register_prompts
 from vaquill_mcp.resources import register_resources
@@ -731,7 +732,7 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
         if jurisdiction == "US"
         else f"Vaquill Legal Research ({jurisdiction})"
     )
-    mcp = FastMCP(name=name, lifespan=_lifespan)
+    mcp = FastMCP(name=name, instructions=instructions_for(jurisdiction), lifespan=_lifespan)
 
     provider = OpenAPIProvider(
         openapi_spec=openapi_spec,

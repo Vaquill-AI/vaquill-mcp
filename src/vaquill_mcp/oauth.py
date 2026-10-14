@@ -271,6 +271,49 @@ def _durable_storage() -> tuple[object | None, str | None]:
     return storage, values["VAQUILL_OAUTH_JWT_SIGNING_KEY"]
 
 
+_DAY = 86400
+
+
+def _days_from_env(name: str, default: int, *, low: int, high: int) -> int:
+    """A whole number of days from the environment, or `default` when unset.
+
+    A bad value raises at start-up, like every other OAuth setting here: a typo
+    that silently fell back to the default would be a lifetime nobody chose.
+    """
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        days = int(raw)
+    except ValueError:
+        raise ValueError(f"{name} must be a whole number of days, got {raw!r}") from None
+    if not low <= days <= high:
+        raise ValueError(f"{name} must be between {low} and {high} days, got {days}")
+    return days
+
+
+def refresh_token_seconds() -> int:
+    """How long a refresh token lives after it was issued. Default 30 days.
+
+    FastMCP's own default is 365 days, and Supabase gives no expiry of its own,
+    so a stolen refresh token used to work for a year. Every refresh issues a
+    fresh token, so a client in regular use never reaches the limit; one idle
+    for this long signs in again.
+    """
+    return _days_from_env("VAQUILL_OAUTH_REFRESH_TOKEN_DAYS", 30, low=1, high=365) * _DAY
+
+
+def client_registration_seconds() -> int:
+    """How long a dynamically registered client is kept. Default 90 days.
+
+    Registration is open (the point of DCR), so without an expiry every
+    registration lives forever. A record is renewed each time that client
+    refreshes a token, so a client in use never loses it. Keep this longer than
+    `refresh_token_seconds`, or an active session could outlive its client.
+    """
+    return _days_from_env("VAQUILL_OAUTH_CLIENT_REGISTRATION_DAYS", 90, low=1, high=730) * _DAY
+
+
 def _allowed_redirect_uris() -> list[str] | None:
     """Operator-set client redirect allowlist, or None (accept any, as before)."""
     raw = os.environ.get("VAQUILL_OAUTH_ALLOWED_REDIRECT_URIS", "")
@@ -303,6 +346,7 @@ def _refresh_safe_proxy_class():
     """
     from fastmcp.server.auth import OAuthProxy
     from mcp.server.auth.provider import TokenError
+    from mcp.server.auth.settings import RevocationOptions
 
     _REFUSED = "The refresh token is no longer valid. Authorize the connection again."
 
@@ -348,12 +392,42 @@ def _refresh_safe_proxy_class():
             return response
 
     class VaquillOAuthProxy(OAuthProxy):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # FastMCP publishes `/revoke` (RFC 7009) only when an UPSTREAM
+            # revocation endpoint is configured, and Supabase has none for this
+            # flow, so a client could never end a session. Local revocation is
+            # what matters: it deletes the refresh token this server issued, so
+            # it can no longer be exchanged. Upstream revocation stays unset, and
+            # FastMCP skips it cleanly. An access token already issued is not
+            # recalled; it lapses with its own lifetime (about an hour).
+            self.revocation_options = RevocationOptions(enabled=True)
+
+        async def _renew_client(self, client_id: str | None) -> None:
+            """Reset a registered client's expiry. Never lets a failure reach the caller."""
+            if not client_id:
+                return
+            try:
+                client = await self._client_store.get(key=client_id)
+                if client is not None:
+                    await self._client_store.put(
+                        key=client_id, value=client, ttl=client_registration_seconds()
+                    )
+            except Exception:
+                logger.warning("oauth_client_renew_failed client_id=%s", client_id, exc_info=True)
+
+        async def register_client(self, client_info):
+            await super().register_client(client_info)
+            await self._renew_client(client_info.client_id)
+
         def _create_upstream_oauth_client(self):
             return _RefusalAwareClient(super()._create_upstream_oauth_client())
 
         async def exchange_refresh_token(self, client, refresh_token, scopes):
             try:
-                return await super().exchange_refresh_token(client, refresh_token, scopes)
+                result = await super().exchange_refresh_token(client, refresh_token, scopes)
+                await self._renew_client(getattr(client, "client_id", None))
+                return result
             except _UpstreamRefreshRefused:
                 raise TokenError("invalid_grant", _REFUSED) from None
             except KeyError as exc:
@@ -477,6 +551,8 @@ def build_auth_provider():
         # never read an ID token, so asking for one would buy a failure mode and
         # nothing else.
         valid_scopes=["offline_access"],
+        # Our own refresh tokens expire (30 days by default, renewed on each use).
+        fallback_refresh_token_expiry_seconds=refresh_token_seconds(),
         enable_cimd=True,
         # "remember", NOT False, and not True either.
         #

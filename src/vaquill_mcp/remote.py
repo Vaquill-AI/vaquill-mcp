@@ -84,6 +84,7 @@ from vaquill_mcp.aliases import register_aliases
 from vaquill_mcp.brand_assets import square_icon
 from vaquill_mcp.client_identity import make_client_stamp
 from vaquill_mcp.config import _SPEC_PATHS, get_base_url, get_timeout
+from vaquill_mcp.instructions import instructions_for
 from vaquill_mcp.oauth import ConnectorKeyResolver
 from vaquill_mcp.ordering import DeterministicToolOrder
 from vaquill_mcp.prompts import register_prompts
@@ -298,6 +299,7 @@ def create_remote_server(
     # see brand_assets.py for why it is served from this host.
     server = FastMCP(
         name,
+        instructions=instructions_for(jurisdiction),
         lifespan=_lifespan,
         auth=auth,
         icons=[

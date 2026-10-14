@@ -108,11 +108,21 @@ def test_the_guide_carries_the_traps_it_exists_for(
 _CANDIDATE_RE = re.compile(r"`([a-z][a-z0-9]*(?:_[a-z0-9]+)+)`")
 
 
+# Prompt arguments are validated, so a placeholder like `<since>` is rejected by
+# design. These are the right SHAPE for each argument name.
+_VALID_ARGUMENT = {
+    "since": "2026-01-01",
+    "corpus": "STATE",
+    "state": "ca",
+    "states": "ca, tx",
+}
+
+
 async def _prompt_texts(server: FastMCP) -> dict[str, str]:
     """Render every prompt with placeholder arguments."""
     rendered: dict[str, str] = {}
     for prompt in await server.list_prompts():
-        args = {a.name: f"<{a.name}>" for a in (prompt.arguments or [])}
+        args = {a.name: _VALID_ARGUMENT.get(a.name, f"<{a.name}>") for a in (prompt.arguments or [])}
         result = await server.render_prompt(prompt.name, args)
         rendered[prompt.name] = " ".join(
             m.content.text if hasattr(m.content, "text") else str(m.content)
@@ -159,7 +169,8 @@ async def test_prompts_interpolate_their_arguments(
         prompt = next(p for p in await server.list_prompts() if p.name == name)
         required = [a.name for a in (prompt.arguments or []) if a.required]
         for arg in required:
-            assert f"<{arg}>" in text, f"{name} never uses its `{arg}` argument"
+            expected = _VALID_ARGUMENT.get(arg, f"<{arg}>")
+            assert expected in text, f"{name} never uses its `{arg}` argument"
 
 
 def test_prompts_register_nothing_for_an_unknown_jurisdiction() -> None:

@@ -16,11 +16,18 @@ far above what a person connecting clients by hand reaches, and tunable with
 `VAQUILL_OAUTH_REGISTER_LIMIT` / `VAQUILL_OAUTH_REGISTER_WINDOW_S`. A limit of
 0 disables it.
 
+The same middleware caps the SIZE of a registration. Before this, a 2 MB
+`client_name` or 5,000 `redirect_uris` returned 201 and were stored, so the
+per-address count was not a bound on storage. A real registration is a few
+hundred bytes. The body is capped at 16 KiB (`VAQUILL_OAUTH_REGISTER_MAX_BYTES`,
+413 above it) and `redirect_uris` at 20 entries (400 `invalid_client_metadata`).
+
 DELIBERATE PROPERTIES
 =====================
 
-* Pure ASGI, not `BaseHTTPMiddleware`: it never reads or buffers a body, so the
-  MCP stream and every other route pass through untouched.
+* Pure ASGI, not `BaseHTTPMiddleware`: it reads a body ONLY for `POST /register`
+  (bounded by the size cap), so the MCP stream and every other route pass
+  through untouched.
 * Acts ONLY on `POST` to a path ending in `/register`. Everything else is
   forwarded without inspection.
 * Fails OPEN. Any internal error forwards the request, because a broken limiter
@@ -32,6 +39,7 @@ DELIBERATE PROPERTIES
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -44,6 +52,12 @@ _DEFAULT_WINDOW_S = 600
 #: Hard cap on tracked addresses so a spray of distinct sources cannot grow the
 #: table without bound. Past it, the oldest-seen addresses are evicted.
 _MAX_TRACKED = 10_000
+_DEFAULT_MAX_BYTES = 16 * 1024
+_MAX_REDIRECT_URIS = 20
+
+
+class _BodyTooLarge(Exception):
+    """The request body went past the registration size cap."""
 
 
 def _int_env(name: str, default: int) -> int:
@@ -74,7 +88,13 @@ def _client_ip(scope: dict) -> str:
 class RegistrationRateLimit:
     """ASGI middleware: 429 a source that over-registers OAuth clients."""
 
-    def __init__(self, app, limit: int | None = None, window_s: int | None = None):
+    def __init__(
+        self,
+        app,
+        limit: int | None = None,
+        window_s: int | None = None,
+        max_bytes: int | None = None,
+    ):
         self.app = app
         self.limit = (
             _int_env("VAQUILL_OAUTH_REGISTER_LIMIT", _DEFAULT_LIMIT)
@@ -85,6 +105,11 @@ class RegistrationRateLimit:
             _int_env("VAQUILL_OAUTH_REGISTER_WINDOW_S", _DEFAULT_WINDOW_S)
             if window_s is None
             else window_s
+        )
+        self.max_bytes = (
+            _int_env("VAQUILL_OAUTH_REGISTER_MAX_BYTES", _DEFAULT_MAX_BYTES)
+            if max_bytes is None
+            else max_bytes
         )
         self._hits: dict[str, deque[float]] = {}
 
@@ -102,37 +127,112 @@ class RegistrationRateLimit:
         window.append(now)
         return 0
 
+    async def _read_capped(self, scope, receive) -> bytes:
+        """The request body, or `_BodyTooLarge` once it passes the cap."""
+        declared = dict(scope.get("headers", [])).get(b"content-length", b"")
+        if declared.isdigit() and int(declared) > self.max_bytes:
+            raise _BodyTooLarge
+        chunks: list[bytes] = []
+        size = 0
+        while True:
+            message = await receive()
+            if message["type"] != "http.request":
+                return b"".join(chunks)
+            chunk = message.get("body", b"")
+            size += len(chunk)
+            if size > self.max_bytes:
+                raise _BodyTooLarge
+            chunks.append(chunk)
+            if not message.get("more_body"):
+                return b"".join(chunks)
+
+    @staticmethod
+    def _too_many_redirect_uris(body: bytes) -> bool:
+        """True only for a parseable object whose `redirect_uris` is over the cap.
+
+        Anything else (bad JSON, other shapes) is the library's to reject.
+        """
+        try:
+            data = json.loads(body)
+        except ValueError:
+            return False
+        uris = data.get("redirect_uris") if isinstance(data, dict) else None
+        return isinstance(uris, list) and len(uris) > _MAX_REDIRECT_URIS
+
+    async def _refuse(self, send, status: int, payload: dict, retry: int = 0) -> None:
+        body = json.dumps(payload).encode()
+        headers = [
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode()),
+            (b"cache-control", b"no-store"),
+        ]
+        if retry:
+            headers.append((b"retry-after", str(retry).encode()))
+        await send({"type": "http.response.start", "status": status, "headers": headers})
+        await send({"type": "http.response.body", "body": body})
+
     async def __call__(self, scope, receive, send):
         if (
             scope["type"] != "http"
-            or self.limit <= 0
             or scope.get("method") != "POST"
             or not scope.get("path", "").rstrip("/").endswith("/register")
         ):
             await self.app(scope, receive, send)
             return
-        try:
-            retry = self._retry_after(_client_ip(scope), time.monotonic())
-        except Exception:
-            logger.exception("registration limiter failed; allowing the request")
-            retry = 0
-        if not retry:
+        retry = 0
+        if self.limit > 0:
+            try:
+                retry = self._retry_after(_client_ip(scope), time.monotonic())
+            except Exception:
+                logger.exception("registration limiter failed; allowing the request")
+        if retry:
+            await self._refuse(
+                send,
+                429,
+                {
+                    "error": "too_many_requests",
+                    "error_description": (
+                        "Too many client registrations from this address. "
+                        "Retry later."
+                    ),
+                },
+                retry,
+            )
+            return
+        if self.max_bytes <= 0:
             await self.app(scope, receive, send)
             return
-        body = (
-            b'{"error":"too_many_requests","error_description":'
-            b'"Too many client registrations from this address. Retry later."}'
-        )
-        await send(
-            {
-                "type": "http.response.start",
-                "status": 429,
-                "headers": [
-                    (b"content-type", b"application/json"),
-                    (b"content-length", str(len(body)).encode()),
-                    (b"retry-after", str(retry).encode()),
-                    (b"cache-control", b"no-store"),
-                ],
-            }
-        )
-        await send({"type": "http.response.body", "body": body})
+        try:
+            body = await self._read_capped(scope, receive)
+        except _BodyTooLarge:
+            await self._refuse(
+                send,
+                413,
+                {
+                    "error": "invalid_client_metadata",
+                    "error_description": "Registration request is too large.",
+                },
+            )
+            return
+        if self._too_many_redirect_uris(body):
+            await self._refuse(
+                send,
+                400,
+                {
+                    "error": "invalid_redirect_uri",
+                    "error_description": (
+                        f"At most {_MAX_REDIRECT_URIS} redirect URIs are accepted."
+                    ),
+                },
+            )
+            return
+        replayed = False
+
+        async def replay():
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            return await receive()
+
+        await self.app(scope, replay, send)
