@@ -304,6 +304,22 @@ def _refresh_safe_proxy_class():
     from fastmcp.server.auth import OAuthProxy
     from mcp.server.auth.provider import TokenError
 
+    _REFUSED = "The refresh token is no longer valid. Authorize the connection again."
+
+    class _UpstreamRefreshRefused(Exception):  # noqa: N818 - a signal, not an error type
+        """The upstream refused a refresh. Becomes `TokenError` OUTSIDE fastmcp's block.
+
+        🔴 Never raise `TokenError` from inside the upstream client. fastmcp calls
+        it within `async with self._upstream_oauth_client()`, a contextlib
+        context manager, and contextlib assigns `__traceback__` to an exception
+        passing through it. mcp 2.3.0 made `TokenError` a FROZEN dataclass, so
+        that assignment raises `FrozenInstanceError` and the refusal reaches the
+        client as a 500 again: the exact bug this class exists to fix, brought
+        back by a dependency release with no change on our side. An ordinary
+        exception crosses the block safely; `exchange_refresh_token` below, which
+        runs after the block has exited, does the translation.
+        """
+
     class _RefusalAwareClient:
         """The upstream OAuth client, answering a refused refresh as `invalid_grant`.
 
@@ -328,10 +344,7 @@ def _refresh_safe_proxy_class():
                     response.get("error_code") or response.get("error"),
                     response.get("msg") or response.get("error_description"),
                 )
-                raise TokenError(
-                    "invalid_grant",
-                    "The refresh token is no longer valid. Authorize the connection again.",
-                )
+                raise _UpstreamRefreshRefused
             return response
 
     class VaquillOAuthProxy(OAuthProxy):
@@ -341,6 +354,8 @@ def _refresh_safe_proxy_class():
         async def exchange_refresh_token(self, client, refresh_token, scopes):
             try:
                 return await super().exchange_refresh_token(client, refresh_token, scopes)
+            except _UpstreamRefreshRefused:
+                raise TokenError("invalid_grant", _REFUSED) from None
             except KeyError as exc:
                 if exc.args != ("access_token",):
                     raise
@@ -348,10 +363,7 @@ def _refresh_safe_proxy_class():
                     "oauth_refresh_upstream_returned_no_access_token client_id=%s",
                     getattr(client, "client_id", None),
                 )
-                raise TokenError(
-                    "invalid_grant",
-                    "The refresh token is no longer valid. Authorize the connection again.",
-                ) from exc
+                raise TokenError("invalid_grant", _REFUSED) from exc
 
     return VaquillOAuthProxy
 
