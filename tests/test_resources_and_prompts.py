@@ -178,9 +178,12 @@ async def test_prompts_do_not_inflate_the_tool_budget(
     deliberately. Adding six prompts must not have added six tools.
     """
     server = _server(jurisdiction, monkeypatch, respx_mock)
-    # 18 US and 22 IN as of 2026-09-29. US was 27 until the nine law-change
+    # 21 US and 22 IN as of 2026-10-05. US was 27 until the nine law-change
     # alert tools (boards and watches) left the MCP catalogue. The India figure
     # jumped from 8 when the September India redesign landed and the committed
-    # fixtures were finally refreshed to match the live document.
-    expected = 18 if jurisdiction == "US" else 22
+    # fixtures were finally refreshed to match the live document. US went
+    # from 18 to 21 when the three state session-law tools shipped, and to 26
+    # on 2026-10-14 with four more session-law tools and
+    # extract_statute_citations.
+    expected = 26 if jurisdiction == "US" else 22
     assert len(await server.list_tools()) == expected

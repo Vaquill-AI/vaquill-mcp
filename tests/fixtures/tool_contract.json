@@ -1265,10 +1265,70 @@
           "actStatus": {
             "anyOf": [
               {
+                "enum": [
+                  "abolished",
+                  "deleted",
+                  "expired",
+                  "in_force",
+                  "inactive",
+                  "non_precedential",
+                  "not_funded",
+                  "not_yet_effective",
+                  "omitted",
+                  "proposed",
+                  "recodified",
+                  "recompiled",
+                  "rejected",
+                  "relocated",
+                  "removed",
+                  "renumbered",
+                  "repealed",
+                  "rescinded",
+                  "reserved",
+                  "revoked",
+                  "superseded",
+                  "terminated",
+                  "transferred",
+                  "unconstitutional",
+                  "vacant",
+                  "vacated",
+                  "vetoed",
+                  "withdrawn"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "abolished",
+                    "deleted",
+                    "expired",
+                    "in_force",
+                    "inactive",
+                    "non_precedential",
+                    "not_funded",
+                    "not_yet_effective",
+                    "omitted",
+                    "proposed",
+                    "recodified",
+                    "recompiled",
+                    "rejected",
+                    "relocated",
+                    "removed",
+                    "renumbered",
+                    "repealed",
+                    "rescinded",
+                    "reserved",
+                    "revoked",
+                    "superseded",
+                    "terminated",
+                    "transferred",
+                    "unconstitutional",
+                    "vacant",
+                    "vacated",
+                    "vetoed",
+                    "withdrawn"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -1347,6 +1407,7 @@
                   "STATE",
                   "CONSTITUTION",
                   "FEDERAL_RULES",
+                  "FEDERAL_LOCAL_RULES",
                   "STATE_CONSTITUTION",
                   "STATE_RULES",
                   "EXECUTIVE_ACTION",
@@ -1358,6 +1419,7 @@
                   "US_TAX_TREATY",
                   "STATE_AGENCY_GUIDANCE",
                   "STATE_AG_OPINION",
+                  "STATE_REGISTER",
                   "SESSION_LAW",
                   "STATUTE_COMPILATION",
                   "AGENCY_ADJUDICATION",
@@ -1374,6 +1436,7 @@
                     "STATE",
                     "CONSTITUTION",
                     "FEDERAL_RULES",
+                    "FEDERAL_LOCAL_RULES",
                     "STATE_CONSTITUTION",
                     "STATE_RULES",
                     "EXECUTIVE_ACTION",
@@ -1385,6 +1448,7 @@
                     "US_TAX_TREATY",
                     "STATE_AGENCY_GUIDANCE",
                     "STATE_AG_OPINION",
+                    "STATE_REGISTER",
                     "SESSION_LAW",
                     "STATUTE_COMPILATION",
                     "AGENCY_ADJUDICATION",
@@ -1432,10 +1496,128 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "federal",
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "federal",
+                    "al",
+                    "ak",
+                    "as",
+                    "az",
+                    "ar",
+                    "ca",
+                    "co",
+                    "ct",
+                    "de",
+                    "dc",
+                    "fl",
+                    "ga",
+                    "gu",
+                    "hi",
+                    "id",
+                    "il",
+                    "in",
+                    "ia",
+                    "ks",
+                    "ky",
+                    "la",
+                    "me",
+                    "md",
+                    "ma",
+                    "mi",
+                    "mn",
+                    "ms",
+                    "mo",
+                    "mt",
+                    "ne",
+                    "nv",
+                    "nh",
+                    "nj",
+                    "nm",
+                    "ny",
+                    "nc",
+                    "nd",
+                    "mp",
+                    "oh",
+                    "ok",
+                    "or",
+                    "pa",
+                    "pr",
+                    "ri",
+                    "sc",
+                    "sd",
+                    "tn",
+                    "tx",
+                    "ut",
+                    "vt",
+                    "vi",
+                    "va",
+                    "wa",
+                    "wv",
+                    "wi",
+                    "wy"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -1443,61 +1625,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "federal",
-              "al",
-              "ak",
-              "az",
-              "ar",
-              "ca",
-              "co",
-              "ct",
-              "de",
-              "dc",
-              "fl",
-              "ga",
-              "hi",
-              "id",
-              "il",
-              "in",
-              "ia",
-              "ks",
-              "ky",
-              "la",
-              "me",
-              "md",
-              "ma",
-              "mi",
-              "mn",
-              "ms",
-              "mo",
-              "mt",
-              "ne",
-              "nv",
-              "nh",
-              "nj",
-              "nm",
-              "ny",
-              "nc",
-              "nd",
-              "oh",
-              "ok",
-              "or",
-              "pa",
-              "pr",
-              "ri",
-              "sc",
-              "sd",
-              "tn",
-              "tx",
-              "ut",
-              "vt",
-              "va",
-              "wa",
-              "wv",
-              "wi",
-              "wy"
             ],
             "examples": [
               "tx"
@@ -1523,6 +1650,111 @@
       },
       "method": "POST",
       "path": "/api/v1/us/statutes/count"
+    },
+    "extract_statute_citations": {
+      "inputSchema": {
+        "properties": {
+          "includeUnresolved": {
+            "default": true,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "resolve": {
+            "default": true,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "ca"
+            ]
+          },
+          "text": {
+            "examples": [
+              "Plaintiff sued under 42 U.S.C. \u00a7 1983(b). See also Cal. Civ. Code \u00a7 1942 and 42 U.S.C. \u00a7 1983."
+            ],
+            "maxLength": 200000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/statutes/extract-citations"
     },
     "get_credit_balance": {
       "inputSchema": {
@@ -1712,6 +1944,26 @@
       "method": "GET",
       "path": "/api/v1/us/statutes/section/{act_id}/definitions"
     },
+    "get_section_enactments": {
+      "inputSchema": {
+        "properties": {
+          "act_id": {
+            "examples": [
+              "STATE_MS_T27_C71_S27-71-5"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/enactments"
+    },
     "get_section_neighbors": {
       "inputSchema": {
         "properties": {
@@ -1773,6 +2025,364 @@
       },
       "method": "POST",
       "path": "/api/v1/us/statutes/sections"
+    },
+    "get_session_law": {
+      "inputSchema": {
+        "properties": {
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "mn"
+            ]
+          },
+          "session_law_id": {
+            "examples": [
+              "SSL_MN_2025R_G_Y2025_C1"
+            ],
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_law_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/session-laws/{session_law_id}"
+    },
+    "get_session_law_body": {
+      "inputSchema": {
+        "properties": {
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "eyJ2IjoyLCJvIjoyOTk4NywiaCI6IjAyNjkzZDViNTVkNDcwOWIifQ.stWHVSgGqJPIElcTLfAGHA"
+            ]
+          },
+          "expectTextSha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{16,64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "02693d5b55d4709bdd36fdccee4a9737d2655a3988a90daeb6b7c486ce50260b"
+            ]
+          },
+          "session_law_id": {
+            "examples": [
+              "SSL_MN_2025S1_G_Y2025_C1"
+            ],
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "startChar": {
+            "anyOf": [
+              {
+                "maximum": 100000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              29987
+            ]
+          }
+        },
+        "required": [
+          "session_law_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/session-laws/{session_law_id}/body"
+    },
+    "get_session_law_changes": {
+      "inputSchema": {
+        "properties": {
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "mn"
+            ]
+          },
+          "limit": {
+            "default": 50,
+            "examples": [
+              100
+            ],
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "sinceId": {
+            "default": 0,
+            "examples": [
+              1500
+            ],
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/session-laws/changes"
+    },
+    "get_session_laws_batch": {
+      "inputSchema": {
+        "properties": {
+          "ids": {
+            "examples": [
+              [
+                "SSL_MN_2025R_G_Y2025_C1",
+                "S.F.No. 1552",
+                "SSL_MN_1801R_G_Y1801_C9999"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "type": "array"
+          },
+          "includeBody": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "mn"
+            ]
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/session-laws/batch"
     },
     "get_us_statute_section": {
       "inputSchema": {
@@ -1852,12 +2462,390 @@
       "method": "GET",
       "path": "/api/v1/us/statutes/section/{act_id}/body"
     },
+    "list_session_laws": {
+      "inputSchema": {
+        "properties": {
+          "approvedFrom": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025-04-01"
+            ],
+            "format": "date"
+          },
+          "approvedTo": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025-05-31"
+            ],
+            "format": "date"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "eyJ2IjoyLCJqIjoibW4iLCJzIjoiMjAyNVIiLCJpIjoiU1NMX01OXzIwMjVSX0dfWTIwMjVfQzEwIiwicSI6IjYxMjk2NDEzOTE2OTJmOTYifQ.86d0NXnVAJD7j_3d9zoWPQ"
+            ]
+          },
+          "effectiveFrom": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025-09-01"
+            ],
+            "format": "date"
+          },
+          "effectiveTo": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025-09-30"
+            ],
+            "format": "date"
+          },
+          "enactmentOutcome": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "signed",
+                    "became_law_without_signature",
+                    "veto_overridden",
+                    "line_item_veto",
+                    "vetoed",
+                    "pocket_veto",
+                    "not_presented",
+                    "approved_by_voters",
+                    "unknown"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "vetoed",
+                "pocket_veto"
+              ]
+            ]
+          },
+          "hasText": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "instrumentType": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "act",
+                    "joint_resolution",
+                    "concurrent_resolution",
+                    "resolution",
+                    "resolve",
+                    "memorial",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "joint_resolution",
+                "concurrent_resolution"
+              ]
+            ]
+          },
+          "isLaw": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              false
+            ]
+          },
+          "jurisdiction": {
+            "enum": [
+              "al",
+              "ak",
+              "as",
+              "az",
+              "ar",
+              "ca",
+              "co",
+              "ct",
+              "de",
+              "dc",
+              "fl",
+              "ga",
+              "gu",
+              "hi",
+              "id",
+              "il",
+              "in",
+              "ia",
+              "ks",
+              "ky",
+              "la",
+              "me",
+              "md",
+              "ma",
+              "mi",
+              "mn",
+              "ms",
+              "mo",
+              "mt",
+              "ne",
+              "nv",
+              "nh",
+              "nj",
+              "nm",
+              "ny",
+              "nc",
+              "nd",
+              "mp",
+              "oh",
+              "ok",
+              "or",
+              "pa",
+              "pr",
+              "ri",
+              "sc",
+              "sd",
+              "tn",
+              "tx",
+              "ut",
+              "vt",
+              "vi",
+              "va",
+              "wa",
+              "wv",
+              "wi",
+              "wy"
+            ],
+            "examples": [
+              "mn"
+            ],
+            "type": "string"
+          },
+          "limit": {
+            "default": 50,
+            "examples": [
+              25
+            ],
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "grain buyers"
+            ]
+          },
+          "series": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "general",
+                    "public",
+                    "public_act",
+                    "special_act",
+                    "private_and_special",
+                    "act",
+                    "acts",
+                    "law",
+                    "local",
+                    "municipal",
+                    "appropriation",
+                    "resolve",
+                    "resolves",
+                    "resolution",
+                    "resolution_chapter",
+                    "joint_resolution",
+                    "concurrent_resolution",
+                    "memorial",
+                    "initiated_bill",
+                    "constitutional_amendment"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "general"
+              ]
+            ]
+          },
+          "session": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9._-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025R"
+            ]
+          },
+          "textStatus": {
+            "anyOf": [
+              {
+                "enum": [
+                  "held",
+                  "withheld",
+                  "not_held",
+                  "pending"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "held"
+            ]
+          },
+          "updatedSince": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-10-01"
+            ],
+            "format": "date"
+          }
+        },
+        "required": [
+          "jurisdiction"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/session-laws/list"
+    },
     "list_statute_divisions": {
       "inputSchema": {
         "properties": {
           "actStatus": {
             "anyOf": [
               {
+                "enum": [
+                  "abolished",
+                  "deleted",
+                  "expired",
+                  "in_force",
+                  "inactive",
+                  "non_precedential",
+                  "not_funded",
+                  "not_yet_effective",
+                  "omitted",
+                  "proposed",
+                  "recodified",
+                  "recompiled",
+                  "rejected",
+                  "relocated",
+                  "removed",
+                  "renumbered",
+                  "repealed",
+                  "rescinded",
+                  "reserved",
+                  "revoked",
+                  "superseded",
+                  "terminated",
+                  "transferred",
+                  "unconstitutional",
+                  "vacant",
+                  "vacated",
+                  "vetoed",
+                  "withdrawn"
+                ],
                 "type": "string"
               },
               {
@@ -1949,65 +2937,69 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "al",
-              "ak",
-              "az",
-              "ar",
-              "ca",
-              "co",
-              "ct",
-              "de",
-              "dc",
-              "fl",
-              "ga",
-              "hi",
-              "id",
-              "il",
-              "in",
-              "ia",
-              "ks",
-              "ky",
-              "la",
-              "me",
-              "md",
-              "ma",
-              "mi",
-              "mn",
-              "ms",
-              "mo",
-              "mt",
-              "ne",
-              "nv",
-              "nh",
-              "nj",
-              "nm",
-              "ny",
-              "nc",
-              "nd",
-              "oh",
-              "ok",
-              "or",
-              "pa",
-              "pr",
-              "ri",
-              "sc",
-              "sd",
-              "tn",
-              "tx",
-              "ut",
-              "vt",
-              "va",
-              "wa",
-              "wv",
-              "wi",
-              "wy"
             ],
             "examples": [
               "tx"
@@ -2059,18 +3051,18 @@
           "corpusType": {
             "anyOf": [
               {
+                "enum": [
+                  "CONSTITUTION",
+                  "REGULATION",
+                  "STATE",
+                  "STATE_CONSTITUTION",
+                  "STATE_RULES"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "CONSTITUTION",
-              "REGULATION",
-              "STATE",
-              "STATE_CONSTITUTION",
-              "STATE_RULES"
             ],
             "examples": [
               "REGULATION"
@@ -2079,6 +3071,65 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "federal",
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
                 "maxLength": 7,
                 "minLength": 2,
                 "type": "string"
@@ -2086,61 +3137,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "federal",
-              "al",
-              "ak",
-              "az",
-              "ar",
-              "ca",
-              "co",
-              "ct",
-              "de",
-              "dc",
-              "fl",
-              "ga",
-              "hi",
-              "id",
-              "il",
-              "in",
-              "ia",
-              "ks",
-              "ky",
-              "la",
-              "me",
-              "md",
-              "ma",
-              "mi",
-              "mn",
-              "ms",
-              "mo",
-              "mt",
-              "ne",
-              "nv",
-              "nh",
-              "nj",
-              "nm",
-              "ny",
-              "nc",
-              "nd",
-              "oh",
-              "ok",
-              "or",
-              "pa",
-              "pr",
-              "ri",
-              "sc",
-              "sd",
-              "tn",
-              "tx",
-              "ut",
-              "vt",
-              "va",
-              "wa",
-              "wv",
-              "wi",
-              "wy"
             ],
             "examples": [
               "tx"
@@ -2176,18 +3172,18 @@
           "corpusType": {
             "anyOf": [
               {
+                "enum": [
+                  "CONSTITUTION",
+                  "REGULATION",
+                  "STATE",
+                  "STATE_CONSTITUTION",
+                  "STATE_RULES"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "CONSTITUTION",
-              "REGULATION",
-              "STATE",
-              "STATE_CONSTITUTION",
-              "STATE_RULES"
             ],
             "examples": [
               "REGULATION"
@@ -2196,6 +3192,65 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "federal",
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
                 "maxLength": 7,
                 "minLength": 2,
                 "type": "string"
@@ -2203,61 +3258,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "federal",
-              "al",
-              "ak",
-              "az",
-              "ar",
-              "ca",
-              "co",
-              "ct",
-              "de",
-              "dc",
-              "fl",
-              "ga",
-              "hi",
-              "id",
-              "il",
-              "in",
-              "ia",
-              "ks",
-              "ky",
-              "la",
-              "me",
-              "md",
-              "ma",
-              "mi",
-              "mn",
-              "ms",
-              "mo",
-              "mt",
-              "ne",
-              "nv",
-              "nh",
-              "nj",
-              "nm",
-              "ny",
-              "nc",
-              "nd",
-              "oh",
-              "ok",
-              "or",
-              "pa",
-              "pr",
-              "ri",
-              "sc",
-              "sd",
-              "tn",
-              "tx",
-              "ut",
-              "vt",
-              "va",
-              "wa",
-              "wv",
-              "wi",
-              "wy"
             ],
             "examples": [
               "ca"
@@ -2272,16 +3272,52 @@
       "method": "POST",
       "path": "/api/v1/us/statutes/resolve"
     },
-    "search_us_statutes": {
+    "search_session_laws": {
       "inputSchema": {
         "properties": {
-          "actStatus": {
+          "approvedFrom": {
             "anyOf": [
               {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
                 "type": "string"
               },
               {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025-03-01"
+            ],
+            "format": "date"
+          },
+          "approvedTo": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025-06-30"
+            ],
+            "format": "date"
+          },
+          "instrumentType": {
+            "anyOf": [
+              {
                 "items": {
+                  "enum": [
+                    "act",
+                    "joint_resolution",
+                    "concurrent_resolution",
+                    "resolution",
+                    "resolve",
+                    "memorial",
+                    "other"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -2290,35 +3326,252 @@
                 "type": "null"
               }
             ],
-            "enum": [
-              "abolished",
-              "deleted",
-              "expired",
-              "in_force",
-              "inactive",
-              "non_precedential",
-              "not_funded",
-              "not_yet_effective",
-              "omitted",
-              "proposed",
-              "recodified",
-              "recompiled",
-              "rejected",
-              "relocated",
-              "removed",
-              "renumbered",
-              "repealed",
-              "rescinded",
-              "reserved",
-              "revoked",
-              "superseded",
-              "terminated",
-              "transferred",
-              "unconstitutional",
-              "vacant",
-              "vacated",
-              "vetoed",
-              "withdrawn"
+            "examples": [
+              [
+                "act",
+                "joint_resolution"
+              ]
+            ]
+          },
+          "jurisdiction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "al"
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "examples": [
+              5
+            ],
+            "maximum": 25.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              5
+            ],
+            "maximum": 59.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "query": {
+            "examples": [
+              "can the sheriff pay with a debit card"
+            ],
+            "maxLength": 300,
+            "minLength": 2,
+            "type": "string"
+          },
+          "series": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "general",
+                    "public",
+                    "public_act",
+                    "special_act",
+                    "private_and_special",
+                    "act",
+                    "acts",
+                    "law",
+                    "local",
+                    "municipal",
+                    "appropriation",
+                    "resolve",
+                    "resolves",
+                    "resolution",
+                    "resolution_chapter",
+                    "joint_resolution",
+                    "concurrent_resolution",
+                    "memorial",
+                    "initiated_bill",
+                    "constitutional_amendment"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "general"
+              ]
+            ]
+          },
+          "session": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9._-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2025R"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/session-laws/search"
+    },
+    "search_us_statutes": {
+      "inputSchema": {
+        "properties": {
+          "actStatus": {
+            "anyOf": [
+              {
+                "enum": [
+                  "abolished",
+                  "deleted",
+                  "expired",
+                  "in_force",
+                  "inactive",
+                  "non_precedential",
+                  "not_funded",
+                  "not_yet_effective",
+                  "omitted",
+                  "proposed",
+                  "recodified",
+                  "recompiled",
+                  "rejected",
+                  "relocated",
+                  "removed",
+                  "renumbered",
+                  "repealed",
+                  "rescinded",
+                  "reserved",
+                  "revoked",
+                  "superseded",
+                  "terminated",
+                  "transferred",
+                  "unconstitutional",
+                  "vacant",
+                  "vacated",
+                  "vetoed",
+                  "withdrawn"
+                ],
+                "type": "string"
+              },
+              {
+                "items": {
+                  "enum": [
+                    "abolished",
+                    "deleted",
+                    "expired",
+                    "in_force",
+                    "inactive",
+                    "non_precedential",
+                    "not_funded",
+                    "not_yet_effective",
+                    "omitted",
+                    "proposed",
+                    "recodified",
+                    "recompiled",
+                    "rejected",
+                    "relocated",
+                    "removed",
+                    "renumbered",
+                    "repealed",
+                    "rescinded",
+                    "reserved",
+                    "revoked",
+                    "superseded",
+                    "terminated",
+                    "transferred",
+                    "unconstitutional",
+                    "vacant",
+                    "vacated",
+                    "vetoed",
+                    "withdrawn"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
             ],
             "examples": [
               "repealed"
@@ -2424,6 +3677,7 @@
                   "STATE",
                   "CONSTITUTION",
                   "FEDERAL_RULES",
+                  "FEDERAL_LOCAL_RULES",
                   "STATE_CONSTITUTION",
                   "STATE_RULES",
                   "EXECUTIVE_ACTION",
@@ -2435,6 +3689,7 @@
                   "US_TAX_TREATY",
                   "STATE_AGENCY_GUIDANCE",
                   "STATE_AG_OPINION",
+                  "STATE_REGISTER",
                   "SESSION_LAW",
                   "STATUTE_COMPILATION",
                   "AGENCY_ADJUDICATION",
@@ -2451,6 +3706,7 @@
                     "STATE",
                     "CONSTITUTION",
                     "FEDERAL_RULES",
+                    "FEDERAL_LOCAL_RULES",
                     "STATE_CONSTITUTION",
                     "STATE_RULES",
                     "EXECUTIVE_ACTION",
@@ -2462,6 +3718,7 @@
                     "US_TAX_TREATY",
                     "STATE_AGENCY_GUIDANCE",
                     "STATE_AG_OPINION",
+                    "STATE_REGISTER",
                     "SESSION_LAW",
                     "STATUTE_COMPILATION",
                     "AGENCY_ADJUDICATION",
@@ -2515,6 +3772,156 @@
             "anyOf": [
               {
                 "items": {
+                  "enum": [
+                    "abstract",
+                    "actId",
+                    "actStatus",
+                    "action",
+                    "adoptedAfterCurrentThrough",
+                    "adoptingCitations",
+                    "agencies",
+                    "agencySlugs",
+                    "alternateCitations",
+                    "amendmentHistory",
+                    "amendmentNote",
+                    "amendmentYears",
+                    "amendmentsCount",
+                    "articleName",
+                    "articleNumber",
+                    "audience",
+                    "body",
+                    "breadcrumb",
+                    "caseName",
+                    "chapter",
+                    "chapterName",
+                    "citation",
+                    "citationShort",
+                    "committeeNote",
+                    "corpusType",
+                    "court",
+                    "crossReferencesCfr",
+                    "crossReferencesUsc",
+                    "currencyNote",
+                    "currencyYear",
+                    "currentThrough",
+                    "datesText",
+                    "displayLabel",
+                    "displayPath",
+                    "documentNumber",
+                    "documentSubtype",
+                    "documentTypeLabel",
+                    "docxUrl",
+                    "edition",
+                    "effectiveDate",
+                    "effectiveDateRaw",
+                    "excerpt",
+                    "expirationDate",
+                    "expirationDateRaw",
+                    "externalUrl",
+                    "federalRegisterCitations",
+                    "forum",
+                    "frCommentsCloseOn",
+                    "frCorrectionOf",
+                    "frCorrections",
+                    "frDocketIds",
+                    "frEffectiveOn",
+                    "frEndPage",
+                    "frRegulationIdNumbers",
+                    "frRegulationsDotGovUrl",
+                    "frRelatedDocuments",
+                    "frSignificant",
+                    "frStartPage",
+                    "frVolume",
+                    "goodLawStatus",
+                    "govInfoHtmlUrl",
+                    "govInfoPdfUrl",
+                    "granuleId",
+                    "history",
+                    "historyEffectiveDate",
+                    "htmlUrl",
+                    "implementingRegulations",
+                    "issueDate",
+                    "issueDateRaw",
+                    "issuingAgency",
+                    "languageCode",
+                    "lastAmendedDate",
+                    "lastAmendedDateRaw",
+                    "lastAmendedYear",
+                    "lawImplemented",
+                    "licenseNote",
+                    "originalEnactmentDate",
+                    "originalEnactmentDateRaw",
+                    "packageId",
+                    "parent",
+                    "part",
+                    "partName",
+                    "pdfUrl",
+                    "pendingAdoptions",
+                    "popularName",
+                    "president",
+                    "priorEffectiveDates",
+                    "program",
+                    "publicLawCites",
+                    "publicLaws",
+                    "publicationDate",
+                    "publicationDateRaw",
+                    "publisherKey",
+                    "referencedShortTitles",
+                    "relatedCitations",
+                    "relatedDocuments",
+                    "releaseDate",
+                    "releaseDateRaw",
+                    "relevanceScore",
+                    "renumberedTo",
+                    "renumberedToLabel",
+                    "requesters",
+                    "rescindedOn",
+                    "rescindedOnRaw",
+                    "reviewDate",
+                    "reviewDateRaw",
+                    "ruleSet",
+                    "ruleSetCode",
+                    "sectionNumber",
+                    "sectionTitle",
+                    "settlementAmount",
+                    "signingDate",
+                    "signingDateRaw",
+                    "source",
+                    "sourceCharEnd",
+                    "sourceCharStart",
+                    "sourceCredit",
+                    "sourceNote",
+                    "sourcePageEnd",
+                    "sourcePageStart",
+                    "sourceUrl",
+                    "state",
+                    "stateHtmlUrl",
+                    "statutoryAuthority",
+                    "subchapter",
+                    "subchapterName",
+                    "subject",
+                    "subjectNumber",
+                    "subpart",
+                    "subpartName",
+                    "subtitle",
+                    "subtitleName",
+                    "supersededBy",
+                    "supersedes",
+                    "supersessionActions",
+                    "textUrl",
+                    "title",
+                    "titleName",
+                    "titleNumber",
+                    "topLevelTitle",
+                    "topics",
+                    "transferredTo",
+                    "transferredToLabel",
+                    "versionId",
+                    "volume",
+                    "wordCount",
+                    "xmlUrl",
+                    "year"
+                  ],
                   "type": "string"
                 },
                 "type": "array",
@@ -2522,6 +3929,156 @@
               },
               {
                 "items": {
+                  "enum": [
+                    "abstract",
+                    "actId",
+                    "actStatus",
+                    "action",
+                    "adoptedAfterCurrentThrough",
+                    "adoptingCitations",
+                    "agencies",
+                    "agencySlugs",
+                    "alternateCitations",
+                    "amendmentHistory",
+                    "amendmentNote",
+                    "amendmentYears",
+                    "amendmentsCount",
+                    "articleName",
+                    "articleNumber",
+                    "audience",
+                    "body",
+                    "breadcrumb",
+                    "caseName",
+                    "chapter",
+                    "chapterName",
+                    "citation",
+                    "citationShort",
+                    "committeeNote",
+                    "corpusType",
+                    "court",
+                    "crossReferencesCfr",
+                    "crossReferencesUsc",
+                    "currencyNote",
+                    "currencyYear",
+                    "currentThrough",
+                    "datesText",
+                    "displayLabel",
+                    "displayPath",
+                    "documentNumber",
+                    "documentSubtype",
+                    "documentTypeLabel",
+                    "docxUrl",
+                    "edition",
+                    "effectiveDate",
+                    "effectiveDateRaw",
+                    "excerpt",
+                    "expirationDate",
+                    "expirationDateRaw",
+                    "externalUrl",
+                    "federalRegisterCitations",
+                    "forum",
+                    "frCommentsCloseOn",
+                    "frCorrectionOf",
+                    "frCorrections",
+                    "frDocketIds",
+                    "frEffectiveOn",
+                    "frEndPage",
+                    "frRegulationIdNumbers",
+                    "frRegulationsDotGovUrl",
+                    "frRelatedDocuments",
+                    "frSignificant",
+                    "frStartPage",
+                    "frVolume",
+                    "goodLawStatus",
+                    "govInfoHtmlUrl",
+                    "govInfoPdfUrl",
+                    "granuleId",
+                    "history",
+                    "historyEffectiveDate",
+                    "htmlUrl",
+                    "implementingRegulations",
+                    "issueDate",
+                    "issueDateRaw",
+                    "issuingAgency",
+                    "languageCode",
+                    "lastAmendedDate",
+                    "lastAmendedDateRaw",
+                    "lastAmendedYear",
+                    "lawImplemented",
+                    "licenseNote",
+                    "originalEnactmentDate",
+                    "originalEnactmentDateRaw",
+                    "packageId",
+                    "parent",
+                    "part",
+                    "partName",
+                    "pdfUrl",
+                    "pendingAdoptions",
+                    "popularName",
+                    "president",
+                    "priorEffectiveDates",
+                    "program",
+                    "publicLawCites",
+                    "publicLaws",
+                    "publicationDate",
+                    "publicationDateRaw",
+                    "publisherKey",
+                    "referencedShortTitles",
+                    "relatedCitations",
+                    "relatedDocuments",
+                    "releaseDate",
+                    "releaseDateRaw",
+                    "relevanceScore",
+                    "renumberedTo",
+                    "renumberedToLabel",
+                    "requesters",
+                    "rescindedOn",
+                    "rescindedOnRaw",
+                    "reviewDate",
+                    "reviewDateRaw",
+                    "ruleSet",
+                    "ruleSetCode",
+                    "sectionNumber",
+                    "sectionTitle",
+                    "settlementAmount",
+                    "signingDate",
+                    "signingDateRaw",
+                    "source",
+                    "sourceCharEnd",
+                    "sourceCharStart",
+                    "sourceCredit",
+                    "sourceNote",
+                    "sourcePageEnd",
+                    "sourcePageStart",
+                    "sourceUrl",
+                    "state",
+                    "stateHtmlUrl",
+                    "statutoryAuthority",
+                    "subchapter",
+                    "subchapterName",
+                    "subject",
+                    "subjectNumber",
+                    "subpart",
+                    "subpartName",
+                    "subtitle",
+                    "subtitleName",
+                    "supersededBy",
+                    "supersedes",
+                    "supersessionActions",
+                    "textUrl",
+                    "title",
+                    "titleName",
+                    "titleNumber",
+                    "topLevelTitle",
+                    "topics",
+                    "transferredTo",
+                    "transferredToLabel",
+                    "versionId",
+                    "volume",
+                    "wordCount",
+                    "xmlUrl",
+                    "year"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -2529,156 +4086,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "abstract",
-              "actId",
-              "actStatus",
-              "action",
-              "adoptedAfterCurrentThrough",
-              "adoptingCitations",
-              "agencies",
-              "agencySlugs",
-              "alternateCitations",
-              "amendmentHistory",
-              "amendmentNote",
-              "amendmentYears",
-              "amendmentsCount",
-              "articleName",
-              "articleNumber",
-              "audience",
-              "body",
-              "breadcrumb",
-              "caseName",
-              "chapter",
-              "chapterName",
-              "citation",
-              "citationShort",
-              "committeeNote",
-              "corpusType",
-              "court",
-              "crossReferencesCfr",
-              "crossReferencesUsc",
-              "currencyNote",
-              "currencyYear",
-              "currentThrough",
-              "datesText",
-              "displayLabel",
-              "displayPath",
-              "documentNumber",
-              "documentSubtype",
-              "documentTypeLabel",
-              "docxUrl",
-              "edition",
-              "effectiveDate",
-              "effectiveDateRaw",
-              "excerpt",
-              "expirationDate",
-              "expirationDateRaw",
-              "externalUrl",
-              "federalRegisterCitations",
-              "forum",
-              "frCommentsCloseOn",
-              "frCorrectionOf",
-              "frCorrections",
-              "frDocketIds",
-              "frEffectiveOn",
-              "frEndPage",
-              "frRegulationIdNumbers",
-              "frRegulationsDotGovUrl",
-              "frRelatedDocuments",
-              "frSignificant",
-              "frStartPage",
-              "frVolume",
-              "goodLawStatus",
-              "govInfoHtmlUrl",
-              "govInfoPdfUrl",
-              "granuleId",
-              "history",
-              "historyEffectiveDate",
-              "htmlUrl",
-              "implementingRegulations",
-              "issueDate",
-              "issueDateRaw",
-              "issuingAgency",
-              "languageCode",
-              "lastAmendedDate",
-              "lastAmendedDateRaw",
-              "lastAmendedYear",
-              "lawImplemented",
-              "licenseNote",
-              "originalEnactmentDate",
-              "originalEnactmentDateRaw",
-              "packageId",
-              "parent",
-              "part",
-              "partName",
-              "pdfUrl",
-              "pendingAdoptions",
-              "popularName",
-              "president",
-              "priorEffectiveDates",
-              "program",
-              "publicLawCites",
-              "publicLaws",
-              "publicationDate",
-              "publicationDateRaw",
-              "publisherKey",
-              "referencedShortTitles",
-              "relatedCitations",
-              "relatedDocuments",
-              "releaseDate",
-              "releaseDateRaw",
-              "relevanceScore",
-              "renumberedTo",
-              "renumberedToLabel",
-              "requesters",
-              "rescindedOn",
-              "rescindedOnRaw",
-              "reviewDate",
-              "reviewDateRaw",
-              "ruleSet",
-              "ruleSetCode",
-              "sectionNumber",
-              "sectionTitle",
-              "settlementAmount",
-              "signingDate",
-              "signingDateRaw",
-              "source",
-              "sourceCharEnd",
-              "sourceCharStart",
-              "sourceCredit",
-              "sourceNote",
-              "sourcePageEnd",
-              "sourcePageStart",
-              "sourceUrl",
-              "state",
-              "stateHtmlUrl",
-              "statutoryAuthority",
-              "subchapter",
-              "subchapterName",
-              "subject",
-              "subjectNumber",
-              "subpart",
-              "subpartName",
-              "subtitle",
-              "subtitleName",
-              "supersededBy",
-              "supersedes",
-              "supersessionActions",
-              "textUrl",
-              "title",
-              "titleName",
-              "titleNumber",
-              "topLevelTitle",
-              "topics",
-              "transferredTo",
-              "transferredToLabel",
-              "versionId",
-              "volume",
-              "wordCount",
-              "xmlUrl",
-              "year"
             ],
             "examples": [
               [
@@ -2779,10 +4186,172 @@
           "source": {
             "anyOf": [
               {
+                "enum": [
+                  "administrative_guidance",
+                  "ag_precedent",
+                  "agency_guidance",
+                  "bia_precedent",
+                  "bis_advisory_opinion",
+                  "cfpb_circular",
+                  "cfpb_enforcement_action",
+                  "cfpb_supervisory_guidance",
+                  "cftc_staff_letter",
+                  "cms_iom",
+                  "copyright_circular",
+                  "copyright_compendium",
+                  "cpsc_advisory_opinion",
+                  "cpsc_secg",
+                  "ddtc_commodity_jurisdiction",
+                  "ddtc_guidance",
+                  "dfars",
+                  "dfars_pgi",
+                  "doe_appliance_guidance",
+                  "doj_business_review",
+                  "doj_justice_manual",
+                  "doj_leniency",
+                  "eeoc_guidance",
+                  "far",
+                  "fcc_declaratory_ruling",
+                  "fdic_fil",
+                  "ferc_policy_statement",
+                  "fincen_amla_material",
+                  "fincen_boi_compliance_guide",
+                  "fincen_boi_faq",
+                  "fincen_boi_rule_qa",
+                  "fincen_guidance",
+                  "fincen_ruling",
+                  "frap",
+                  "frb_sr_letter",
+                  "frbp",
+                  "frcp",
+                  "frcrp",
+                  "fre",
+                  "ftc_administrative_decision",
+                  "ftc_advisory_opinion",
+                  "ftc_advocacy_filing",
+                  "ftc_hsr_interpretation",
+                  "ftc_policy_statement",
+                  "hhs_ocr_hipaa_faq",
+                  "hhs_ocr_hipaa_guidance",
+                  "hhs_ocr_resolution_agreement",
+                  "immigration_admin_precedent",
+                  "irs_announcement",
+                  "irs_irm",
+                  "irs_notice",
+                  "irs_rev_proc",
+                  "irs_rev_rul",
+                  "irs_written_determination",
+                  "merger_guidelines",
+                  "mpep",
+                  "mspb_nonprecedential",
+                  "mspb_precedential",
+                  "nlrb_advice_memo",
+                  "nlrb_board_decision",
+                  "nlrb_gc_memo",
+                  "occ_bulletin",
+                  "occ_interpretive_letter",
+                  "ofac_faq",
+                  "olc_opinion",
+                  "sct",
+                  "sec_commission_opinion",
+                  "senate_treaty",
+                  "senate_treaty_document",
+                  "senate_treaty_resolution",
+                  "ssa_ruling",
+                  "state_financial_bulletin",
+                  "state_insurance_bulletin",
+                  "tmep",
+                  "us_tax_treaty",
+                  "us_tax_treaty_technical_explanation",
+                  "uscis_policy_manual",
+                  "whd_foh",
+                  "whd_opinion_letter"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "administrative_guidance",
+                    "ag_precedent",
+                    "agency_guidance",
+                    "bia_precedent",
+                    "bis_advisory_opinion",
+                    "cfpb_circular",
+                    "cfpb_enforcement_action",
+                    "cfpb_supervisory_guidance",
+                    "cftc_staff_letter",
+                    "cms_iom",
+                    "copyright_circular",
+                    "copyright_compendium",
+                    "cpsc_advisory_opinion",
+                    "cpsc_secg",
+                    "ddtc_commodity_jurisdiction",
+                    "ddtc_guidance",
+                    "dfars",
+                    "dfars_pgi",
+                    "doe_appliance_guidance",
+                    "doj_business_review",
+                    "doj_justice_manual",
+                    "doj_leniency",
+                    "eeoc_guidance",
+                    "far",
+                    "fcc_declaratory_ruling",
+                    "fdic_fil",
+                    "ferc_policy_statement",
+                    "fincen_amla_material",
+                    "fincen_boi_compliance_guide",
+                    "fincen_boi_faq",
+                    "fincen_boi_rule_qa",
+                    "fincen_guidance",
+                    "fincen_ruling",
+                    "frap",
+                    "frb_sr_letter",
+                    "frbp",
+                    "frcp",
+                    "frcrp",
+                    "fre",
+                    "ftc_administrative_decision",
+                    "ftc_advisory_opinion",
+                    "ftc_advocacy_filing",
+                    "ftc_hsr_interpretation",
+                    "ftc_policy_statement",
+                    "hhs_ocr_hipaa_faq",
+                    "hhs_ocr_hipaa_guidance",
+                    "hhs_ocr_resolution_agreement",
+                    "immigration_admin_precedent",
+                    "irs_announcement",
+                    "irs_irm",
+                    "irs_notice",
+                    "irs_rev_proc",
+                    "irs_rev_rul",
+                    "irs_written_determination",
+                    "merger_guidelines",
+                    "mpep",
+                    "mspb_nonprecedential",
+                    "mspb_precedential",
+                    "nlrb_advice_memo",
+                    "nlrb_board_decision",
+                    "nlrb_gc_memo",
+                    "occ_bulletin",
+                    "occ_interpretive_letter",
+                    "ofac_faq",
+                    "olc_opinion",
+                    "sct",
+                    "sec_commission_opinion",
+                    "senate_treaty",
+                    "senate_treaty_document",
+                    "senate_treaty_resolution",
+                    "ssa_ruling",
+                    "state_financial_bulletin",
+                    "state_insurance_bulletin",
+                    "tmep",
+                    "us_tax_treaty",
+                    "us_tax_treaty_technical_explanation",
+                    "uscis_policy_manual",
+                    "whd_foh",
+                    "whd_opinion_letter"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -2790,87 +4359,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "administrative_guidance",
-              "ag_precedent",
-              "agency_guidance",
-              "bia_precedent",
-              "bis_advisory_opinion",
-              "cfpb_circular",
-              "cfpb_enforcement_action",
-              "cfpb_supervisory_guidance",
-              "cftc_staff_letter",
-              "cms_iom",
-              "copyright_circular",
-              "copyright_compendium",
-              "cpsc_advisory_opinion",
-              "cpsc_secg",
-              "ddtc_commodity_jurisdiction",
-              "ddtc_guidance",
-              "dfars",
-              "dfars_pgi",
-              "doe_appliance_guidance",
-              "doj_business_review",
-              "doj_justice_manual",
-              "doj_leniency",
-              "eeoc_guidance",
-              "far",
-              "fcc_declaratory_ruling",
-              "fdic_fil",
-              "ferc_policy_statement",
-              "fincen_amla_material",
-              "fincen_boi_compliance_guide",
-              "fincen_boi_faq",
-              "fincen_boi_rule_qa",
-              "fincen_guidance",
-              "fincen_ruling",
-              "frap",
-              "frb_sr_letter",
-              "frbp",
-              "frcp",
-              "frcrp",
-              "fre",
-              "ftc_administrative_decision",
-              "ftc_advisory_opinion",
-              "ftc_advocacy_filing",
-              "ftc_hsr_interpretation",
-              "ftc_policy_statement",
-              "hhs_ocr_hipaa_faq",
-              "hhs_ocr_hipaa_guidance",
-              "hhs_ocr_resolution_agreement",
-              "immigration_admin_precedent",
-              "irs_announcement",
-              "irs_irm",
-              "irs_notice",
-              "irs_rev_proc",
-              "irs_rev_rul",
-              "irs_written_determination",
-              "merger_guidelines",
-              "mpep",
-              "mspb_nonprecedential",
-              "mspb_precedential",
-              "nlrb_advice_memo",
-              "nlrb_board_decision",
-              "nlrb_gc_memo",
-              "occ_bulletin",
-              "occ_interpretive_letter",
-              "ofac_faq",
-              "olc_opinion",
-              "sct",
-              "sec_commission_opinion",
-              "senate_treaty",
-              "senate_treaty_document",
-              "senate_treaty_resolution",
-              "ssa_ruling",
-              "state_financial_bulletin",
-              "state_insurance_bulletin",
-              "tmep",
-              "us_tax_treaty",
-              "us_tax_treaty_technical_explanation",
-              "uscis_policy_manual",
-              "whd_foh",
-              "whd_opinion_letter"
             ],
             "examples": [
               "sct"
@@ -2879,10 +4367,128 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "federal",
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "federal",
+                    "al",
+                    "ak",
+                    "as",
+                    "az",
+                    "ar",
+                    "ca",
+                    "co",
+                    "ct",
+                    "de",
+                    "dc",
+                    "fl",
+                    "ga",
+                    "gu",
+                    "hi",
+                    "id",
+                    "il",
+                    "in",
+                    "ia",
+                    "ks",
+                    "ky",
+                    "la",
+                    "me",
+                    "md",
+                    "ma",
+                    "mi",
+                    "mn",
+                    "ms",
+                    "mo",
+                    "mt",
+                    "ne",
+                    "nv",
+                    "nh",
+                    "nj",
+                    "nm",
+                    "ny",
+                    "nc",
+                    "nd",
+                    "mp",
+                    "oh",
+                    "ok",
+                    "or",
+                    "pa",
+                    "pr",
+                    "ri",
+                    "sc",
+                    "sd",
+                    "tn",
+                    "tx",
+                    "ut",
+                    "vt",
+                    "vi",
+                    "va",
+                    "wa",
+                    "wv",
+                    "wi",
+                    "wy"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -2890,61 +4496,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "federal",
-              "al",
-              "ak",
-              "az",
-              "ar",
-              "ca",
-              "co",
-              "ct",
-              "de",
-              "dc",
-              "fl",
-              "ga",
-              "hi",
-              "id",
-              "il",
-              "in",
-              "ia",
-              "ks",
-              "ky",
-              "la",
-              "me",
-              "md",
-              "ma",
-              "mi",
-              "mn",
-              "ms",
-              "mo",
-              "mt",
-              "ne",
-              "nv",
-              "nh",
-              "nj",
-              "nm",
-              "ny",
-              "nc",
-              "nd",
-              "oh",
-              "ok",
-              "or",
-              "pa",
-              "pr",
-              "ri",
-              "sc",
-              "sd",
-              "tn",
-              "tx",
-              "ut",
-              "vt",
-              "va",
-              "wa",
-              "wv",
-              "wi",
-              "wy"
             ],
             "examples": [
               "ca"

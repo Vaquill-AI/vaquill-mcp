@@ -162,7 +162,9 @@ async def test_law_change_alert_tools_are_absent_from_the_us_catalogue(
     published = {tool.name for tool in await server.list_tools()}
     assert not (published & in_document), sorted(published & in_document)
     assert not [n for n in published if "watch" in n or "board" in n], sorted(published)
-    assert len(published) == 18, sorted(published)
+    # 26 since 2026-10-14: 18, plus the seven US state session-law tools and
+    # extract_statute_citations.
+    assert len(published) == 26, sorted(published)
 
 
 # ---------------------------------------------------------------------------

@@ -145,6 +145,14 @@ _PROD_PRICING_ENDPOINTS = {
     "/us/statutes/coverage",
     "/us/statutes/laws",
     "/credits/balance",
+    "/us/session-laws",
+    "/us/session-laws/body",
+    "/us/session-laws/list",
+    "/us/session-laws/search",
+    "/us/session-laws/batch",
+    "/us/session-laws/changes",
+    "/us/statutes/section/enactments",
+    "/us/statutes/extract-citations",
 }
 
 

@@ -451,6 +451,15 @@ _READ_ONLY_POSTS: frozenset[str] = frozenset(
         # Absent here it fell to the write default, so a client that gates writes
         # asked for approval before counting rows.
         "/us/statutes/count",
+        # The text-in counterpart of /resolve: extracts and resolves the
+        # citations in a pasted document. The text is never stored.
+        "/us/statutes/extract-citations",
+        # Session laws, added 2026-10-05. Both are POST-as-query: a keyword
+        # search and a read of up to 50 records. Missing here, they shipped
+        # with readOnlyHint false, because the fixture the classification
+        # guard reads predated them.
+        "/us/session-laws/search",
+        "/us/session-laws/batch",
         "/in/acts/search",
         # POST-as-query: resolves a batch of citations and writes nothing.
         "/in/acts/resolve",

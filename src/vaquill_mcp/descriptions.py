@@ -12,9 +12,10 @@ startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
-SCOPE: both jurisdictions. US (18 published tools: statutes, regulations,
-constitutions, court rules and agency guidance) and India (22 published tools:
-Central and State Acts plus regulator instruments). Both counts include the
+SCOPE: both jurisdictions. US (26 published tools: statutes, regulations,
+constitutions, court rules, agency guidance, state session laws and citation extraction) and
+India (22 published tools: Central and State Acts plus regulator
+instruments). Both counts include the
 `search` / `fetch` aliases, which are titled here but described in aliases.py.
 The law-change alert tools (boards and watches) were removed from the MCP
 catalogue on 2026-09-29 and have no entries here. India was retired on
@@ -239,6 +240,70 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "searching a corpus that does not exist."
     ),
     # ------------------------------------------------------------------
+    # US state session laws (acts as enacted), added 2026-10-05. v1 is STATE
+    # acts only: a federal `SAL_` id is a 404 pointing at the statutes tools.
+    # ------------------------------------------------------------------
+    "list_session_laws": (
+        "List one US state's session laws (acts as enacted, v1 covers state "
+        "acts only). jurisdiction is REQUIRED, a two-letter state code. Filter "
+        "by session, approval date or effective date, for example everything "
+        "taking effect on a date. Rows include laws whose text is not served "
+        "(textStatus not_held or withheld); pass hasText=true for readable "
+        "ones. Page with cursor = nextCursor. An empty page is still charged."
+    ),
+    "get_session_law": (
+        "One US state session law's record: citation, session, approval and "
+        "effective dates, code sections it affects, official sources and "
+        "textStatus. v1 covers state acts; federal session laws are on the "
+        "statute tools. Accepts a sessionLawId or a citation (adds the resolve "
+        "price, kept even if it does not resolve). A withheld law is still "
+        "returned, textStatus withheld with withheldReason: we hold its text "
+        "but a measured defect keeps it from being served."
+    ),
+    "get_session_law_body": (
+        "The text of one US state session law exactly as printed, about 30,000 "
+        "characters per page; follow nextCursor while hasMore is true, each "
+        "page charged. Check amendatoryMarkup: if lost, struck language may "
+        "read as law. A withheld or not-held law answers available: false with "
+        "a reason and is not charged: withheld means we hold the text but a "
+        "measured defect keeps it back, so read the source instead."
+    ),
+    "search_session_laws": (
+        "Keyword search (BM25, not semantic) over the ENACTED text of US state "
+        "session laws, best first, each with the passage that matched and a "
+        "snippet. Send plain words, a quoted phrase (verbatim), a citation, a "
+        "code section or a bill number. Words must match the act's own "
+        "vocabulary: `teeth cleaning` will not find `dental hygienist`. Struck "
+        "language is never searched. There is no 'no good match' flag, so read "
+        "the snippet. An empty result is still charged."
+    ),
+    "get_session_laws_batch": (
+        "Read up to 50 US state session laws in one call, by sessionLawId or "
+        "citation: the record get_session_law returns, for each. Every entry is "
+        "answered: served laws in `laws`, each carrying the `input` it answers, "
+        "and the rest in `notFound` with a status. Duplicates collapse first. "
+        "includeBody adds the first page of each law's text at the body price. "
+        "To identify citations use resolve_statute_citations_batch; use this to "
+        "read the records."
+    ),
+    "get_session_law_changes": (
+        "A sync feed of the US state session-law registry: every law that began "
+        "to be served, gained text, was corrected, unserved, withdrawn or merged, "
+        "oldest first. Start with sinceId=0, then pass the returned cursor while "
+        "hasMore is true. detectedAt is when we recorded the change, never an "
+        "effective date. State laws only. An empty page is still charged. Read a "
+        "law from the feed with get_session_law or get_session_laws_batch."
+    ),
+    "get_section_enactments": (
+        "The state session laws that a publisher's own 'sections affected' "
+        "tables list against one code section: which act added, amended or "
+        "repealed it, the act's effective dates, and a sessionLawId to read with "
+        "get_session_law. Never a complete amendment history: only acts and "
+        "sessions we hold. Only some states are supported; any other section "
+        "answers supported: false and is not charged. Empty with supported: true "
+        "means no held table lists it."
+    ),
+    # ------------------------------------------------------------------
     # Meta
     # ------------------------------------------------------------------
     "get_pricing": (
@@ -294,8 +359,18 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "resolve_statute_citations_batch": (
         "Resolve up to 50 Bluebook citations in one call, returning the same confirmed "
         "section, official source link and act_id as the single-citation tool. Use when "
-        "a document or answer cites several provisions: one call is far cheaper in both "
-        "credits and latency than looping the single-citation tool."
+        "a document or answer cites several provisions: one call instead of a loop. "
+        "Priced per citation, the same as one at a time, so it buys latency, not a "
+        "discount."
+    ),
+    "extract_statute_citations": (
+        "Paste text (a brief, memo or model answer) and get every distinct US "
+        "statute, regulation, court rule and constitution citation in it, each "
+        "resolved to its section with act_id and official source. Case citations "
+        "are not extracted. Extraction is measured, not perfect, so a citation "
+        "can be missed; `resolved` is what we verified. resolve=false lists the "
+        "citations without charge. Pass state for citations that name no "
+        "jurisdiction. Up to 200,000 characters, never stored."
     ),
 }
 
@@ -505,9 +580,11 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "`SENTENCING_GUIDELINES`, `US_TAX_TREATY`, `SESSION_LAW` (Statutes "
         "at Large, as enacted), `STATUTE_COMPILATION` (an act as amended "
         "through a stated later law), `AGENCY_ADJUDICATION` (DOJ Office of "
-        "Legal Counsel opinions and MSPB decisions). Pair with `state`: "
+        "Legal Counsel opinions and MSPB decisions), `FEDERAL_LOCAL_RULES` "
+        "(courts of appeals' circuit rules). Pair with `state`: "
         "`STATE`, `REGULATION`, `STATE_RULES`, `STATE_CONSTITUTION`, "
-        "`STATE_AGENCY_GUIDANCE`, `STATE_AG_OPINION`. Omit for all."
+        "`STATE_AGENCY_GUIDANCE`, `STATE_AG_OPINION`, `STATE_REGISTER` "
+        "(register notices as printed, not codified law). Omit for all."
     ),
     ("search_us_statutes", "changedSince"): (
         "Only sections we OBSERVED changing on or after this date (`YYYY-MM-DD`). "
@@ -614,6 +691,159 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "corpora share; like `state`, a citation belonging to another corpus resolves "
         "to nothing instead."
     ),
+    # --- US state session laws, added 2026-10-05 ----------------------------
+    # The published description (746 chars) is shared by both routes, but only
+    # the record route resolves a citation; the body route takes an id.
+    ("get_session_law", "session_law_id"): (
+        "A state session law id from list_session_laws, e.g. "
+        "`SSL_MN_2025R_G_Y2025_C1`, or a citation such as `S.F.No. 1552` "
+        "(resolved, at the extra resolve price). A citation naming several laws "
+        "is a 404 listing candidates in `didYouMean`. Federal `SAL_` ids 404."
+    ),
+    ("get_session_law_body", "session_law_id"): (
+        "A state session law id, e.g. `SSL_MN_2025R_G_Y2025_C1`, from "
+        "list_session_laws or get_session_law. Pass the id, not a citation: "
+        "resolve a citation with get_session_law first. Federal `SAL_` ids 404."
+    ),
+    ("get_session_law", "jurisdiction"): (
+        "Optional two-letter state code, `dc` or `pr`, used only when a citation "
+        "is sent in place of the id: it supplies a state the citation omits and "
+        "rejects one that conflicts (a 404, resolve fee kept). Ignored for an "
+        "id. `federal` or an unknown code is a 422, never charged."
+    ),
+    ("get_session_law_body", "cursor"): (
+        "The previous page's nextCursor, unchanged; omit for the first page. "
+        "Tied to the exact text: an unknown or expired cursor is a 422, one from "
+        "before the text was re-collected is a 409 (start again). Never charged. "
+        "Send cursor or startChar, not both."
+    ),
+    ("get_session_law_body", "startChar"): (
+        "Start the page at this 0-based character offset (the scale of pageStart "
+        "and totalChars) to jump to a known place without paging. Same page size "
+        "and price as any page. Send startChar or cursor, not both. At or past "
+        "the end of the text is a 422, refunded."
+    ),
+    ("get_session_law_body", "expectTextSha256"): (
+        "The textSha256 you read under, lowercase hex, 16 to 64 characters. If "
+        "the text has since been re-collected the answer is a 409 and nothing is "
+        "charged. Use with startChar, which has no version binding of its own."
+    ),
+    ("get_session_law_changes", "jurisdiction"): (
+        "Limit the feed to one two-letter state code, `dc` or `pr`; omit for all. "
+        "`federal` or an unknown code is a 422, never charged. The cursor is a "
+        "position in the whole feed, so a filtered page can skip ids."
+    ),
+    ("get_session_law_changes", "sinceId"): (
+        "Return entries with an id greater than this. Send 0 (the default) to "
+        "start, then the cursor of your last page; exact and immune to clock "
+        "skew. A value past the newest id returns an empty page, which is charged."
+    ),
+    ("get_session_laws_batch", "ids"): (
+        "Session law ids or citations (`Minn. Laws 2025, ch. 1`, `S.F.No. 1552`), "
+        "at most 50 distinct entries after duplicates collapse (200 raw, 300 "
+        "characters each). A citation also pays the resolve price. Federal `SAL_` "
+        "ids are misses and are never charged."
+    ),
+    ("get_session_laws_batch", "includeBody"): (
+        "true adds the first page (about 30,000 characters) of each served law's "
+        "text as `body`, at the body price per law served. A withheld or not-held "
+        "law gets body: null and is not charged for it. Continue a long act with "
+        "get_session_law_body from bodyNextCursor."
+    ),
+    ("get_session_laws_batch", "jurisdiction"): (
+        "Optional two-letter state code, `dc` or `pr`, applied to every citation "
+        "in ids: it supplies a state a citation omits and rejects one that "
+        "conflicts. Ignored for ids. `federal` or an unknown code is a 422, "
+        "nothing charged."
+    ),
+    ("list_session_laws", "jurisdiction"): (
+        "REQUIRED. The two-letter code of the state to list, `dc` or `pr`, "
+        "case-insensitive; one jurisdiction per call. `federal` or an unknown "
+        "code is a 422. A state with no held session laws returns an empty page "
+        "with a coverage note, not charged."
+    ),
+    ("list_session_laws", "session"): (
+        "Only laws from this session, with the code exactly as session.code "
+        "reports it (`2025R` regular, `2025S1` first special). Case-sensitive. A "
+        "code that matches nothing returns an empty page, which is charged."
+    ),
+    ("list_session_laws", "series"): (
+        "Only laws in these numbering series (OR), as a result's series reports "
+        "it; `general` is most states' ordinary chapter sequence. Not every state "
+        "uses every series. An unknown value is a 422; a valid one that matches "
+        "nothing is an empty, charged page."
+    ),
+    ("list_session_laws", "instrumentType"): (
+        "Only these kinds of measure (OR); `act` is an ordinary law. An unknown "
+        "value is a 422; a valid kind that matches nothing is an empty, charged "
+        "page."
+    ),
+    ("list_session_laws", "approvedFrom"): (
+        "Only laws approved (signed) on or after this date, `YYYY-MM-DD`, "
+        "inclusive. A law with no printed approval date, or a derived one "
+        "(approvedDateDerived: true), never matches. Pair with approvedTo; an end "
+        "before the start is a 422."
+    ),
+    ("list_session_laws", "effectiveFrom"): (
+        "Only laws with an effective date on or after this date, `YYYY-MM-DD`, "
+        "inclusive; a law matches when its effectiveFirst to effectiveLast span "
+        "overlaps the window. A law with no held effective date never matches, "
+        "though it may be in force. For one day, send it as both bounds."
+    ),
+    ("list_session_laws", "enactmentOutcome"): (
+        "Only laws with one of these outcomes (OR), for example `vetoed` or "
+        "`pocket_veto`, as enactmentOutcome reports it. An unknown value is a "
+        "422; a valid outcome that matches nothing is an empty, charged page."
+    ),
+    ("list_session_laws", "hasText"): (
+        "true: only laws whose text is served (textStatus held), the ones "
+        "get_session_law_body returns. false: only laws without served text. "
+        "Omit for both. Combines with textStatus by AND."
+    ),
+    ("list_session_laws", "textStatus"): (
+        "Only laws with this text status: `held` (served), `withheld` (held but "
+        "kept back for a measured defect), `not_held` (known, no text) or "
+        "`pending` (collected, not yet verified). Omit for all."
+    ),
+    ("list_session_laws", "isLaw"): (
+        "true: only measures that are law. false: only numbered measures that "
+        "are not (a vetoed bill, a pocket veto). Omit for both. A measure whose "
+        "outcome is unsettled matches neither; use enactmentOutcome for those."
+    ),
+    ("list_session_laws", "updatedSince"): (
+        "Only laws whose record changed on or after this date (`YYYY-MM-DD`, "
+        "midnight UTC, by updatedAt), for sync jobs. A day with no change returns "
+        "an empty page, which is charged."
+    ),
+    ("list_session_laws", "q"): (
+        "Only laws whose title or printed bill number contains this text, "
+        "case-insensitive. A plain substring, with no stemming or ranking (use "
+        "search_session_laws for that). Bill numbers match as printed "
+        "(`S.F.No. 1552`). 3 to 100 characters."
+    ),
+    ("list_session_laws", "cursor"): (
+        "The previous page's nextCursor, unchanged, sent with the same filters "
+        "(limit may change). A cursor we did not issue, an expired one or one "
+        "sent with different filters is a 422; restart without it. Omit for the "
+        "first page."
+    ),
+    ("search_session_laws", "query"): (
+        "Plain words, a quoted phrase (matched verbatim), a citation (`63-3004`), "
+        "a code section or a bill number (`S.F.No. 1552`). Unquoted words are "
+        "stemmed and matched as the legislature wrote them, so use the act's "
+        "vocabulary. 2 to 300 characters."
+    ),
+    ("search_session_laws", "series"): (
+        "Limit to these numbering series (OR), as a result's series reports it; "
+        "`general` is most states' ordinary chapter sequence. An unknown value is "
+        "a 422, never charged."
+    ),
+    ("extract_statute_citations", "state"): (
+        "The document's jurisdiction as a two-letter state code (the forum of a "
+        "filing). It scopes a citation that names no jurisdiction, such as "
+        "`Civil Rule 56.1`; a citation naming its own is always checked against "
+        "that one."
+    ),
 }
 
 # Keyed by parameter name alone, applying wherever that name appears. Reserved
@@ -664,6 +894,15 @@ TOOL_TITLES: dict[str, str] = {
     "get_section_definitions": "Defined Terms in Section",
     "get_section_neighbors": "Adjacent Sections",
     "get_section_changes": "Section Change History",
+    # --- US: state session laws ---------------------------------------------
+    "list_session_laws": "State Session Laws",
+    "get_session_law": "State Session Law Record",
+    "get_session_law_body": "State Session Law Text",
+    "get_session_laws_batch": "State Session Laws (Batch)",
+    "search_session_laws": "Search State Session Laws",
+    "get_session_law_changes": "Session Law Change Feed",
+    "get_section_enactments": "Session Laws Affecting a Section",
+    "extract_statute_citations": "Extract Citations from Text",
     # --- US: sizing and account ---------------------------------------------
     "count_statute_sections": "Count Sections in a Scope",
     "get_credit_balance": "Credit Balance",
