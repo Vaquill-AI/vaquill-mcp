@@ -3030,7 +3030,80 @@
     },
     "list_statutes_coverage": {
       "inputSchema": {
-        "properties": {},
+        "properties": {
+          "state": {
+            "anyOf": [
+              {
+                "enum": [
+                  "federal",
+                  "al",
+                  "ak",
+                  "as",
+                  "az",
+                  "ar",
+                  "ca",
+                  "co",
+                  "ct",
+                  "de",
+                  "dc",
+                  "fl",
+                  "ga",
+                  "gu",
+                  "hi",
+                  "id",
+                  "il",
+                  "in",
+                  "ia",
+                  "ks",
+                  "ky",
+                  "la",
+                  "me",
+                  "md",
+                  "ma",
+                  "mi",
+                  "mn",
+                  "ms",
+                  "mo",
+                  "mt",
+                  "ne",
+                  "nv",
+                  "nh",
+                  "nj",
+                  "nm",
+                  "ny",
+                  "nc",
+                  "nd",
+                  "mp",
+                  "oh",
+                  "ok",
+                  "or",
+                  "pa",
+                  "pr",
+                  "ri",
+                  "sc",
+                  "sd",
+                  "tn",
+                  "tx",
+                  "ut",
+                  "vt",
+                  "vi",
+                  "va",
+                  "wa",
+                  "wv",
+                  "wi",
+                  "wy"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "ca"
+            ]
+          }
+        },
         "required": [],
         "type": "object"
       },

@@ -237,7 +237,8 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "Self-describing coverage matrix: every corpusType we hold and its per-jurisdiction "
         "section counts. Use before answering a jurisdiction question to check whether we "
         "actually cover that state and that body of law, so you can say so instead of "
-        "searching a corpus that does not exist."
+        "searching a corpus that does not exist. Pass state (a two-letter code, or "
+        "federal) to read one jurisdiction; the full matrix is about a megabyte."
     ),
     # ------------------------------------------------------------------
     # US state session laws (acts as enacted), added 2026-10-05. v1 is STATE
@@ -430,6 +431,13 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "Sections with no recorded status are kept. US Code uses a stored "
         "annual edition, so sections repealed after that edition closed are "
         "still counted."
+    ),
+    # Added 2026-10-16 with the backend's `state` filter: the full matrix is about a
+    # megabyte, which a chat client cannot read, so a model asked about one place
+    # must know to pass it.
+    ("list_statutes_coverage", "state"): (
+        "One jurisdiction: a two-letter state code or `federal`. Omit for every "
+        "jurisdiction (about a megabyte)."
     ),
     ("get_act_amendments", "type"): (
         "Action classes are returned in nominal form, but filters accept "

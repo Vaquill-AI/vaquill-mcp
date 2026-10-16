@@ -18088,6 +18088,88 @@
       "get": {
         "description": "Self-describing coverage matrix. Returns a legend of every `corpusType` token (what it contains and whether it is federal or state-scoped) plus, for each jurisdiction, the per-corpusType ingested DOCUMENT counts in `corpora` (one per section or document, not per retrieval passage; `totalPassages` in the same response IS the passage count). Use it to learn exactly what is queryable where before calling /us/statutes/search: read a jurisdiction's `corpora` keys, then pass one as `corpusType` (paired with `state` for state-scoped corpora). Each legend entry's `browsable` says whether `GET /us/statutes/divisions` can also walk that corpus as a tree.\n\nIt reports what we hold, not how recently it was refreshed. For the age of any source, call `GET /boards`: it is free, needs no credits, and carries `lastRetrievedAt` and `cadence` for every tracked source. Read it alongside the counts here so a section count carries an age. It records when we last CHECKED, not when the law last changed, and it is not a claim that the law is current as of that date. Where a publisher states its own currency, that rides on each section as `currentThrough`.\n\n**Free.** Requires an API key and is rate-limited, but costs no credits.\n\nState session laws (acts as enacted) are at /us/session-laws. Where we hold any for a jurisdiction, its `sessionLaws` block says which sessions are `complete` or `partial`, how many laws we serve, how many we withhold (`withheldCount`: in our registry, text not shown, each with a stated reason), the expected total and open gaps, and the `series`, `instrumentTypes` and approval-date span that exist (the values `GET /us/session-laws/list` accepts). A jurisdiction we hold no session laws for has no block. Which jurisdictions have one changes as we collect more, so read it here and do not assume it from a list. This is the one place session-law coverage is served: check it before you list, then read the laws at `/us/session-laws`.",
         "operationId": "list_statutes_coverage_api_v1_us_statutes_coverage_get",
+        "parameters": [
+          {
+            "description": "Return only this jurisdiction: a 2-letter US state code (one of the 52 supported) or `federal`. Case-insensitive. Omit for every jurisdiction. The unfiltered matrix runs to about a megabyte, so pass this when you are asking about one place. `totalSections` and `stateCountWithData` stay corpus-wide.",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "federal",
+                    "al",
+                    "ak",
+                    "as",
+                    "az",
+                    "ar",
+                    "ca",
+                    "co",
+                    "ct",
+                    "de",
+                    "dc",
+                    "fl",
+                    "ga",
+                    "gu",
+                    "hi",
+                    "id",
+                    "il",
+                    "in",
+                    "ia",
+                    "ks",
+                    "ky",
+                    "la",
+                    "me",
+                    "md",
+                    "ma",
+                    "mi",
+                    "mn",
+                    "ms",
+                    "mo",
+                    "mt",
+                    "ne",
+                    "nv",
+                    "nh",
+                    "nj",
+                    "nm",
+                    "ny",
+                    "nc",
+                    "nd",
+                    "mp",
+                    "oh",
+                    "ok",
+                    "or",
+                    "pa",
+                    "pr",
+                    "ri",
+                    "sc",
+                    "sd",
+                    "tn",
+                    "tx",
+                    "ut",
+                    "vt",
+                    "vi",
+                    "va",
+                    "wa",
+                    "wv",
+                    "wi",
+                    "wy"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Return only this jurisdiction: a 2-letter US state code (one of the 52 supported) or `federal`. Case-insensitive. Omit for every jurisdiction. The unfiltered matrix runs to about a megabyte, so pass this when you are asking about one place. `totalSections` and `stateCountWithData` stay corpus-wide.",
+              "examples": [
+                "ca"
+              ],
+              "title": "State"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -18184,6 +18266,16 @@
               }
             },
             "description": "API key lacks `research:read` scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           },
           "429": {
             "content": {

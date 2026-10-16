@@ -4,7 +4,7 @@
   "app_info": {
     "display_name": "Vaquill AI Primary Law",
     "subtitle": "US statutes and regulations",
-    "description": "Vaquill AI gives ChatGPT direct access to United States primary law, ingested from official government publishers and cited back to them. It covers the US Code and the Code of Federal Regulations, all 50 state statutory codes plus DC and Puerto Rico, state administrative regulations, federal and state court rules and constitutions, agency guidance from 51 named sources, agency adjudications, the Statutes at Large and the Federal Register: roughly 5.8 million sections, including repealed and historical provisions kept with their status.\n\nSearch every corpus at once or scope to one jurisdiction, body of law or status. Resolve a citation such as 42 U.S.C. 1983 to the exact provision it names. Read a section's operative text, or read it as it stood on a past date and see what changed. Walk a code's hierarchy, find the sections that cite a provision, the terms it defines, its neighbours and the equivalent rule in other states.\n\nEvery legal-record result carries its official source URL and the publisher's own status for that section. The derived good-law verdict reports what the PUBLISHER records about repeal or supersession; it is not a judicial-validity check, and where currency cannot be vouched for it reports unknown rather than over-claiming. Coverage is self-describing, so an empty result can be told apart from an absence of law.",
+    "description": "Vaquill AI gives ChatGPT direct access to United States primary law, ingested from official government publishers and cited back to them. It covers the US Code and the Code of Federal Regulations, all 50 state statutory codes plus DC and Puerto Rico, state administrative regulations, federal and state court rules and constitutions, agency guidance from 51 named sources, agency adjudications, the Statutes at Large and the Federal Register: more than 5.4 million sections, including repealed and historical provisions kept with their status.\n\nSearch every corpus at once or scope to one jurisdiction, body of law or status. Resolve a citation such as 42 U.S.C. 1983 to the exact provision it names. Read a section's operative text, or read it as it stood on a past date and see what changed. Walk a code's hierarchy, find the sections that cite a provision, the terms it defines, its neighbours and the equivalent rule in other states.\n\nEvery legal-record result carries its official source URL and the publisher's own status for that section. The derived good-law verdict reports what the PUBLISHER records about repeal or supersession; it is not a judicial-validity check, and where currency cannot be vouched for it reports unknown rather than over-claiming. Coverage is self-describing, so an empty result can be told apart from an absence of law.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
@@ -16,6 +16,18 @@
       },
       "justifications": {
         "read_only_justification": "Counts the sections inside a requested scope and returns a number without reading or altering any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "extract_statute_citations": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Finds the statute citations in a passage of text the caller supplies and returns them without storing the text or changing any record.",
         "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
@@ -104,6 +116,18 @@
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
     },
+    "get_section_enactments": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the acts that a state publisher lists against a section and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
     "get_section_neighbors": {
       "annotations": {
         "readOnlyHint": true,
@@ -128,6 +152,54 @@
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
     },
+    "get_session_law": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one session law record and does not modify it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_session_law_body": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the text of one session law and does not modify it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_session_law_changes": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the changes a session law made to code sections and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_session_laws_batch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns several session law records in one call. It is a POST only because the list of ids is too long for a URL, and it writes nothing.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
     "get_us_statute_section": {
       "annotations": {
         "readOnlyHint": true,
@@ -148,6 +220,18 @@
       },
       "justifications": {
         "read_only_justification": "Returns the stored text of one section and does not change it.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_session_laws": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists one state's session laws with the filters the caller sets and does not modify any record.",
         "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
@@ -212,6 +296,18 @@
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
     },
+    "search_session_laws": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Searches session law text. It is a POST only because the query and filters are long, and it writes nothing.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
     "search_us_statutes": {
       "annotations": {
         "readOnlyHint": true,
@@ -231,7 +327,7 @@
       "user_prompt": "What does Vaquill hold for California law?",
       "file_attachment_urls": null,
       "tools_triggered": "list_statutes_coverage",
-      "expected_output": "Per-corpus section counts for California across statutes, regulations, court rules, the state constitution and agency guidance, with the date they were measured.",
+      "expected_output": "The California row of the coverage matrix: per-corpus section counts across statutes, regulations, state register notices, court rules, attorney general opinions, state agency guidance and the state constitution, with the date they were measured.",
       "expected_output_url": null
     },
     {
@@ -247,7 +343,7 @@
       "user_prompt": "Show me the full text of 42 U.S.C. 1983.",
       "file_attachment_urls": null,
       "tools_triggered": "get_us_statute_section_text",
-      "expected_output": "The operative text of the section with the source credit separated out, and the date the publisher states the text is current through.",
+      "expected_output": "The operative text of the section with the source credit separated out, and the official government source URL it was published at.",
       "expected_output_url": null
     },
     {
@@ -259,11 +355,11 @@
       "expected_output_url": null
     },
     {
-      "description": "Compare how several states word the same rule.",
-      "user_prompt": "How do Texas, Florida and New York each word their non-compete rule?",
+      "description": "Find how other states address the same subject as a known state statute.",
+      "user_prompt": "Which other states have a covenant not to compete statute similar to Texas Business and Commerce Code 15.50?",
       "file_attachment_urls": null,
-      "tools_triggered": "get_section_cross_state",
-      "expected_output": "The equivalent provision in each named state with its own citation and source URL, and an explicit note for any state where no equivalent is held.",
+      "tools_triggered": "resolve_statute_citation, get_section_cross_state",
+      "expected_output": "Provisions from other states on the same subject, ranked by similarity, each with its own citation and its own act identifier. A source URL is shown for each provision where we are permitted to publish one.",
       "expected_output_url": null
     }
   ],
