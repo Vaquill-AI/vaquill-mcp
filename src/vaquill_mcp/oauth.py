@@ -145,7 +145,12 @@ class ConnectorKeyResolver:
             response = await client.post(
                 f"{self._base_url}/api/v1/internal/connector-keys/resolve",
                 json={"userId": subject, "connector": "mcp"},
-                headers={"X-Vaquill-Internal": self._secret},
+                # Lowercase on purpose. Over HTTP/1.1 a header keeps the case it was
+                # sent in, and a Cloudflare rule in front of this route once compared
+                # the NAME case-sensitively, so "X-Vaquill-Internal" was blocked with a
+                # 403 for a week (2026-10-14 to 2026-10-21) and every OAuth tool call
+                # failed. HTTP/2 lowercases names, which is why curl never saw it.
+                headers={"x-vaquill-internal": self._secret},
             )
         if response.status_code != 200:
             # Deliberately does NOT include the response body. This endpoint

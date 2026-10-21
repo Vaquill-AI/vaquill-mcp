@@ -158,6 +158,21 @@ class TestConnectorKeyResolver:
         await ConnectorKeyResolver(_BASE, "secret").resolve("user-1")
         assert seen == ["secret"]
 
+    async def test_the_secret_header_name_is_sent_in_lowercase(self, respx_mock) -> None:
+        """`request.headers.get` is case-insensitive, so the test above cannot see the
+        case on the wire. Over HTTP/1.1 it matters: an edge rule that matched the name
+        case-sensitively blocked "X-Vaquill-Internal" with a 403 for a week."""
+        names: list[list[bytes]] = []
+
+        def _record(request: httpx.Request) -> httpx.Response:
+            names.append([name for name, _ in request.headers.raw])
+            return httpx.Response(200, json={"apiKey": "vq_key_conn", "keyId": "k"})
+
+        respx_mock.post(_RESOLVE).mock(side_effect=_record)
+        await ConnectorKeyResolver(_BASE, "secret").resolve("user-1")
+        assert b"x-vaquill-internal" in names[0]
+        assert b"X-Vaquill-Internal" not in names[0]
+
     async def test_forgetting_a_subject_forces_a_re_resolve(self, respx_mock) -> None:
         """Revoking a connection has to take effect without a restart."""
         route = respx_mock.post(_RESOLVE).mock(
