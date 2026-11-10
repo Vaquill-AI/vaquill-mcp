@@ -14,6 +14,10 @@ injection review (docs/security) measures what it does and does not change.
 _CORPUS = {
     "US": "United States primary law collected from government publishers",
     "IN": "Indian legislation collected from India Code and regulator publications",
+    # The regulatory server (regulatory.py). An unrecognised key falls back to the
+    # US text below, silently, so a corpus that is not listed here tells every
+    # client it serves United States law.
+    "REG": "Indian regulatory publications collected from government publishers",
 }
 
 _TEMPLATE = (

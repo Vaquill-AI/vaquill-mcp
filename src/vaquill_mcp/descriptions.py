@@ -946,4 +946,14 @@ TOOL_TITLES: dict[str, str] = {
     "india_act_subordinate": "Rules Made Under an Act",
     "resolve_india_citation": "Resolve Indian Citation",
     "resolve_india_citations_batch": "Resolve Indian Citations (Batch)",
+    # --- India: regulatory publications (regulatory.py) ----------------------
+    # Titled here like the aliases, DESCRIBED in regulatory.py, because these
+    # five are declared rather than derived from an OpenAPI document and
+    # `test_derived_catalogue` rightly refuses a TOOL_DESCRIPTIONS entry that no
+    # document produces.
+    "search_regulatory_documents": "Search Indian Regulatory Documents",
+    "get_regulatory_document": "Regulatory Document",
+    "get_regulatory_document_file": "Regulatory Document File",
+    "list_regulatory_changes": "Regulatory Change Feed",
+    "get_regulatory_coverage": "Regulatory Coverage",
 }

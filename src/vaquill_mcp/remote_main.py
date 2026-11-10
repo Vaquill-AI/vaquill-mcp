@@ -254,7 +254,12 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     # Before anything is served: `/s/{api_key}` puts a customer's key in the
-    # URL, and uvicorn's access log prints the URL.
+    # URL, and uvicorn's access log prints the URL. AFTER `basicConfig`, because
+    # this also holds the httpx2/httpcore2 loggers at WARNING (their INFO line is
+    # the full upstream URL, `?cite=` included) and filters the root handlers
+    # basicConfig just created. uvicorn's own `dictConfig` at startup leaves
+    # both in place; `test_query_text_redaction.py` proves it on the installed
+    # uvicorn.
     install_key_redaction()
 
     import uvicorn
