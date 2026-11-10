@@ -102,8 +102,12 @@ ids usually 404. Start from `search_us_statutes` or `resolve_statute_citation`.
 Two fields, and they answer different questions.
 
 - `actStatus` is what the PUBLISHER says (`in_force`, `repealed`, `renumbered`...).
-- `goodLawStatus` is our verdict: `good_law` means checked, `unknown` means we
-  hold no trustworthy repeal signal for that jurisdiction.
+- `goodLawStatus` is our verdict: `good_law` means checked. `unknown` means no
+  currency verdict is asserted for the section, which is different from out of
+  date. It is returned where a jurisdiction does not publish repeal
+  information, and for some corpora by design: attorney general opinions,
+  register notices and statute compilations. Annual editions (`cfr_annual`,
+  `usc_annual`) return `not_good_law` because a later edition supersedes them.
 
 `excludeRepealed: true` removes what we KNOW is dead. It does not promise the
 remainder is good law: a section survives it when its status is `in_force` OR
@@ -119,6 +123,47 @@ it is per-source, and events sweep at 24 months.
 **An empty change list means we recorded no change. It never means the section
 was never amended.** For the publisher's own history, read `amendmentHistory`
 on the section.
+
+## Boolean (terms-and-connectors) search
+`search_us_statutes` with `matchType: "boolean"` reads `query` as an expression
+and returns ONLY sections whose full text satisfies it, ranked by relevance
+among them. Use it when you need exact logic (alternatives, exclusions,
+proximity, word forms) or every match; stay on `any` for a plain-English
+question, and use `resolve_statute_citation` for a citation.
+
+- Operators are UPPERCASE: `AND`, `OR`, `NOT`, `/s` (same sentence), `/p`
+  (same paragraph), `/N` (within N words, 1-255), `+s` `+p` `+N` (left term
+  first), `atleastN(term)`, `"exact phrase"`, `( )`. Lowercase and/or/not are
+  ordinary words.
+- Adjacent bare words are an exact PHRASE: `landlord tenant` is not
+  `landlord AND tenant`.
+- No stemming: `deposit` misses `deposits`. Write `deposit*` (`*` or `!` at the
+  end, `?` for one character, at least 3 characters before it, at most 20
+  wildcard or fuzzy terms).
+- Precedence is the legal-research convention, not textbook Boolean: `OR`
+  binds tightest, then `/N`, `/s`, `/p`, then `AND`, then `NOT`. Parenthesize
+  every `OR` group. Read `parsedQuery` to confirm the grouping, and fix what
+  `queryWarnings` names before relying on the results.
+- Scope with `state`, `corpusType`, `code`, `titleNumber`, not with words.
+
+Paging: `totalMatches` is the count across every page. When
+`totalMatchesExact` is false it is an upper bound (phrases, proximity, or a
+filter the count does not apply), not a promise. Send the response's
+`nextOffset` as the next `offset` until it is absent and `hasMore` is false
+(offset reaches 10,000 in this mode, 70 in the others); never compute it,
+because a page can hold fewer rows than `limit`. The first 120 results are
+relevance-ranked and the rest follow in keyword order. For the total alone,
+`count_statute_sections` takes the same expression (`isExact` there).
+
+Errors: a 422 is not charged. It either names the syntax error and its
+character position, or says the expression is too heavy to verify within one
+search. Change the expression or narrow the scope (fewer `/s` `/p`, add
+`state` or `corpusType`); the same request returns the same 422. A 503 is a
+temporary outage, also not charged: retry the same request with backoff.
+
+An empty result means no match in the scope searched, not that no such law
+exists: loosen (`/s` to `/p` to `AND`, a phrase to its words) or widen the
+scope before saying so.
 
 ## Cost discipline
 `get_us_statute_section` returns metadata WITHOUT the text; the body is a

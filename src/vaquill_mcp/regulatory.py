@@ -57,6 +57,7 @@ from typing import Annotated, Any, Literal
 import httpx2
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
+from fastmcp.server.middleware import Middleware
 from fastmcp.utilities.types import File
 from mcp.types import EmbeddedResource
 from pydantic import Field
@@ -82,6 +83,18 @@ TOOL_NAMES: tuple[str, ...] = (
     "list_regulatory_changes",
     "get_regulatory_coverage",
 )
+
+#: Where each tool goes, with `{id}` left in for the two per-document routes.
+#: ONE table, read by the tools below and by the price lookup, so a route cannot
+#: be changed in one place and still be priced against its old spelling: that is
+#: the drift `_pricing_endpoint_for_route` exists to end for the derived tools.
+TOOL_ROUTES: dict[str, str] = {
+    "search_regulatory_documents": f"{_PREFIX}/documents",
+    "get_regulatory_document": f"{_PREFIX}/documents/{{id}}/detail",
+    "get_regulatory_document_file": f"{_PREFIX}/documents/{{id}}/file",
+    "list_regulatory_changes": f"{_PREFIX}/changes",
+    "get_regulatory_coverage": f"{_PREFIX}/sources",
+}
 
 #: The only permission any of the five needs. Stated once so the 403 text and the
 #: docs cannot drift apart.
@@ -529,8 +542,85 @@ def _annotations(name: str) -> dict[str, object]:
     return {**_READ_ONLY, "title": TOOL_TITLES[name]}
 
 
-def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
+def _described(tool: str, costs: dict[str, str] | None) -> str:
+    """The description a model reads: the hand-written text plus a price line.
+
+    The price is NEVER written in `DESCRIPTIONS` (a test fails on a number
+    there). It arrives from the live pricing matrix, exactly as it does for every
+    derived tool, because a hand-keyed price is the thing that drifted silently
+    for a month (CHANGELOG 0.3.0). No entry means no line, never a guessed one.
+    """
+    line = (costs or {}).get(tool, "")
+    return f"{DESCRIPTIONS[tool]} {line}" if line else DESCRIPTIONS[tool]
+
+
+def _flatten_optional(schema: dict[str, Any]) -> bool:
+    """Hoist a parameter's `description` out of a doubled nullable wrapper.
+
+    On Python 3.10, `Annotated[T | None, Field(description=...)]` renders as
+    `anyOf[{anyOf[T, null], description}, null]`: the description sits one level
+    DEEPER than on 3.11+, which renders the flat
+    `anyOf[T, null] + description`. Measured 2026-11-10 on one fastmcp (4.0.1)
+    across two interpreters, so it is the interpreter and not the library, and
+    `Optional[...]` spells the same thing. It bit here as a snapshot failure on
+    the py3.10 CI leg alone while 3.11, 3.12 and 3.13 passed.
+
+    It is not cosmetic. Clients read `properties.<p>.description`, so on 3.10
+    every optional parameter publishes NO description at the place a model looks
+    for one, and the list-of-enum parameters bury their allowed values two
+    `anyOf` levels down. The text a model reads is exactly what this file exists
+    to control, and it was version-dependent.
+
+    Fixing it here rather than respelling 20 annotations keeps one rule in one
+    place: whatever the interpreter emits, what we publish is flat. Returns True
+    when it changed something, so a test can assert the 3.10 shape is actually
+    reached rather than passing vacuously on a newer interpreter.
+    """
+    changed = False
+    for prop in (schema.get("properties") or {}).values():
+        branches = prop.get("anyOf")
+        if not isinstance(branches, list) or len(branches) != 2:
+            continue
+        inner, tail = branches
+        if not isinstance(inner, dict) or tail != {"type": "null"}:
+            continue
+        # The doubled wrapper: the first branch is ITSELF `anyOf[T, null]` and
+        # carries the description the outer property should be publishing.
+        if "description" not in inner or not isinstance(inner.get("anyOf"), list):
+            continue
+        prop["anyOf"] = inner["anyOf"]
+        prop["description"] = inner["description"]
+        changed = True
+    return changed
+
+
+class _FlattenOptionalParams(Middleware):
+    """Publish the flat parameter shape whatever the interpreter emits.
+
+    `list_tools` is the one surface every client and the text snapshot read
+    through, and the Tool it yields is the registered object itself (measured:
+    `get_tool` and `list_tools` return the same instance and a mutation through
+    one is visible in the other), so flattening here is what a model actually
+    sees. Scoped to `TOOL_NAMES` so a tool this module did not define is left
+    exactly as its own server built it.
+    """
+
+    async def on_list_tools(self, context, call_next):  # type: ignore[no-untyped-def]
+        tools = await call_next(context)
+        for tool in tools:
+            if tool.name in TOOL_NAMES:
+                _flatten_optional(tool.parameters)
+        return tools
+
+
+def register_regulatory_tools(
+    mcp: FastMCP, client: httpx2.AsyncClient, costs: dict[str, str] | None = None
+) -> None:
     """Publish exactly the five tools in `TOOL_NAMES` on `mcp`.
+
+    `costs` is `{tool: "Cost: 1 credit."}` from `regulatory_costs`. Omitted, the
+    descriptions carry no price line, which is what the stdio server and the
+    offline tests want.
 
     `client` carries the credential (a fixed header for one user, an `httpx2.Auth`
     that reads the caller's key per request for the hosted server). It never
@@ -540,7 +630,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
     @mcp.tool(
         name="search_regulatory_documents",
         title=TOOL_TITLES["search_regulatory_documents"],
-        description=DESCRIPTIONS["search_regulatory_documents"],
+        description=_described("search_regulatory_documents", costs),
         annotations=_annotations("search_regulatory_documents"),
     )
     async def search_regulatory_documents(
@@ -580,7 +670,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
         return await _get_json(
             client,
             "search_regulatory_documents",
-            f"{_PREFIX}/documents",
+            TOOL_ROUTES["search_regulatory_documents"],
             build_query(
                 q=q,
                 publisherId=publisherId,
@@ -599,7 +689,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
     @mcp.tool(
         name="get_regulatory_document",
         title=TOOL_TITLES["get_regulatory_document"],
-        description=DESCRIPTIONS["get_regulatory_document"],
+        description=_described("get_regulatory_document", costs),
         annotations=_annotations("get_regulatory_document"),
     )
     async def get_regulatory_document(
@@ -615,14 +705,14 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
         return await _get_json(
             client,
             "get_regulatory_document",
-            f"{_PREFIX}/documents/{int(id)}/detail",
+            TOOL_ROUTES["get_regulatory_document"].format(id=int(id)),
             build_query(include=include),
         )
 
     @mcp.tool(
         name="get_regulatory_document_file",
         title=TOOL_TITLES["get_regulatory_document_file"],
-        description=DESCRIPTIONS["get_regulatory_document_file"],
+        description=_described("get_regulatory_document_file", costs),
         annotations=_annotations("get_regulatory_document_file"),
     )
     async def get_regulatory_document_file(
@@ -634,7 +724,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
         response, body = await _get(
             client,
             "get_regulatory_document_file",
-            f"{_PREFIX}/documents/{int(id)}/file",
+            TOOL_ROUTES["get_regulatory_document_file"].format(id=int(id)),
             [],
             max_bytes=FILE_MAX_BYTES,
         )
@@ -646,7 +736,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
     @mcp.tool(
         name="list_regulatory_changes",
         title=TOOL_TITLES["list_regulatory_changes"],
-        description=DESCRIPTIONS["list_regulatory_changes"],
+        description=_described("list_regulatory_changes", costs),
         annotations=_annotations("list_regulatory_changes"),
     )
     async def list_regulatory_changes(
@@ -673,7 +763,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
         return await _get_json(
             client,
             "list_regulatory_changes",
-            f"{_PREFIX}/changes",
+            TOOL_ROUTES["list_regulatory_changes"],
             build_query(
                 since=since,
                 publisherId=publisherId,
@@ -688,7 +778,7 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
     @mcp.tool(
         name="get_regulatory_coverage",
         title=TOOL_TITLES["get_regulatory_coverage"],
-        description=DESCRIPTIONS["get_regulatory_coverage"],
+        description=_described("get_regulatory_coverage", costs),
         annotations=_annotations("get_regulatory_coverage"),
     )
     async def get_regulatory_coverage(
@@ -701,18 +791,91 @@ def register_regulatory_tools(mcp: FastMCP, client: httpx2.AsyncClient) -> None:
         return await _get_json(
             client,
             "get_regulatory_coverage",
-            f"{_PREFIX}/sources",
+            TOOL_ROUTES["get_regulatory_coverage"],
             build_query(publisherId=publisherId, includePaused=includePaused),
         )
 
+    # Flatten every tool on the way out, in ONE place, so a sixth tool is
+    # covered the day it is added. It runs as middleware rather than inline
+    # here because the registered Tool is only reachable through an async
+    # accessor and this function is sync; `list_tools` is also the exact
+    # chokepoint every client and the snapshot test read through.
+    #
+    # Two routes that look right and are not, both measured 2026-11-10 on
+    # fastmcp 4.0.1: `Tool.from_function` on the same callable returns a Tool
+    # whose `parameters` is EQUAL but a DIFFERENT dict object, so mutating it
+    # changes nothing the server publishes while every local test still passes;
+    # and re-adding with `add_tool` does flatten the real one but logs
+    # "Component already exists".
+    mcp.add_middleware(_FlattenOptionalParams())
 
-def create_regulatory_server(client: httpx2.AsyncClient | None = None) -> FastMCP:
+
+def regulatory_costs(entries: list[dict]) -> dict[str, str]:
+    """`{tool: price line}` from the `costs` array of the public pricing matrix.
+
+    The same derivation the OpenAPI-built tools use: the pricing endpoint is the
+    route with the version prefix and every path parameter removed, so
+    `/api/v1/in/reg/documents/{id}/detail` is priced as
+    `/in/reg/documents/detail`. A tool whose route has no row is OMITTED rather
+    than priced wrongly, and `fetch_regulatory_costs` says so out loud.
+    """
+    from vaquill_mcp.server import _format_cost, _pricing_endpoint_for_route
+
+    by_endpoint: dict[str, list[dict]] = {}
+    for entry in entries:
+        endpoint = entry.get("endpoint")
+        if endpoint:
+            by_endpoint.setdefault(endpoint, []).append(entry)
+
+    costs: dict[str, str] = {}
+    for tool, route in TOOL_ROUTES.items():
+        matches = by_endpoint.get(_pricing_endpoint_for_route(route))
+        line = _format_cost(matches) if matches else ""
+        if line:
+            costs[tool] = line
+    return costs
+
+
+def fetch_regulatory_costs(base_url: str) -> dict[str, str]:
+    """Fetch the public pricing matrix for India and derive the five price lines.
+
+    Region `IN`, and it must be passed: the route is not scoped by any mount and
+    defaults to US, which would label these tools with United States prices.
+
+    A tool left without a price is logged at WARNING by name. A missing price
+    row is otherwise silent, and a tool that does not say what it costs is the
+    exact failure the cost-line guard exists to catch.
+    """
+    from vaquill_mcp.server import _fetch_public_costs
+
+    costs = regulatory_costs(_fetch_public_costs(base_url, "IN"))
+    unpriced = [t for t in TOOL_NAMES if t not in costs]
+    if unpriced:
+        logger.warning(
+            "No price in the pricing matrix for: %s. Their descriptions carry no "
+            "cost line this session.",
+            ", ".join(unpriced),
+        )
+    return costs
+
+
+def create_regulatory_server(
+    client: httpx2.AsyncClient | None = None,
+    *,
+    auth: object | None = None,
+    costs: dict[str, str] | None = None,
+) -> FastMCP:
     """A server whose whole catalogue is the five regulatory tools.
 
     A SEPARATE server rather than five more tools on the US or India one, because
     one connection should see one corpus (a client pays for every tool in every
     turn) and because the live catalogues' exact-count tests and snapshots are
     what protect the connector people already use.
+
+    `auth` is per-SERVER, for the reason `remote.create_remote_server` gives:
+    FastMCP reads it when it builds each HTTP app, so the OAuth mount and the
+    `/s/{api_key}` mount cannot share one instance. `costs` is
+    `regulatory_costs(...)`; see `_described`.
 
     `client` is supplied by a hosted entry point, which owns its credential and
     its lifetime. Without one, a client is built from the same environment the
@@ -751,11 +914,27 @@ def create_regulatory_server(client: httpx2.AsyncClient | None = None) -> FastMC
             finally:
                 await owned.aclose()
 
+    # `icons` and `website_url` are what the OAuth consent screen renders: it
+    # reads `icons[0]` and `website_url` off this object, so without them the
+    # screen a user checks before granting access shows FastMCP's own logo.
+    from mcp.types import Icon
+
+    from vaquill_mcp.brand_assets import square_icon
+
     mcp = FastMCP(
         name="Vaquill Indian Regulatory",
         instructions=instructions_for(CORPUS),
         lifespan=lifespan,
+        auth=auth,
+        icons=[
+            Icon(
+                src="https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png",
+                mime_type="image/png",
+            ),
+            square_icon(),
+        ],
+        website_url="https://www.vaquill.ai",
     )
-    register_regulatory_tools(mcp, client)
+    register_regulatory_tools(mcp, client, costs)
     mcp.add_middleware(DeterministicToolOrder())
     return mcp

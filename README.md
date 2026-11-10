@@ -238,7 +238,7 @@ set always matches the current API. For the **authoritative, up-to-date list and
 per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
 client's tool list.
 
-The US server publishes 26 tools and the India server 22, counting `search` and
+The US server publishes 37 tools and the India server 22, counting `search` and
 `fetch`. Every one is read-only. Law change alerts (boards and watches) are deliberately **not** MCP
 tools: the API still serves them, so create and manage alerts in the Vaquill
 console or over the REST API directly.
@@ -252,7 +252,8 @@ Register, and agency guidance.
 
 | Tool | Description |
 |------|-------------|
-| `search_us_statutes` | Hybrid semantic + keyword search; filter by `corpusType`, `state`, `titleNumber`, `chapter`, year, and more. |
+| `search_us_statutes` | Hybrid semantic + keyword search; filter by `corpusType`, `state`, `titleNumber`, `chapter`, year, and more. `matchType: "boolean"` takes a terms-and-connectors expression (`AND`, `OR`, `NOT`, `/s`, `/p`, `/N`, wildcards) and returns only sections that satisfy it, with `totalMatches` / `totalMatchesExact` and a `nextOffset` to page to the end. |
+| `count_statute_sections` | Exact section count for a scope, or for a Boolean expression (`query` + `matchType: "boolean"`, with `isExact` and `parsedQuery`). |
 | `get_us_statute_section` | Section metadata by `actId` (citation, hierarchy, official-source links). |
 | `get_us_statute_section_text` | Full HTML + plain text of a section. |
 | `get_sections_batch` | Metadata for up to 50 sections in one call. |
@@ -269,6 +270,25 @@ Register, and agency guidance.
 | `get_section_cited_by` | Which USC/CFR sections cross-reference this one (the inverse of `crossReferences`). |
 | `get_section_cross_state` | Provisions in other states addressing the same subject, ranked by similarity. |
 | `get_section_changes` | What our refreshes observed changing on this section over time. |
+
+### Federal rulemaking
+
+The Federal Register lineage of the CFR, and the dockets and Unified Agenda entries that
+share a Regulation Identifier Number (RIN). Metadata only: no comment text. Costs are
+appended to each tool's description at startup from the live pricing table.
+
+| Tool | Description |
+|------|-------------|
+| `get_section_rulemaking` | The Federal Register documents behind one CFR section, from its printed source note and eCFR amendment dates, with a `quality` tier per match. |
+| `get_part_rulemaking` | Every Federal Register document that references a CFR title and part, newest first, over the most recent `years` (default 5). |
+| `get_rulemaking_docket` | One Regulations.gov docket: agency, type, title, RIN, document counts and comment count (`null` means not measured). |
+| `list_rulemaking_dockets` | Dockets, most recently modified first, filtered by `agencyId`, `docketType`, `rin`, `hasRin` and a modified window. Cursor paged. |
+| `list_docket_documents` | The documents of one docket, oldest first, with comment periods and Federal Register document numbers. Cursor paged. |
+| `get_rulemaking_rin` | Everything held for one RIN: Unified Agenda entry, OIRA reviews, dockets, Federal Register documents by role, CFR parts and related RINs. |
+| `list_rin_agenda` | The Unified Agenda edition history of one RIN, newest first, with `from` and `to` edition ids (`YYYYMM`). |
+| `list_rulemaking_committee_records` | Judicial Conference Rules Committee records (minutes, agenda books, reports, rules packages, comments), most recent first, filtered by `committee`, `docType`, `year`, `ruleSet`, `rule` and `docketId`. Drafting history, not law; comments and suggestions have title, filename and text withheld. Cursor paged. |
+| `get_rulemaking_committee_record` | One committee record with its comment dockets, Federal Rule links and a window of page text (`pageFrom`, `pageLimit`). Same withheld-text rule. |
+| `get_rulemaking_coverage` | What the rulemaking store holds per source, with a freshness verdict (free). |
 
 ### Utility
 
@@ -306,7 +326,7 @@ per-turn tool budget.
 
 | Prompt | What it encodes |
 |--------|-----------------|
-| `good_law_check(citation)` | `actStatus` vs `goodLawStatus` vs `amendmentHistory`, and why `unknown` means unchecked rather than current. |
+| `good_law_check(citation)` | `actStatus` vs `goodLawStatus` vs `amendmentHistory`, and why `unknown` means no currency verdict is asserted, which is different from out of date. |
 | `fifty_state_survey(topic, states)` | Check coverage first, so "no such law" and "not in our corpus" are never conflated. |
 | `whats_changed(since, corpus, state)` | Change capture is observation, not effect; an empty result is not "nothing was amended". |
 | `cite_check(text)` | Batch-resolve rather than looping, then verify the passage's claims against each section. |
@@ -342,6 +362,75 @@ one of them, so nothing under `/mcp` or `/s/` can expose an Indian tool and
 nothing under `/in/` can expose a US one. The mount path selects an app; it
 does not filter one, so there is no per-request check to get wrong. That also keeps an integrator's context window
 to the jurisdiction they actually work in.
+
+### Indian regulatory publications
+
+Circulars, orders, notices and press releases from named Indian regulators,
+captured from the publishers themselves. A **separate server on its own
+origin**, not a path on `mcp.vaquill.ai`:
+
+```
+https://reg-mcp.vaquill.ai/mcp            Authorization: Bearer vq_key_..., or sign in over OAuth
+https://reg-mcp.vaquill.ai/s/vq_key_...   key in the path, for clients that cannot send a header
+```
+
+Same API key and credit balance as the other endpoints. The key needs the
+single `reg:read` permission, which covers every tool and every publisher.
+
+| Tool | Description |
+|------|-------------|
+| `search_regulatory_documents` | Search by words and filters: publisher, source, document type, publication dates. Cursor paged. |
+| `get_regulatory_document` | One document by id, with the extracted text, the latest diff or every capture on request. |
+| `get_regulatory_document_file` | The archived original, returned as a file. |
+| `list_regulatory_changes` | What is new, changed or retracted since a time or cursor, in capture order. |
+| `get_regulatory_coverage` | What the corpus covers and how fresh each source is. |
+
+Capture began on 2026-08-23. An empty result for an earlier date does not mean
+nothing was published. Costs are appended to each description at startup from
+the live pricing table.
+
+**Why a subdomain.** OAuth only works at an origin root. Discovery
+(RFC 9728) is served from the origin's `/.well-known/*`, and a FastMCP app knows
+only its own path, so an app mounted under a prefix advertises the wrong
+`resource` URL and serves its document at the wrong location. Claude requires
+`resource` to match the URL the user typed, path included. That is why the
+India legislation endpoint above is bearer-only, and why this corpus is not
+mounted there.
+
+#### Running and deploying it
+
+It is the same package and the same `Dockerfile` as `mcp.vaquill.ai`, with a
+different entry point. It is deliberately not in `remote_main._MOUNTS`, which
+drives the live US and India connectors.
+
+```bash
+pip install "vaquill-mcp[remote]"
+PORT=8001 vaquill-mcp-regulatory            # or: python -m vaquill_mcp.regulatory_main
+curl localhost:8001/health                  # {"status":"ok",...,"corpus":"regulatory"}
+```
+
+To deploy, create a second application from this repository and build the
+existing `Dockerfile` with one build argument:
+
+```
+SERVER=vaquill-mcp-regulatory
+```
+
+Leaving it unset builds the `vaquill-mcp-remote` image exactly as before. Point
+the new host name at the application and set its own environment (the table
+under "Hosted server only" applies unchanged, with these differences):
+
+- `VAQUILL_PUBLIC_URL` is **this** origin, `https://reg-mcp.vaquill.ai`.
+- With OAuth on, register `https://reg-mcp.vaquill.ai/auth/callback` as a
+  second redirect URI on the upstream client. Give it its own
+  `VAQUILL_OAUTH_JWT_SIGNING_KEY` and its own Redis database or instance, so
+  the two deployments do not share OAuth state.
+- Without the `VAQUILL_OAUTH_*` group it serves bearer keys only.
+- `HOST` and `PORT` behave as above (`0.0.0.0` and `8000`).
+
+At startup it reads the India pricing matrix and logs a warning naming any of
+the five tools that has no price row; such a tool is published without a cost
+line rather than with a guessed one.
 
 ## Environment Variables
 

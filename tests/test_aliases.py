@@ -162,9 +162,15 @@ async def test_law_change_alert_tools_are_absent_from_the_us_catalogue(
     published = {tool.name for tool in await server.list_tools()}
     assert not (published & in_document), sorted(published & in_document)
     assert not [n for n in published if "watch" in n or "board" in n], sorted(published)
-    # 26 since 2026-10-14: 18, plus the seven US state session-law tools and
-    # extract_statute_citations.
-    assert len(published) == 26, sorted(published)
+    # 35 since 2026-11-03: 29, plus the six US rulemaking tools
+    # (get_rulemaking_docket, list_rulemaking_dockets, list_docket_documents,
+    # get_rulemaking_rin, list_rin_agenda, get_rulemaking_coverage).
+    # 29 on 2026-10-30 was 18, plus the seven US state session-law tools,
+    # extract_statute_citations, get_session_law_versions and the two CFR
+    # rulemaking tools (section and part).
+    # 37 since 2026-11-07: 35, plus list_rulemaking_committee_records and
+    # get_rulemaking_committee_record.
+    assert len(published) == 37, sorted(published)
 
 
 # ---------------------------------------------------------------------------

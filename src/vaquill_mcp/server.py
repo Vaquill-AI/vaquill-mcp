@@ -77,6 +77,16 @@ _FUNC_OVERRIDES: dict[str, str] = {
     "search_statutes": "search_us_statutes",
     "get_section": "get_us_statute_section",
     "get_section_body": "get_us_statute_section_text",
+    # The rulemaking handlers are named for their route, not for the question a
+    # model asks. The documents list is the documents OF A DOCKET, `by_rin`
+    # reads as a filter, and `get_rin_agenda_history` is a list.
+    "list_rulemaking_documents": "list_docket_documents",
+    "get_rulemaking_by_rin": "get_rulemaking_rin",
+    "get_rin_agenda_history": "list_rin_agenda",
+    # The Rules Committee records handlers carry no "rulemaking" in their name,
+    # so the tools are named for the family they sit in beside the dockets.
+    "list_committee_records": "list_rulemaking_committee_records",
+    "get_committee_record": "get_rulemaking_committee_record",
 }
 
 
@@ -103,7 +113,14 @@ def _derive_mcp_names(spec: dict) -> dict[str, str]:
         ]
         resource = segs[0] if segs else ""
         op_id = op.get("operationId")
-        if not op_id or "_api_v1_" not in op_id:
+        if not op_id:
+            continue
+        if "_api_v1_" not in op_id:
+            # The backend publishes the handler name itself as the operationId
+            # (no path or method suffix), so the semantic renames must still
+            # apply to it; any other marker-less id is used verbatim by FastMCP.
+            if op_id in _FUNC_OVERRIDES:
+                entries.append((op_id, resource, _FUNC_OVERRIDES[op_id]))
             continue
         func = op_id.split("_api_v1_", 1)[0]
         entries.append((op_id, resource, _FUNC_OVERRIDES.get(func, func)))

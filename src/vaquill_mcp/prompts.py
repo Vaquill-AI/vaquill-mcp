@@ -9,9 +9,9 @@ Each prompt below exists because the naive tool sequence produces a confidently
 wrong answer:
 
 * `good_law_check` -- because `excludeRepealed` and `actStatus` look like they
-  answer "is this still law" and do not. `goodLawStatus: unknown` means
-  unchecked, not current, and the distinction decides whether an answer is
-  safe to rely on.
+  answer "is this still law" and do not. `goodLawStatus: unknown` means no
+  currency verdict is asserted, which is neither current nor out of date, and
+  the distinction decides whether an answer is safe to rely on.
 * `whats_changed` -- because change capture is OBSERVATION. An empty result
   reads as "nothing was amended" and means "we recorded nothing".
 * `fifty_state_survey` -- because a state we do not hold and a state with no
@@ -120,15 +120,19 @@ Determine whether **{citation}** is still good law, using the Vaquill US corpus.
 2. `get_us_statute_section` on that `act_id`. Read THREE fields, which answer
    different questions and are routinely conflated:
    - `actStatus`: what the publisher says (`in_force`, `repealed`, ...).
-   - `goodLawStatus`: our verdict. `good_law` = checked. `unknown` = we hold no
-     trustworthy repeal signal for this jurisdiction.
+   - `goodLawStatus`: our verdict. `good_law` = checked. `unknown` = no currency
+     verdict is asserted for the section, which is different from out of date.
+     It is returned where a jurisdiction does not publish repeal information,
+     and for some corpora by design (attorney general opinions, register
+     notices, statute compilations). Annual editions (`cfr_annual`,
+     `usc_annual`) return `not_good_law` because a later edition supersedes them.
    - `amendmentHistory`: the publisher's own record of amendments.
 3. `get_section_changes` on the same `act_id` for what our refreshes OBSERVED.
 
 Then report, in this order:
 - whether it is in force, and **on whose authority** (publisher status vs our check);
-- if `goodLawStatus` is `unknown`, say plainly that we have not verified it
-  rather than implying it is current;
+- if `goodLawStatus` is `unknown`, say plainly that no currency verdict is
+  asserted for it, rather than implying it is current or out of date;
 - the most recent amendment, distinguishing the publisher's effective date from
   our observation date;
 - if the change list is empty, say we recorded no change. Do NOT say it was

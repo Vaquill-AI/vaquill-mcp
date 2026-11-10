@@ -5,6 +5,34 @@ All notable changes to `vaquill-mcp` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-10
+
+### Added
+
+- **A hosted server for the Indian regulatory corpus, on its own origin.**
+  `vaquill-mcp-regulatory` (`vaquill_mcp.regulatory_main`) serves the five
+  regulatory tools at the root of `https://reg-mcp.vaquill.ai`: `/mcp` for
+  a bearer key or OAuth, `/s/{api_key}` for clients that cannot send a header.
+
+  It is a subdomain and not a path on `mcp.vaquill.ai` because OAuth discovery is
+  served from the origin root: an app under a prefix advertises the wrong
+  `resource` URL, which is why India legislation is still bearer-only. It is a
+  separate process from `remote_main` so the live US and India connectors, and
+  the tool-count tests that protect them, are untouched.
+
+- **One Dockerfile builds both hosted servers.** `--build-arg
+  SERVER=vaquill-mcp-regulatory` selects the new one; the default is the
+  previous hard-coded `vaquill-mcp-remote`, so an unset argument builds what it
+  always did.
+
+- **Price lines on the five regulatory tools,** injected at startup from the
+  public pricing matrix (region `IN`) exactly as for the derived tools, never
+  typed into a description. A tool with no price row is named in a startup
+  warning and published without a line.
+
+- `server.json` lists the regulatory remote, with the API-key header optional
+  because OAuth is available at its origin root.
+
 ## [0.4.2] - 2026-11-06
 
 ### Changed

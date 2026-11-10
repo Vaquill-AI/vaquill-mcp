@@ -12,7 +12,7 @@ startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
-SCOPE: both jurisdictions. US (26 published tools: statutes, regulations,
+SCOPE: both jurisdictions. US (35 published tools: statutes, regulations,
 constitutions, court rules, agency guidance, state session laws and citation extraction) and
 India (22 published tools: Central and State Acts plus regulator
 instruments). Both counts include the
@@ -36,13 +36,18 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     # one, while the fixtures here still described the old shape. Until this,
     # every one of them shipped its raw multi-paragraph OpenAPI description
     # into every agent's context on every turn.
+    # Boolean counting added 2026-10-23 with the backend's `query` +
+    # `matchType: "boolean"` on /us/statutes/count. A natural-language query is
+    # still refused there (a ranked window has no total), so the description
+    # says which kind of query counts rather than that none does.
     "count_statute_sections": (
-        "Exact section count for a jurisdiction, corpus, code, title, chapter "
-        "or part. Use when sizing a job before walking divisions and fetching "
-        "sections. This counts a scope, not search matches. There is no query "
-        "parameter, because search ranks within a bounded window and cannot "
-        "give an exact total of matching sections. A zero count may indicate "
-        "a wrong filter. "
+        "Exact section count for a jurisdiction, corpus, code, title, chapter or "
+        "part, or the number of sections matching a Boolean expression (`query` "
+        "with matchType `boolean`, syntax as search_us_statutes). Use to size a job "
+        "before walking divisions or paging a Boolean search. A natural-language "
+        "question cannot be counted. `isExact` false means an upper bound (phrases, "
+        "proximity, or filters beyond corpusType, state and status). A zero count "
+        "may indicate a wrong filter. "
     ),
     "get_act_section": (
         "Metadata for one provision, including its citation, position in the "
@@ -166,13 +171,18 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     # ------------------------------------------------------------------
     # US statutes, regulations, constitutions and court rules
     # ------------------------------------------------------------------
+    # The Boolean operator summary lives on the `matchType` parameter and the
+    # paging contract on `offset`, because this string is capped at 500 chars
+    # (`test_descriptions_are_concise`). The 422/503 rule is here because it
+    # holds for every matchType, not only Boolean.
     "search_us_statutes": (
-        "Semantic + keyword search across US primary law: USC, CFR, and all 50 states' "
-        "statutes, regulations, constitutions and court rules. Use for any 'what does the "
-        "law say' question. Returns sections with citation, hierarchy and source links. "
-        "The returned act_id feeds every other statute tool; never hand-build one. To "
-        "look up a citation the user gave, prefer resolve_statute_citation. "
-        "`citationOutsideFilters` means the cited section exists but your filters exclude it."
+        "Search US federal and state statutes, regulations, constitutions and court "
+        "rules. Default ranks by meaning; matchType `boolean` returns only sections "
+        "satisfying a terms-and-connectors expression, pageable to the end. A result's "
+        "act_id feeds the other statute tools; never hand-build one. For a citation, "
+        "use resolve_statute_citation. `citationOutsideFilters`: the cited section "
+        "exists outside your filters. 422: change the request, never resend it "
+        "unchanged. 503: retry with backoff."
     ),
     "get_us_statute_section": (
         "Metadata for one US statute, regulation or rule section by act_id: citation, title "
@@ -184,7 +194,8 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "The full text of a US statute, regulation or rule section by act_id. Returns styled "
         "HTML (with cross-references and paragraph numbering as officially published) and "
         "plain text. Use when you need the actual statutory language to quote, draft against, "
-        "or analyze rather than just cite."
+        "or analyze rather than just cite. A section the publisher prints as images answers "
+        "`bodyUnavailable: true` with `image_only_source` and no text, and is not charged."
     ),
     "get_sections_batch": (
         "Metadata for up to 50 sections in one call, by a list of act_ids. Same fields as "
@@ -226,20 +237,27 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "Resolve a Bluebook citation string ('42 U.S.C. 1983', '16 C.F.R. 444.1', "
         "'Cal. Code Regs. tit. 22, 76227') to the exact section, confirmed, with an official "
         "source link and the act_id. Use this whenever the user gives you a citation rather "
-        "than a question -- it is far more reliable than searching for the citation text."
+        "than a question -- it is far more reliable than searching for the citation text. "
+        "`matchLevel` means `section` is NOT the exact unit cited. A shared acronym "
+        "(`G.S. 52-577`) is resolved: false until you pass `state`."
     ),
     "list_statute_divisions": (
-        "Walk the statutory hierarchy: list the child divisions (titles, chapters, parts, or "
-        "sections) under any level, in statutory order. Use to browse a code structurally when "
-        "you do not yet know the section number, or to enumerate everything under a chapter."
+        "Walk the statutory hierarchy: list the level directly below what you pass, in "
+        "statutory order. Which level that is depends on the code, so read `level` and each "
+        "node's `kind` and pass its `identifier` back as the filter that kind names, until "
+        "`isLeaf` is true and `actId` is set. One listing can mix kinds. `name` is null when "
+        "the publisher prints no heading. A filter that does not fit the corpus is a 422 "
+        "before any charge; an empty level is refunded; `nextCursor` means page on."
     ),
     "list_statutes_coverage": (
-        "Self-describing coverage matrix: every corpusType we hold and its per-jurisdiction "
-        "section counts. Use before answering a jurisdiction question to check whether we "
-        "actually cover that state and that body of law, so you can say so instead of "
-        "searching a corpus that does not exist. Pass state (a two-letter code, or "
-        "federal) to read one jurisdiction; the full matrix is about a megabyte."
+        "Coverage matrix: every corpusType we hold and its per-jurisdiction section "
+        "counts, split by recorded status in `statusBreakdown`. Use before answering a "
+        "jurisdiction question. A corpusType missing from `corpora` means no documents "
+        "of that type are held for it yet; counts show what is held, not completeness. "
+        "Pass state (a two-letter code, or federal) to read one jurisdiction; the full "
+        "matrix is about a megabyte."
     ),
+
     # ------------------------------------------------------------------
     # US state session laws (acts as enacted), added 2026-10-05. v1 is STATE
     # acts only: a federal `SAL_` id is a 404 pointing at the statutes tools.
@@ -294,6 +312,94 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "hasMore is true. detectedAt is when we recorded the change, never an "
         "effective date. State laws only. An empty page is still charged. Read a "
         "law from the feed with get_session_law or get_session_laws_batch."
+    ),
+    "get_session_law_versions": (
+        "Every version of one STATE session law that we served or adopted, newest "
+        "first, and which is current. A law's text can be corrected after it is "
+        "first served, so the version read yesterday may not be the one a plain "
+        "body call returns today. Lists when each was recorded, its length, hash "
+        "and how the text was taken; carries no text. Read one version with "
+        "get_session_law_body and its `version`. Takes an id, not a citation. "
+        "Charged once per call; a law with a single version still answers."
+    ),
+    "get_section_rulemaking": (
+        "The Federal Register documents behind one CFR section, from the section's "
+        "printed source note and from eCFR amendment dates. `matchBasis` says which "
+        "signal matched and `quality` is `verified` only when both agree; a "
+        "`candidate` is a lead, not a finding. `noteIsStale` means eCFR records an "
+        "amendment newer than the note prints. Read `coverage` before treating a "
+        "missing document as absent. A document with one valid RIN carries "
+        "`rulemakingUrl`, a pointer to get_rulemaking_rin. CFR sections only."
+    ),
+    "get_part_rulemaking": (
+        "Every Federal Register rule, proposed rule and notice whose CFR references "
+        "include one title and part, newest first. The window is bounded to the "
+        "`years` most recent publication years (default 5, max 12), and `coverage` "
+        "says when a year was truncated. Use get_section_rulemaking for one "
+        "section, and get_rulemaking_rin for the whole rulemaking behind a RIN."
+    ),
+    "get_rulemaking_docket": (
+        "One Regulations.gov docket, rulemaking or non-rulemaking: agency, type, "
+        "title, abstract, the RIN when the agency entered one, when it was last "
+        "modified, how many documents we hold and of which types, and the comment "
+        "count when we measured it (null means not measured, never zero). Current "
+        "state only; no comment text. Takes a docket_id such as EPA-HQ-OAR-2021-0208. "
+        "An unknown docket is a 404 and is refunded. Read the "
+        "documents with list_docket_documents."
+    ),
+    "list_rulemaking_dockets": (
+        "List and filter Regulations.gov dockets, most recently modified first, by "
+        "agencyId, docketType (Rulemaking or Nonrulemaking), rin, hasRin and a "
+        "modifiedSince/modifiedUntil window. Charged per page; an empty page "
+        "is still charged. nextCursor is bound to the filters that produced it, so "
+        "pass it back with the same filters. Read one with get_rulemaking_docket."
+    ),
+    "list_docket_documents": (
+        "The documents of one Regulations.gov docket, oldest first: the proposal, "
+        "notices, final rule and supporting material, with comment periods and "
+        "Federal Register document numbers. Metadata only, no document text and no "
+        "comments. Filter by documentType, openForComment and a postedFrom/postedTo "
+        "window. Charged per page; an unknown docket is a 404 and is refunded."
+    ),
+    "get_rulemaking_rin": (
+        "Everything we hold for one Regulation Identifier Number (NNNN-AANN, such "
+        "as 2060-AV16): the latest Unified Agenda entry, OIRA reviews, "
+        "Regulations.gov dockets, Federal Register documents by role (proposed, "
+        "final, correction), CFR parts, public laws and related RINs, each link "
+        "with its basis and quality. An ambiguous link carries no pick. `coverage` "
+        "lists what we do not hold. An unknown RIN is a 404 and is refunded. For "
+        "edition history use list_rin_agenda."
+    ),
+    "list_rin_agenda": (
+        "The Unified Agenda history of one RIN: one entry per edition that carried "
+        "it (Fall 1995 onward), newest first, each with the stage, priority and "
+        "timetable the agency printed in that edition. Narrow with from and to "
+        "(edition ids YYYYMM, such as 202510). Charged per page; a RIN no "
+        "edition carries is a 404 and is refunded. Use get_rulemaking_rin for the "
+        "linked dockets and Federal Register documents."
+    ),
+    "list_rulemaking_committee_records": (
+        "List Judicial Conference Rules Committee records (minutes, agenda books, "
+        "reports, rules packages, comments), newest first. Filter by committee, "
+        "docType, year, ruleSet, rule (needs ruleSet) and docketId. Drafting "
+        "history, not law. Public comments and suggestions (textWithheld: true) "
+        "withhold title, filename, sourceUrl, itemUrl and text: they name private "
+        "people. Charged per page; an empty page is refunded. "
+        "Read one with get_rulemaking_committee_record."
+    ),
+    "get_rulemaking_committee_record": (
+        "One Rules Committee record by recordId (rcr_ plus 24 hex): its comment "
+        "dockets, linked Federal Rules (method, confidence) and a window of page "
+        "text (pageFrom, pageLimit; nextPage continues). Drafting history, not law. "
+        "quality needs_ocr: no text yet; quality blank: really empty. Comments and "
+        "suggestions (textWithheld: true) withhold title, filename, URLs and text. "
+        "An unknown record is a refunded 404."
+    ),
+    "get_rulemaking_coverage": (
+        "What the rulemaking store holds, per source: row counts, newest change, "
+        "last successful refresh and a freshness verdict (ok, stale or unmeasured), "
+        "the Unified Agenda editions held, and what is not included and why. "
+        "Read it before treating a missing docket or RIN as absent."
     ),
     "get_section_enactments": (
         "The state session laws that a publisher's own 'sections affected' "
@@ -365,13 +471,13 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "discount."
     ),
     "extract_statute_citations": (
-        "Paste text (a brief, memo or model answer) and get every distinct US "
-        "statute, regulation, court rule and constitution citation in it, each "
-        "resolved to its section with act_id and official source. Case citations "
-        "are not extracted. Extraction is measured, not perfect, so a citation "
-        "can be missed; `resolved` is what we verified. resolve=false lists the "
-        "citations without charge. Pass state for citations that name no "
-        "jurisdiction. Up to 200,000 characters, never stored."
+        "Paste text (a brief, memo or answer) and get each distinct US statute, "
+        "regulation, court rule and constitution citation, resolved to its "
+        "section. Not case citations; extraction can miss one. Extraction is "
+        "free (resolve=false); each distinct citation resolved is charged. Rows "
+        "carry charStart/charEnd, rangeRole/rangePartner (range ends are two "
+        "charged rows; `interior` rows are never charged) and counts."
+        "distinctSections. Up to 200,000 characters, never stored."
     ),
 }
 
@@ -426,6 +532,13 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # to 513 characters and no curated entry, riding in every agent's context on
     # every turn. Each keeps the one fact a CALLER cannot guess and drops the
     # background; the API reference is the right place for the long version.
+    # Added 2026-11-03 when the fixtures were refreshed and the backend's `full`
+    # switch (response bounds) appeared on the section metadata route.
+    ("get_us_statute_section", "full"): (
+        "Return every list entry and the whole `history` credit line. By default "
+        "lists are capped at 50 items and `history` at 4,000 characters, and "
+        "`responseBounds` reports each cut with its total. No extra charge."
+    ),
     ("count_statute_sections", "excludeRepealed"): (
         "Only sections with an affirmatively dead status are excluded. "
         "Sections with no recorded status are kept. US Code uses a stored "
@@ -438,6 +551,33 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ("list_statutes_coverage", "state"): (
         "One jurisdiction: a two-letter state code or `federal`. Omit for every "
         "jurisdiction (about a megabyte)."
+    ),
+    # Added 2026-11-07 when the fixtures were refreshed: five backend descriptions
+    # grew past the budget (pagination, refund and session-matching rules).
+    ("extract_statute_citations", "includeUnresolved"): (
+        "`false` drops rows that were sent to the resolver and did not resolve; rows "
+        "with `skipped` set are always kept. `counts` and the charge are unchanged. "
+        "Ignored when `resolve` is false."
+    ),
+    ("get_section_changes", "sinceId"): (
+        "Return only changes with an `id` greater than this, to poll forward. Implies "
+        "`order=asc`. Ids only grow, so this is exact; carry the response `cursor` "
+        "forward."
+    ),
+    ("list_session_laws", "order"): (
+        "`asc` (default) sorts by session code, then law id; `desc` is the exact "
+        "reverse (newest session first). Law ids sort as text. Keep the same `order` "
+        "across pages: changing it with a cursor is a 422."
+    ),
+    ("search_session_laws", "session"): (
+        "One session, by the code `session.code` reports (`2025R`, `2025S1`). "
+        "Case-sensitive. Applies to every kind of match, so a narrow session can leave "
+        "fewer than `limit` laws on a page."
+    ),
+    ("search_us_statutes", "excerptChars"): (
+        "Characters of matching text in each `excerpt`, 100 to 600 (default 500). A "
+        "ranking preview, not the section: use `includeBody` or "
+        "`get_us_statute_section_text` for the full text."
     ),
     ("get_act_amendments", "type"): (
         "Action classes are returned in nominal form, but filters accept "
@@ -504,11 +644,21 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     # long version; each one below keeps the fact a CALLER cannot guess and drops
     # the rest.
     ("get_us_statute_section_text", "asOf"): (
-        "Text as it stood on this date (`YYYY-MM-DD`), same cost. A "
-        "RECONSTRUCTION from observed changes, not an archive: read the response's "
-        "`asOf.isBounded` before citing it, since false means the answer is "
-        "limited by when capture began, not by the law. A section we cannot "
-        'rebuild returns `source: "unavailable"` and is refunded.'
+        "Text as it stood on this date (`YYYY-MM-DD`), same cost. Read `asOf.engine` "
+        "first. `observed_change` is a RECONSTRUCTION from observed changes, not an "
+        "archive: `asOf.isBounded` true means no change affecting the date was observed, "
+        "limited by when capture began, not by the law. `stored_edition` (U.S. Code, "
+        "CFR_ANNUAL, Copyright Compendium, OFAC FAQs) is a held published edition, and "
+        "there `isBounded` true means the date is inside one; the U.S. Code holds two "
+        "dates, so most are out of coverage. A section we cannot rebuild, or a date no "
+        'held edition governs, returns `source: "unavailable"` with no text and is refunded.'
+    ),
+    ("get_us_statute_section_text", "pinpoint"): (
+        "Return one subsection in `pinpoint` beside the whole body. Parenthesised "
+        "labels, outermost first, without the section number: `(c)`, `(c)(1)`, "
+        "`(d-1)`. Same cost. Malformed, or sent with `asOf`, is an uncharged 422. "
+        "Read `pinpoint.matched`: a missing subsection is `matched: false`, never "
+        "the whole section."
     ),
     ("get_us_statute_section_text", "format"): (
         "Which representations to return. `both` (default) is `html` + `plain`, the "
@@ -528,9 +678,39 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     ("list_statute_divisions", "article"): (
         "Article to drill into: a constitution's article or amendment (`Article III`, "
-        "`Amendment XIV`), or the article of a state code divided by article rather "
-        "than chapter (New York). Pass the `identifier` exactly as the listing "
-        "returned it."
+        "`Amendment XIV`), or any state-code node with `kind: article` (New York's "
+        "codes, Delaware's UCC articles outside a chapter). Can be combined with "
+        "`chapter`. Pass the `identifier` exactly as the listing returned it."
+    ),
+    ("list_statute_divisions", "code"): (
+        "Code to drill into, from a node with `kind: code`: a state code (`tx_pe`), a "
+        "federal rule set (`frcp`), or a state court rule set (`SCR61`, with "
+        "`corpusType=STATE_RULES` and `state`)."
+    ),
+    ("list_statute_divisions", "subchapter"): (
+        "Subchapter to list, from a node with `kind: subchapter`: a U.S. Code "
+        "subchapter (with `titleNumber` and `chapter`) or a state or court-rule "
+        "subchapter (with `code`). Case-insensitive."
+    ),
+    ("list_statute_divisions", "act"): (
+        "State codes and court rules only: the act to list, from a node with `kind: act` (an "
+        "Illinois act inside an ILCS chapter, a Pennsylvania unconsolidated act). "
+        "Needs `code`."
+    ),
+    ("list_statute_divisions", "division"): (
+        "Division to list, from a node with `kind: division`: a U.S. Code division "
+        "(Title 54, 42 U.S.C. ch. 157; needs `titleNumber`) or a state or regulation "
+        "code division (California; needs `code` and the levels above it)."
+    ),
+    ("list_statute_divisions", "part"): (
+        "Part to drill into, from a node with `kind: part`: a CFR part, a U.S. Code "
+        "part (needs `titleNumber`), or a part of a state code or court rule set "
+        "(needs `code`). Pass the `identifier` exactly as the listing returned it."
+    ),
+    ("list_statute_divisions", "subtitle"): (
+        "Subtitle to list, from a node with `kind: subtitle`: a U.S. Code subtitle "
+        "(needs `titleNumber`) or a state code subtitle (needs `code` and the `title` "
+        "it sits in)."
     ),
     ("search_us_statutes", "article"): (
         "Article label(s) to scope to, exactly as `list_statute_divisions` returns "
@@ -561,6 +741,13 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "call. Rows with no text are not charged, so read `creditsConsumed`. "
         "Prefer this over a bigger `excerptChars`: an excerpt is windowed around "
         "the match and can start mid-section, so it is not safe to quote."
+    ),
+    ("search_us_statutes", "includePinpoint"): (
+        "Name the subsection each hit matched, in `pinpoints` keyed by `actId` (e.g. "
+        "`625 ILCS 5/11-601(c)(1)`, with its text and offsets). Free: the price and "
+        "the results do not change, and it never fails the search. A hit it cannot "
+        "name says why in `reason`; `located: false` means your words did not point "
+        "at a subsection. Adds a few hundred ms per page."
     ),
     # --- search_us_statutes: 19,242 bytes, 38% of the whole US catalogue -----
     ("search_us_statutes", "source"): (
@@ -595,7 +782,11 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "(courts of appeals' circuit rules). Pair with `state`: "
         "`STATE`, `REGULATION`, `STATE_RULES`, `STATE_CONSTITUTION`, "
         "`STATE_AGENCY_GUIDANCE`, `STATE_AG_OPINION`, `STATE_REGISTER` "
-        "(register notices as printed, not codified law). Omit for all."
+        "(register notices as printed, not codified law). Omit for all. "
+        "Currency: attorney general opinions (`STATE_AG_OPINION`), register notices "
+        "(`STATE_REGISTER`) and statute compilations (`STATUTE_COMPILATION`) return "
+        "`goodLawStatus` `unknown` by design. Annual editions (`CFR_ANNUAL`, "
+        "`USC_ANNUAL`) return `not_good_law` because a later edition supersedes them."
     ),
     ("search_us_statutes", "changedSince"): (
         "Only sections we OBSERVED changing on or after this date (`YYYY-MM-DD`). "
@@ -608,7 +799,7 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "renumbered, transferred, expired, superseded, omitted, and the rest). "
         "Removes what we KNOW is dead; it does not promise the remainder is good "
         "law. Read `goodLawStatus` per result to tell them apart: `good_law` is "
-        "checked, `unknown` is unchecked."
+        "checked, `unknown` means no currency verdict is asserted."
     ),
     ("search_us_statutes", "actStatus"): (
         "Positively scope to raw publisher statuses: `repealed` for dead law only, "
@@ -625,12 +816,38 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "`U.S. Const.`): a state filter excludes federal law. Never carry a state over "
         "from an earlier question."
     ),
+    # 🔴 Longer than the budget on purpose (see `uncurated_overruns`): this is
+    # the ONE place a model reads the Boolean syntax, and each clause below is a
+    # mistake that otherwise costs a wrong result set rather than an error. A
+    # space making a phrase, lowercase connectors being words, and legal-service
+    # precedence (OR tightest) all differ from what a model assumes by default.
+    # The full grammar is in the `vaquill://guide` resource, which costs nothing
+    # per turn; this keeps what a first call needs to be right.
     ("search_us_statutes", "matchType"): (
-        "`any` (default) is hybrid semantic + keyword ranking, for natural-language "
-        "questions. `all` requires every query term; `phrase` matches an exact "
-        "phrase, for a defined term. To pull up one section from a citation, use "
-        "resolve_statute_citation. A citation passed as the query ranks first only "
-        "when it is inside your other filters."
+        "`any` (default) ranks by meaning, for a question. `all`: every word; "
+        "`phrase`: the words in order. `boolean`: `query` is a terms-and-connectors "
+        "expression and ONLY sections satisfying it return, ranked; use it for exact "
+        "logic (alternatives, exclusions, proximity, word forms), not for a question "
+        "or a citation. Operators are UPPERCASE: `AND` `OR` `NOT`, `/s` same "
+        "sentence, `/p` same paragraph, `/5` within 5 words (`+s` `+p` `+5`: left "
+        'term first), `"exact phrase"`, `retaliat*` (3+ characters first, at most '
+        "20), `wom?n`, `atleast3(term)`, `( )`. Adjacent bare words are a PHRASE, "
+        "so write `AND`; lowercase and/or/not are words; no stemming. OR binds "
+        "tightest, then /N, /s, /p, AND, NOT: parenthesize. Check `parsedQuery`, "
+        "and fix what `queryWarnings` names. A 422 is free and names the error and "
+        "position, or says the expression is too heavy to verify: narrow "
+        "`state`/`corpusType` or use fewer /s /p. Empty means no match in scope; "
+        "loosen before calling it absent."
+    ),
+    ("search_us_statutes", "query"): (
+        "A natural-language question or a citation; with matchType `boolean`, an "
+        'expression such as `"security deposit" /s (return OR refund) NOT '
+        "commercial`. 2 to 500 characters."
+    ),
+    ("count_statute_sections", "query"): (
+        "A Boolean expression to count, with matchType `boolean` (syntax as on "
+        "search_us_statutes). Omit to count the whole scope. A natural-language "
+        "question cannot be counted: rank it with search_us_statutes."
     ),
     ("search_us_statutes", "code"): (
         "Restrict to specific state statutory codes, e.g. `tx_pe` for the Texas Penal "
@@ -665,10 +882,15 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "counterpart to `chapter`: pass a hit's `parent.part` back. Pair with "
         "`titleNumber`; an unpaired part is rejected."
     ),
+    # Two paging contracts behind one parameter since 2026-10-23: a ranked
+    # search stops at 70, a Boolean one pages to the end of the matches.
     ("search_us_statutes", "offset"): (
-        "How many results to skip, for paging. Every page of a query is cut from one "
-        "ranking, so results never repeat or go missing between pages. The deepest "
-        "reachable result is `offset` + `limit`; check `hasMore`."
+        "Results to skip. Pages never repeat or drop a result. Ranked modes stop at "
+        "70. `boolean` pages to the end (up to 10,000): send the response's "
+        "`nextOffset` until it is absent and `hasMore` is false; never compute it, "
+        "as a page can hold fewer rows than `limit`. `totalMatches` counts every "
+        "match across pages: exact when `totalMatchesExact` is true, an upper bound "
+        "when false."
     ),
     # --- batch inputs --------------------------------------------------------
     ("get_sections_batch", "actIds"): (
@@ -715,6 +937,55 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "A state session law id, e.g. `SSL_MN_2025R_G_Y2025_C1`, from "
         "list_session_laws or get_session_law. Pass the id, not a citation: "
         "resolve a citation with get_session_law first. Federal `SAL_` ids 404."
+    ),
+    ("get_session_law_versions", "session_law_id"): (
+        "A state session law id, e.g. `SSL_MN_2025S1_G_Y2025_C1`, from "
+        "list_session_laws or get_session_law. Pass the id, not a citation: "
+        "resolve a citation with get_session_law first. Federal `SAL_` ids 404."
+    ),
+    ("get_session_law_body", "version"): (
+        "Read this version of the text instead of the current one: a `version` "
+        "from get_session_law_versions. Omit for the current version. A cursor "
+        "belongs to its version (a 409 on another), an unlisted number is a "
+        "refunded 404 and a value below 1 is a 422. A withheld law's older "
+        "version needs `includeUnverified=true`, as its current text does."
+    ),
+    ("get_session_law_body", "includeUnverified"): (
+        "Opt in to the text of a law we hold but do not serve (`textStatus: "
+        "withheld`). Default `false`: it answers `available: false`. With `true` "
+        "the text is returned when the reason is one we can label, and every page "
+        "carries `textReliability`, `reasonCode` and a `notice` to show beside it: "
+        "the text MAY show deleted or vetoed law as enacted. A law whose licence "
+        "bars use, or whose text failed validation, is never served."
+    ),
+    ("search_session_laws", "includeUnverified"): (
+        "Opt in to results for laws we hold but do not serve for their text "
+        "(`textStatus: withheld`). Default `false` leaves them out. With `true` "
+        "they are returned and each carries `textReliability`, `reasonCode` and a "
+        "`notice`; the text MAY show deleted or vetoed law as enacted. A law "
+        "whose licence bars use is never returned."
+    ),
+    ("list_statute_divisions", "chapter"): (
+        "Chapter to drill into (USC, CFR and state codes), or the first level "
+        "inside a court rule set (`kind: chapter`; needs `code`). On CFR it lists "
+        "the chapter's parts and needs `titleNumber`; with `part` it is not needed."
+    ),
+    ("list_statute_divisions", "subpart"): (
+        "Subpart to list (`kind: subpart`): a U.S. Code or CFR subpart (needs "
+        "`part` and `titleNumber`), or a state regulation subpart such as "
+        "Louisiana's or Mississippi's (needs `code` and the `part`). "
+        "Case-insensitive."
+    ),
+    ("list_statute_divisions", "subjectGroup"): (
+        "CFR only: the subject group to list (`kind: subjectGroup`), as the "
+        "heading the listing returned or its eCFR id (`ECFR` and 15 hex digits), "
+        "which needs no `subpart`. Needs `titleNumber` and `part`. "
+        "Case-insensitive."
+    ),
+    ("list_statute_divisions", "agency"): (
+        "State regulations only: the agency to list (`kind: agency`), as a listing "
+        "returned it, e.g. Maine `144`. A chapter number repeats under different "
+        "agencies, so name the agency to open the right chapter. Needs `code`."
     ),
     ("get_session_law", "jurisdiction"): (
         "Optional two-letter state code, `dc` or `pr`, used only when a citation "
@@ -862,6 +1133,11 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
 # identical 340-character description on seven tools, so a single entry collapses
 # all seven and cannot drift between them. A tool-scoped entry above wins.
 PARAM_DESCRIPTIONS: dict[str, str] = {
+    "Idempotency-Key": (
+        "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry "
+        "with the same key and request replays the original 2xx for 24 hours "
+        "without charging again; the same key with a different request is rejected."
+    ),
     "act_id": (
         "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section "
         "1983, written 42 U.S.C. 1983). Take it from a search result rather than "
@@ -912,6 +1188,17 @@ TOOL_TITLES: dict[str, str] = {
     "get_session_laws_batch": "State Session Laws (Batch)",
     "search_session_laws": "Search State Session Laws",
     "get_session_law_changes": "Session Law Change Feed",
+    "get_session_law_versions": "State Session Law Versions",
+    "get_section_rulemaking": "Federal Register Documents for a CFR Section",
+    "get_part_rulemaking": "Federal Register Documents for a CFR Part",
+    "get_rulemaking_docket": "Regulations.gov Docket",
+    "list_rulemaking_dockets": "Regulations.gov Dockets",
+    "list_docket_documents": "Documents in a Docket",
+    "list_rulemaking_committee_records": "Rules Committee Records",
+    "get_rulemaking_committee_record": "Rules Committee Record",
+    "get_rulemaking_rin": "Rulemaking by RIN",
+    "list_rin_agenda": "Unified Agenda History of a RIN",
+    "get_rulemaking_coverage": "Rulemaking Coverage",
     "get_section_enactments": "Session Laws Affecting a Section",
     "extract_statute_citations": "Extract Citations from Text",
     # --- US: sizing and account ---------------------------------------------

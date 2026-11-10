@@ -139,9 +139,15 @@ async def test_the_hosted_us_app_publishes_no_alert_tools(_live_api: None) -> No
     us = {t.name for t in await create_remote_server("US").list_tools()}
     india = {t.name for t in await create_remote_server("IN").list_tools()}
     assert not [n for n in us if "watch" in n or "board" in n], sorted(us)
-    # 26 since 2026-10-14: 18, plus the seven US state session-law tools and
-    # extract_statute_citations.
-    assert len(us) == 26, sorted(us)
+    # 35 since 2026-11-03: 29, plus the six US rulemaking tools
+    # (get_rulemaking_docket, list_rulemaking_dockets, list_docket_documents,
+    # get_rulemaking_rin, list_rin_agenda, get_rulemaking_coverage).
+    # 29 on 2026-10-30 was 18, plus the seven US state session-law tools,
+    # extract_statute_citations, get_session_law_versions and the two CFR
+    # rulemaking tools (section and part).
+    # 37 since 2026-11-07: 35, plus list_rulemaking_committee_records and
+    # get_rulemaking_committee_record.
+    assert len(us) == 37, sorted(us)
     assert len(india) == 22, sorted(india)
 
 

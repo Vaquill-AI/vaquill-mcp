@@ -319,6 +319,138 @@
         "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
+    },
+    "get_session_law_versions": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the recorded versions of a state session law and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_section_rulemaking": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the Federal Register documents linked to a CFR section and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_part_rulemaking": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the Federal Register documents that reference a CFR part and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_rulemaking_docket": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one Regulations.gov docket record and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_rulemaking_dockets": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists Regulations.gov docket records and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_rulemaking_committee_records": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists Judicial Conference Rules Committee records and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_rulemaking_committee_record": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one Judicial Conference Rules Committee record and its page text and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_docket_documents": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the document metadata of one Regulations.gov docket and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_rulemaking_rin": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the rulemaking records held for one Regulation Identifier Number and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_rin_agenda": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the Unified Agenda editions that carried one RIN and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_rulemaking_coverage": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns what the rulemaking store holds and does not modify any record.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
     }
   },
   "test_cases": [

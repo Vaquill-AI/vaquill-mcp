@@ -798,3 +798,63 @@ async def test_a_400_message_naming_the_exact_bearer_is_dropped_whole(respx_mock
         await create_regulatory_server(client).call_tool("get_regulatory_coverage", {})
     assert odd not in str(info.value)
     assert "request was not accepted" in str(info.value)
+
+
+# ---------------------------------------------------------------------------
+# The parameter schema must not depend on the interpreter
+# ---------------------------------------------------------------------------
+
+
+async def test_every_optional_parameter_publishes_its_description_at_the_top() -> None:
+    """A client reads `properties.<p>.description`, so it has to BE there.
+
+    On Python 3.10, fastmcp renders `Annotated[T | None, Field(description=...)]`
+    as `anyOf[{anyOf[T, null], description}, null]`: one level deeper than on
+    3.11+. Measured 2026-11-10 on ONE fastmcp (4.0.1) across two interpreters,
+    so it is the interpreter, not the library, and no annotation spelling
+    avoided it (`Optional[...]` and `json_schema_extra` were both tried and both
+    double-wrap). Unflattened, every optional parameter on 3.10 publishes NO
+    description where a model looks for one, and the list-of-enum parameters
+    bury their allowed values two `anyOf` levels down. That is the whole point
+    of this file, made version-dependent, and it reached CI as a snapshot
+    failure on the py3.10 leg while 3.11, 3.12 and 3.13 passed.
+    """
+    for tool in await _server().list_tools():
+        props = tool.parameters.get("properties", {})
+        for name, prop in props.items():
+            if "anyOf" not in prop:
+                continue
+            assert "description" in prop, f"{tool.name}.{name} has no top-level description"
+            for branch in prop["anyOf"]:
+                assert "anyOf" not in branch, (
+                    f"{tool.name}.{name} is still double-wrapped: {branch}"
+                )
+
+
+def test_the_flattener_is_what_makes_that_true_on_310() -> None:
+    """Guards the test above from passing vacuously on a newer interpreter.
+
+    On 3.11+ the shape is already flat, so the assertions would hold with the
+    flattener deleted. This one feeds it the 3.10 shape directly and requires it
+    to both report a change and produce the flat one, on every version.
+    """
+    doubled = {
+        "properties": {
+            "p": {
+                "anyOf": [
+                    {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "D"},
+                    {"type": "null"},
+                ],
+                "default": None,
+            }
+        }
+    }
+    assert regulatory._flatten_optional(doubled) is True
+    assert doubled["properties"]["p"] == {
+        "anyOf": [{"type": "string"}, {"type": "null"}],
+        "default": None,
+        "description": "D",
+    }
+    # Already flat: nothing to do, and it must say so rather than re-wrap.
+    flat = {"properties": {"p": {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "D"}}}
+    assert regulatory._flatten_optional(flat) is False

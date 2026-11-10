@@ -3,7 +3,7 @@
   "name": "io.github.Vaquill-AI/vaquill-mcp",
   "title": "Vaquill",
   "description": "Search US and Indian statutes, regulations, constitutions, and court rules.",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "repository": {
     "url": "https://github.com/Vaquill-AI/vaquill-mcp",
     "source": "github"
@@ -30,6 +30,19 @@
           "name": "Authorization",
           "description": "Bearer token using a Vaquill API key. Format: 'Bearer vq_key_...'. Get a key at https://www.vaquill.ai/legal-api.",
           "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    },
+    {
+      "type": "streamable-http",
+      "url": "https://reg-mcp.vaquill.ai/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Optional. Leave unset to sign in with your Vaquill account over OAuth 2.1 (recommended; the server advertises discovery metadata). To use an API key instead, send 'Bearer vq_key_...'; the key needs the reg:read permission. Get a key at https://www.vaquill.ai/legal-api.",
+          "isRequired": false,
           "isSecret": true,
           "format": "string"
         }

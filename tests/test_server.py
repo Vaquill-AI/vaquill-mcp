@@ -451,6 +451,11 @@ class TestCostInjection:
             "/api/v1/us/statutes/section/{act_id}/cited-by": "/us/statutes/section/cited-by",
             "/api/v1/us/statutes/section/{act_id}/changes": "/us/statutes/section/changes",
             "/api/v1/credits/balance": "/credits/balance",
+            # The real route is /{session_law_id}/versions; the pricing row is
+            # /us/session-laws/versions (path parameter stripped).
+            "/api/v1/us/session-laws/{session_law_id}/versions": (
+                "/us/session-laws/versions"
+            ),
             "/api/v1/in/acts/{act_id}/sections/{section_number}/body": (
                 "/in/acts/sections/body"
             ),
@@ -751,3 +756,29 @@ class TestMainEntryPoint:
         from vaquill_mcp.__main__ import main
 
         assert callable(main)
+
+
+class TestExtractCitationsDescription:
+    def test_description_names_the_range_and_count_fields(self) -> None:
+        from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS
+
+        desc = TOOL_DESCRIPTIONS["extract_statute_citations"]
+        for field in (
+            "charStart",
+            "charEnd",
+            "rangeRole",
+            "rangePartner",
+            "interior",
+            "distinctSections",
+        ):
+            assert field in desc, field
+        assert not re.search(r"\d+\s*credit", desc, re.IGNORECASE)
+        assert "India" not in desc
+
+
+class TestSessionLawVersionsRouteIsPublished:
+    def test_versions_route_exists_and_joins_a_price_endpoint(self) -> None:
+        spec = _prod_spec()
+        paths = set(spec["paths"])
+        assert "/api/v1/us/session-laws/{session_law_id}/versions" in paths
+        assert not any(p.endswith("/session-laws/versions") for p in paths)

@@ -38,6 +38,15 @@ coverage.xml
 # Ruff
 .ruff_cache/
 
+# Internal working notes. This repo is PUBLIC, and these are go-to-market and
+# handoff documents: the ChatGPT submission runbook names an unlisted
+# verification state and a reviewer demo account configured without MFA. Kept on
+# disk for whoever is working the task, never published. Nothing under docs/ has
+# ever been tracked here, so this shadows no existing file; if a doc is ever
+# meant for the public repo, unignore that path deliberately rather than
+# loosening this line.
+docs/
+
 # OS
 .DS_Store
 Thumbs.db

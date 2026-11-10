@@ -195,6 +195,7 @@ async def test_prompts_do_not_inflate_the_tool_budget(
     # fixtures were finally refreshed to match the live document. US went
     # from 18 to 21 when the three state session-law tools shipped, and to 26
     # on 2026-10-14 with four more session-law tools and
-    # extract_statute_citations.
-    expected = 26 if jurisdiction == "US" else 22
+    # extract_statute_citations, and to 35 on 2026-11-03 with the six rulemaking tools.
+    # and to 37 on 2026-11-07 with the two Rules Committee records tools.
+    expected = 37 if jurisdiction == "US" else 22
     assert len(await server.list_tools()) == expected

@@ -47,23 +47,23 @@
           "type": {
             "anyOf": [
               {
+                "enum": [
+                  "substitution",
+                  "insertion",
+                  "omission",
+                  "renumbering",
+                  "addition",
+                  "repeal",
+                  "deletion",
+                  "adaptation",
+                  "amendment",
+                  "note"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "substitution",
-              "insertion",
-              "omission",
-              "renumbering",
-              "addition",
-              "repeal",
-              "deletion",
-              "adaptation",
-              "amendment",
-              "note"
             ],
             "examples": [
               "substitution"
@@ -557,18 +557,18 @@
           "category": {
             "anyOf": [
               {
+                "enum": [
+                  "central",
+                  "state",
+                  "regulatory",
+                  "repealed",
+                  "spent"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "central",
-              "state",
-              "regulatory",
-              "repealed",
-              "spent"
             ],
             "examples": [
               "central"
@@ -636,53 +636,53 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "andaman-and-nicobar-islands",
+                  "andaman-nicobar",
+                  "andhra-pradesh",
+                  "arunachal-pradesh",
+                  "assam",
+                  "bihar",
+                  "central",
+                  "chandigarh",
+                  "chhattisgarh",
+                  "dadra-and-nagar-haveli-and-daman-and-diu",
+                  "dadra-nagar-haveli",
+                  "delhi",
+                  "goa",
+                  "gujarat",
+                  "haryana",
+                  "himachal-pradesh",
+                  "jammu-and-kashmir",
+                  "jammu-kashmir",
+                  "jharkhand",
+                  "karnataka",
+                  "kerala",
+                  "ladakh",
+                  "lakshadweep",
+                  "madhya-pradesh",
+                  "maharashtra",
+                  "manipur",
+                  "meghalaya",
+                  "mizoram",
+                  "nagaland",
+                  "odisha",
+                  "puducherry",
+                  "punjab",
+                  "rajasthan",
+                  "sikkim",
+                  "tamil-nadu",
+                  "telangana",
+                  "tripura",
+                  "uttar-pradesh",
+                  "uttarakhand",
+                  "west-bengal"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "andaman-and-nicobar-islands",
-              "andaman-nicobar",
-              "andhra-pradesh",
-              "arunachal-pradesh",
-              "assam",
-              "bihar",
-              "central",
-              "chandigarh",
-              "chhattisgarh",
-              "dadra-and-nagar-haveli-and-daman-and-diu",
-              "dadra-nagar-haveli",
-              "delhi",
-              "goa",
-              "gujarat",
-              "haryana",
-              "himachal-pradesh",
-              "jammu-and-kashmir",
-              "jammu-kashmir",
-              "jharkhand",
-              "karnataka",
-              "kerala",
-              "ladakh",
-              "lakshadweep",
-              "madhya-pradesh",
-              "maharashtra",
-              "manipur",
-              "meghalaya",
-              "mizoram",
-              "nagaland",
-              "odisha",
-              "puducherry",
-              "punjab",
-              "rajasthan",
-              "sikkim",
-              "tamil-nadu",
-              "telangana",
-              "tripura",
-              "uttar-pradesh",
-              "uttarakhand",
-              "west-bengal"
             ],
             "examples": [
               "maharashtra"
@@ -691,17 +691,17 @@
           "status": {
             "anyOf": [
               {
+                "enum": [
+                  "in_force",
+                  "repealed",
+                  "superseded",
+                  "spent"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "in_force",
-              "repealed",
-              "superseded",
-              "spent"
             ],
             "examples": [
               "repealed"
@@ -770,53 +770,53 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "andaman-and-nicobar-islands",
+                  "andaman-nicobar",
+                  "andhra-pradesh",
+                  "arunachal-pradesh",
+                  "assam",
+                  "bihar",
+                  "central",
+                  "chandigarh",
+                  "chhattisgarh",
+                  "dadra-and-nagar-haveli-and-daman-and-diu",
+                  "dadra-nagar-haveli",
+                  "delhi",
+                  "goa",
+                  "gujarat",
+                  "haryana",
+                  "himachal-pradesh",
+                  "jammu-and-kashmir",
+                  "jammu-kashmir",
+                  "jharkhand",
+                  "karnataka",
+                  "kerala",
+                  "ladakh",
+                  "lakshadweep",
+                  "madhya-pradesh",
+                  "maharashtra",
+                  "manipur",
+                  "meghalaya",
+                  "mizoram",
+                  "nagaland",
+                  "odisha",
+                  "puducherry",
+                  "punjab",
+                  "rajasthan",
+                  "sikkim",
+                  "tamil-nadu",
+                  "telangana",
+                  "tripura",
+                  "uttar-pradesh",
+                  "uttarakhand",
+                  "west-bengal"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "andaman-and-nicobar-islands",
-              "andaman-nicobar",
-              "andhra-pradesh",
-              "arunachal-pradesh",
-              "assam",
-              "bihar",
-              "central",
-              "chandigarh",
-              "chhattisgarh",
-              "dadra-and-nagar-haveli-and-daman-and-diu",
-              "dadra-nagar-haveli",
-              "delhi",
-              "goa",
-              "gujarat",
-              "haryana",
-              "himachal-pradesh",
-              "jammu-and-kashmir",
-              "jammu-kashmir",
-              "jharkhand",
-              "karnataka",
-              "kerala",
-              "ladakh",
-              "lakshadweep",
-              "madhya-pradesh",
-              "maharashtra",
-              "manipur",
-              "meghalaya",
-              "mizoram",
-              "nagaland",
-              "odisha",
-              "puducherry",
-              "punjab",
-              "rajasthan",
-              "sikkim",
-              "tamil-nadu",
-              "telangana",
-              "tripura",
-              "uttar-pradesh",
-              "uttarakhand",
-              "west-bengal"
             ],
             "examples": [
               "maharashtra"
@@ -865,53 +865,53 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "andaman-and-nicobar-islands",
+                  "andaman-nicobar",
+                  "andhra-pradesh",
+                  "arunachal-pradesh",
+                  "assam",
+                  "bihar",
+                  "central",
+                  "chandigarh",
+                  "chhattisgarh",
+                  "dadra-and-nagar-haveli-and-daman-and-diu",
+                  "dadra-nagar-haveli",
+                  "delhi",
+                  "goa",
+                  "gujarat",
+                  "haryana",
+                  "himachal-pradesh",
+                  "jammu-and-kashmir",
+                  "jammu-kashmir",
+                  "jharkhand",
+                  "karnataka",
+                  "kerala",
+                  "ladakh",
+                  "lakshadweep",
+                  "madhya-pradesh",
+                  "maharashtra",
+                  "manipur",
+                  "meghalaya",
+                  "mizoram",
+                  "nagaland",
+                  "odisha",
+                  "puducherry",
+                  "punjab",
+                  "rajasthan",
+                  "sikkim",
+                  "tamil-nadu",
+                  "telangana",
+                  "tripura",
+                  "uttar-pradesh",
+                  "uttarakhand",
+                  "west-bengal"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "andaman-and-nicobar-islands",
-              "andaman-nicobar",
-              "andhra-pradesh",
-              "arunachal-pradesh",
-              "assam",
-              "bihar",
-              "central",
-              "chandigarh",
-              "chhattisgarh",
-              "dadra-and-nagar-haveli-and-daman-and-diu",
-              "dadra-nagar-haveli",
-              "delhi",
-              "goa",
-              "gujarat",
-              "haryana",
-              "himachal-pradesh",
-              "jammu-and-kashmir",
-              "jammu-kashmir",
-              "jharkhand",
-              "karnataka",
-              "kerala",
-              "ladakh",
-              "lakshadweep",
-              "madhya-pradesh",
-              "maharashtra",
-              "manipur",
-              "meghalaya",
-              "mizoram",
-              "nagaland",
-              "odisha",
-              "puducherry",
-              "punjab",
-              "rajasthan",
-              "sikkim",
-              "tamil-nadu",
-              "telangana",
-              "tripura",
-              "uttar-pradesh",
-              "uttarakhand",
-              "west-bengal"
             ],
             "examples": [
               "maharashtra"
@@ -932,10 +932,22 @@
           "actStatus": {
             "anyOf": [
               {
+                "enum": [
+                  "in_force",
+                  "repealed",
+                  "superseded",
+                  "spent"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "in_force",
+                    "repealed",
+                    "superseded",
+                    "spent"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -943,12 +955,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "in_force",
-              "repealed",
-              "superseded",
-              "spent"
             ],
             "examples": [
               "repealed"
@@ -970,18 +976,18 @@
           "category": {
             "anyOf": [
               {
+                "enum": [
+                  "central",
+                  "state",
+                  "regulatory",
+                  "repealed",
+                  "spent"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "central",
-              "state",
-              "regulatory",
-              "repealed",
-              "spent"
             ],
             "examples": [
               "central"
@@ -1023,10 +1029,42 @@
           "legalSubject": {
             "anyOf": [
               {
+                "enum": [
+                  "administrative_law",
+                  "banking_finance",
+                  "civil_procedure",
+                  "constitutional_law",
+                  "corporate_law",
+                  "criminal_law",
+                  "environmental_law",
+                  "family_law",
+                  "general",
+                  "information_technology",
+                  "intellectual_property",
+                  "labour_law",
+                  "property_law",
+                  "tax_law"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "administrative_law",
+                    "banking_finance",
+                    "civil_procedure",
+                    "constitutional_law",
+                    "corporate_law",
+                    "criminal_law",
+                    "environmental_law",
+                    "family_law",
+                    "general",
+                    "information_technology",
+                    "intellectual_property",
+                    "labour_law",
+                    "property_law",
+                    "tax_law"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -1034,22 +1072,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "administrative_law",
-              "banking_finance",
-              "civil_procedure",
-              "constitutional_law",
-              "corporate_law",
-              "criminal_law",
-              "environmental_law",
-              "family_law",
-              "general",
-              "information_technology",
-              "intellectual_property",
-              "labour_law",
-              "property_law",
-              "tax_law"
             ],
             "examples": [
               "tax_law"
@@ -1087,10 +1109,26 @@
           "provisionType": {
             "anyOf": [
               {
+                "enum": [
+                  "mandatory",
+                  "general",
+                  "prohibitory",
+                  "overriding",
+                  "discretionary",
+                  "declaratory"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "mandatory",
+                    "general",
+                    "prohibitory",
+                    "overriding",
+                    "discretionary",
+                    "declaratory"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -1098,14 +1136,6 @@
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "mandatory",
-              "general",
-              "prohibitory",
-              "overriding",
-              "discretionary",
-              "declaratory"
             ],
             "examples": [
               "mandatory"
@@ -1135,10 +1165,38 @@
           "sectionType": {
             "anyOf": [
               {
+                "enum": [
+                  "amendment_provision",
+                  "article",
+                  "body",
+                  "chapter_heading",
+                  "definition_clause",
+                  "definitions",
+                  "part_heading",
+                  "preamble",
+                  "schedule",
+                  "section",
+                  "short_title",
+                  "sub_section"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "amendment_provision",
+                    "article",
+                    "body",
+                    "chapter_heading",
+                    "definition_clause",
+                    "definitions",
+                    "part_heading",
+                    "preamble",
+                    "schedule",
+                    "section",
+                    "short_title",
+                    "sub_section"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -1147,20 +1205,6 @@
                 "type": "null"
               }
             ],
-            "enum": [
-              "amendment_provision",
-              "article",
-              "body",
-              "chapter_heading",
-              "definition_clause",
-              "definitions",
-              "part_heading",
-              "preamble",
-              "schedule",
-              "section",
-              "short_title",
-              "sub_section"
-            ],
             "examples": [
               "definitions"
             ]
@@ -1168,53 +1212,53 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "andaman-and-nicobar-islands",
+                  "andaman-nicobar",
+                  "andhra-pradesh",
+                  "arunachal-pradesh",
+                  "assam",
+                  "bihar",
+                  "central",
+                  "chandigarh",
+                  "chhattisgarh",
+                  "dadra-and-nagar-haveli-and-daman-and-diu",
+                  "dadra-nagar-haveli",
+                  "delhi",
+                  "goa",
+                  "gujarat",
+                  "haryana",
+                  "himachal-pradesh",
+                  "jammu-and-kashmir",
+                  "jammu-kashmir",
+                  "jharkhand",
+                  "karnataka",
+                  "kerala",
+                  "ladakh",
+                  "lakshadweep",
+                  "madhya-pradesh",
+                  "maharashtra",
+                  "manipur",
+                  "meghalaya",
+                  "mizoram",
+                  "nagaland",
+                  "odisha",
+                  "puducherry",
+                  "punjab",
+                  "rajasthan",
+                  "sikkim",
+                  "tamil-nadu",
+                  "telangana",
+                  "tripura",
+                  "uttar-pradesh",
+                  "uttarakhand",
+                  "west-bengal"
+                ],
                 "type": "string"
               },
               {
                 "type": "null"
               }
-            ],
-            "enum": [
-              "andaman-and-nicobar-islands",
-              "andaman-nicobar",
-              "andhra-pradesh",
-              "arunachal-pradesh",
-              "assam",
-              "bihar",
-              "central",
-              "chandigarh",
-              "chhattisgarh",
-              "dadra-and-nagar-haveli-and-daman-and-diu",
-              "dadra-nagar-haveli",
-              "delhi",
-              "goa",
-              "gujarat",
-              "haryana",
-              "himachal-pradesh",
-              "jammu-and-kashmir",
-              "jammu-kashmir",
-              "jharkhand",
-              "karnataka",
-              "kerala",
-              "ladakh",
-              "lakshadweep",
-              "madhya-pradesh",
-              "maharashtra",
-              "manipur",
-              "meghalaya",
-              "mizoram",
-              "nagaland",
-              "odisha",
-              "puducherry",
-              "punjab",
-              "rajasthan",
-              "sikkim",
-              "tamil-nadu",
-              "telangana",
-              "tripura",
-              "uttar-pradesh",
-              "uttarakhand",
-              "west-bengal"
             ],
             "examples": [
               "maharashtra"
@@ -1261,7 +1305,57 @@
   "US": {
     "count_statute_sections": {
       "inputSchema": {
+        "$defs": {
+          "CorpusType": {
+            "enum": [
+              "USC",
+              "CFR",
+              "STATE",
+              "CONSTITUTION",
+              "FEDERAL_RULES",
+              "FEDERAL_LOCAL_RULES",
+              "STATE_CONSTITUTION",
+              "STATE_RULES",
+              "EXECUTIVE_ACTION",
+              "REGULATION",
+              "FEDERAL_REGISTER",
+              "FEDERAL_REGISTER_NOTICE",
+              "AGENCY_GUIDANCE",
+              "SENTENCING_GUIDELINES",
+              "US_TAX_TREATY",
+              "US_TREATY",
+              "STATE_AGENCY_GUIDANCE",
+              "STATE_AG_OPINION",
+              "STATE_REGISTER",
+              "SESSION_LAW",
+              "STATUTE_COMPILATION",
+              "AGENCY_ADJUDICATION",
+              "CFR_ANNUAL",
+              "USC_ANNUAL",
+              "FEDERAL_BILL",
+              "FEDERAL_RULES_ANNUAL",
+              "FEDERAL_RULES_PROPOSED"
+            ],
+            "type": "string"
+          }
+        },
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "actStatus": {
             "anyOf": [
               {
@@ -1401,61 +1495,11 @@
           "corpusType": {
             "anyOf": [
               {
-                "enum": [
-                  "USC",
-                  "CFR",
-                  "STATE",
-                  "CONSTITUTION",
-                  "FEDERAL_RULES",
-                  "FEDERAL_LOCAL_RULES",
-                  "STATE_CONSTITUTION",
-                  "STATE_RULES",
-                  "EXECUTIVE_ACTION",
-                  "REGULATION",
-                  "FEDERAL_REGISTER",
-                  "FEDERAL_REGISTER_NOTICE",
-                  "AGENCY_GUIDANCE",
-                  "SENTENCING_GUIDELINES",
-                  "US_TAX_TREATY",
-                  "STATE_AGENCY_GUIDANCE",
-                  "STATE_AG_OPINION",
-                  "STATE_REGISTER",
-                  "SESSION_LAW",
-                  "STATUTE_COMPILATION",
-                  "AGENCY_ADJUDICATION",
-                  "CFR_ANNUAL",
-                  "USC_ANNUAL"
-                ],
-                "type": "string"
+                "$ref": "#/$defs/CorpusType"
               },
               {
                 "items": {
-                  "enum": [
-                    "USC",
-                    "CFR",
-                    "STATE",
-                    "CONSTITUTION",
-                    "FEDERAL_RULES",
-                    "FEDERAL_LOCAL_RULES",
-                    "STATE_CONSTITUTION",
-                    "STATE_RULES",
-                    "EXECUTIVE_ACTION",
-                    "REGULATION",
-                    "FEDERAL_REGISTER",
-                    "FEDERAL_REGISTER_NOTICE",
-                    "AGENCY_GUIDANCE",
-                    "SENTENCING_GUIDELINES",
-                    "US_TAX_TREATY",
-                    "STATE_AGENCY_GUIDANCE",
-                    "STATE_AG_OPINION",
-                    "STATE_REGISTER",
-                    "SESSION_LAW",
-                    "STATUTE_COMPILATION",
-                    "AGENCY_ADJUDICATION",
-                    "CFR_ANNUAL",
-                    "USC_ANNUAL"
-                  ],
-                  "type": "string"
+                  "$ref": "#/$defs/CorpusType"
                 },
                 "type": "array"
               },
@@ -1474,6 +1518,20 @@
             ],
             "type": "boolean"
           },
+          "matchType": {
+            "anyOf": [
+              {
+                "const": "boolean",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "boolean"
+            ]
+          },
           "part": {
             "anyOf": [
               {
@@ -1491,6 +1549,21 @@
             ],
             "examples": [
               "240"
+            ]
+          },
+          "query": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "retaliat! /s whistleblow!"
             ]
           },
           "state": {
@@ -1654,6 +1727,22 @@
     "extract_statute_citations": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "includeUnresolved": {
             "default": true,
             "examples": [
@@ -1765,6 +1854,58 @@
       "method": "GET",
       "path": "/api/v1/credits/balance"
     },
+    "get_part_rulemaking": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "part": {
+            "examples": [
+              "314"
+            ],
+            "maxLength": 20,
+            "minLength": 1,
+            "pattern": "^[0-9A-Za-z]+$",
+            "type": "string"
+          },
+          "title": {
+            "examples": [
+              21
+            ],
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "years": {
+            "default": 5,
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "title",
+          "part"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/part/{title}/{part}/rulemaking"
+    },
     "get_pricing": {
       "inputSchema": {
         "properties": {
@@ -1789,9 +1930,157 @@
       "method": "GET",
       "path": "/api/v1/api-credits/pricing"
     },
+    "get_rulemaking_committee_record": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "pageFrom": {
+            "default": 1,
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "pageLimit": {
+            "default": 50,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "record_id": {
+            "examples": [
+              "rcr_0123456789abcdef01234567"
+            ],
+            "maxLength": 28,
+            "minLength": 28,
+            "pattern": "^rcr_[0-9a-f]{24}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/committee-records/{record_id}"
+    },
+    "get_rulemaking_coverage": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/coverage"
+    },
+    "get_rulemaking_docket": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "docket_id": {
+            "examples": [
+              "EPA-HQ-OAR-2021-0208"
+            ],
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "docket_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/dockets/{docket_id}"
+    },
+    "get_rulemaking_rin": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "rin": {
+            "examples": [
+              "2060-AV16"
+            ],
+            "maxLength": 9,
+            "minLength": 9,
+            "pattern": "^[0-9]{4}[- ][A-Za-z]{2}[0-9]{2}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rin"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/rins/{rin}"
+    },
     "get_section_changes": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "CFR_T21_P314_S314_50"
@@ -1869,6 +2158,22 @@
     "get_section_cited_by": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "USC_T42_C21_S1983"
@@ -1885,6 +2190,15 @@
             "maximum": 100.0,
             "minimum": 1.0,
             "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              0
+            ],
+            "maximum": 5000.0,
+            "minimum": 0.0,
+            "type": "integer"
           }
         },
         "required": [
@@ -1898,6 +2212,22 @@
     "get_section_cross_state": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "USC_T42_C21_S1983"
@@ -1927,6 +2257,22 @@
     "get_section_definitions": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "USC_T42_C21_S1983"
@@ -1947,6 +2293,22 @@
     "get_section_enactments": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "STATE_MS_T27_C71_S27-71-5"
@@ -1967,6 +2329,22 @@
     "get_section_neighbors": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "USC_T42_C21_S1983"
@@ -1993,9 +2371,61 @@
       "method": "GET",
       "path": "/api/v1/us/statutes/section/{act_id}/related"
     },
+    "get_section_rulemaking": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "act_id": {
+            "examples": [
+              "CFR_T21_P314_S314_50"
+            ],
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/statutes/section/{act_id}/rulemaking"
+    },
     "get_sections_batch": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "actIds": {
             "examples": [
               [
@@ -2004,6 +2434,7 @@
               ]
             ],
             "items": {
+              "maxLength": 200,
               "type": "string"
             },
             "maxItems": 50,
@@ -2029,6 +2460,22 @@
     "get_session_law": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "jurisdiction": {
             "anyOf": [
               {
@@ -2120,6 +2567,22 @@
     "get_session_law_body": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "cursor": {
             "anyOf": [
               {
@@ -2148,6 +2611,13 @@
               "02693d5b55d4709bdd36fdccee4a9737d2655a3988a90daeb6b7c486ce50260b"
             ]
           },
+          "includeUnverified": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
           "session_law_id": {
             "examples": [
               "SSL_MN_2025S1_G_Y2025_C1"
@@ -2170,6 +2640,21 @@
             "examples": [
               29987
             ]
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              1
+            ]
           }
         },
         "required": [
@@ -2183,6 +2668,22 @@
     "get_session_law_changes": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "jurisdiction": {
             "anyOf": [
               {
@@ -2279,9 +2780,61 @@
       "method": "GET",
       "path": "/api/v1/us/session-laws/changes"
     },
+    "get_session_law_versions": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "session_law_id": {
+            "examples": [
+              "SSL_MN_2025S1_G_Y2025_C1"
+            ],
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_law_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/session-laws/{session_law_id}/versions"
+    },
     "get_session_laws_batch": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "ids": {
             "examples": [
               [
@@ -2387,6 +2940,22 @@
     "get_us_statute_section": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "USC_T42_C21_S1983"
@@ -2394,6 +2963,10 @@
             "maxLength": 200,
             "minLength": 3,
             "type": "string"
+          },
+          "full": {
+            "default": false,
+            "type": "boolean"
           }
         },
         "required": [
@@ -2407,6 +2980,22 @@
     "get_us_statute_section_text": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "CFR_T17_P240_S240_10b5_1"
@@ -2424,9 +3013,6 @@
               {
                 "type": "null"
               }
-            ],
-            "examples": [
-              "2026-01-15"
             ],
             "format": "date"
           },
@@ -2446,6 +3032,20 @@
             ],
             "type": "string"
           },
+          "pinpoint": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "(c)(1)"
+            ]
+          },
           "structured": {
             "default": false,
             "examples": [
@@ -2462,9 +3062,450 @@
       "method": "GET",
       "path": "/api/v1/us/statutes/section/{act_id}/body"
     },
+    "list_docket_documents": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "docket_id": {
+            "examples": [
+              "EPA-HQ-OAR-2021-0208"
+            ],
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+            "type": "string"
+          },
+          "documentType": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Proposed Rule"
+            ]
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "openForComment": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "postedFrom": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-01-01T00:00:00Z"
+            ]
+          },
+          "postedTo": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-07-01T00:00:00Z"
+            ]
+          }
+        },
+        "required": [
+          "docket_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/dockets/{docket_id}/documents"
+    },
+    "list_rin_agenda": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "from": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "default": 25,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "rin": {
+            "examples": [
+              "2060-AV16"
+            ],
+            "maxLength": 9,
+            "minLength": 9,
+            "pattern": "^[0-9]{4}[- ][A-Za-z]{2}[0-9]{2}$",
+            "type": "string"
+          },
+          "to": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "rin"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/rins/{rin}/agenda"
+    },
+    "list_rulemaking_committee_records": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "committee": {
+            "anyOf": [
+              {
+                "pattern": "^(Standing|Appellate|Bankruptcy|Civil|Criminal|Evidence|General)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "docType": {
+            "anyOf": [
+              {
+                "pattern": "^(meeting_minutes|agenda_books|committee_reports|rules_packages|preliminary_drafts|superseded_pamphlets|rules_comments|rules_suggestions|fjc_studies|past_members|special_projects|style_resources|transcripts_testimony|rules_comments_archive)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "docketId": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{1,4}(\\.[0-9]{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ruleSet": {
+            "anyOf": [
+              {
+                "pattern": "^(FRAP|FRBP|FRCP|FRCRP|FRE)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1900.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/committee-records/list"
+    },
+    "list_rulemaking_dockets": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "agencyId": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "EPA"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "docketType": {
+            "anyOf": [
+              {
+                "pattern": "^(Rulemaking|Nonrulemaking)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Rulemaking"
+            ]
+          },
+          "hasRin": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "modifiedSince": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-01-01T00:00:00Z"
+            ]
+          },
+          "modifiedUntil": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-07-01T00:00:00Z"
+            ]
+          },
+          "rin": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9]{4}-[A-Z]{2}[0-9]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2060-AV35"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/rulemaking/dockets/list"
+    },
     "list_session_laws": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "approvedFrom": {
             "anyOf": [
               {
@@ -2696,6 +3737,17 @@
             "minimum": 1.0,
             "type": "integer"
           },
+          "order": {
+            "default": "asc",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "examples": [
+              "desc"
+            ],
+            "type": "string"
+          },
           "q": {
             "anyOf": [
               {
@@ -2735,7 +3787,11 @@
                     "concurrent_resolution",
                     "memorial",
                     "initiated_bill",
-                    "constitutional_amendment"
+                    "constitutional_amendment",
+                    "private",
+                    "constitutional_resolution",
+                    "competing_measure_resolution",
+                    "resolution_act"
                   ],
                   "type": "string"
                 },
@@ -2813,6 +3869,35 @@
     "list_statute_divisions": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "act": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "410"
+            ]
+          },
           "actStatus": {
             "anyOf": [
               {
@@ -2851,6 +3936,19 @@
               {
                 "type": "null"
               }
+            ]
+          },
+          "agency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "144"
             ]
           },
           "article": {
@@ -2898,6 +3996,7 @@
               "CFR",
               "STATE",
               "REGULATION",
+              "STATE_RULES",
               "CONSTITUTION",
               "STATE_CONSTITUTION",
               "FEDERAL_RULES"
@@ -2917,6 +4016,19 @@
               }
             ]
           },
+          "division": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "A"
+            ]
+          },
           "excludeRepealed": {
             "default": false,
             "type": "boolean"
@@ -2932,6 +4044,19 @@
             ],
             "examples": [
               "240"
+            ]
+          },
+          "program": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "0001"
             ]
           },
           "state": {
@@ -3005,6 +4130,84 @@
               "tx"
             ]
           },
+          "subchapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "II"
+            ]
+          },
+          "subdivision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "1"
+            ]
+          },
+          "subjectGroup": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Rules of General Application"
+            ]
+          },
+          "subpart": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "A"
+            ]
+          },
+          "subtitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "A"
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "5"
+            ]
+          },
           "titleNumber": {
             "anyOf": [
               {
@@ -3012,11 +4215,31 @@
                 "type": "integer"
               },
               {
+                "enum": [
+                  "5a",
+                  "18a"
+                ],
+                "type": "string"
+              },
+              {
                 "type": "null"
               }
             ],
             "examples": [
               42
+            ]
+          },
+          "umbrella": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "10"
             ]
           }
         },
@@ -3113,6 +4336,22 @@
     "resolve_statute_citation": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "cite": {
             "examples": [
               "42 U.S.C. 1983"
@@ -3227,6 +4466,22 @@
     "resolve_statute_citations_batch": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "citations": {
             "examples": [
               [
@@ -3238,7 +4493,7 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 500,
+            "maxItems": 50,
             "minItems": 1,
             "type": "array"
           },
@@ -3348,6 +4603,22 @@
     "search_session_laws": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "approvedFrom": {
             "anyOf": [
               {
@@ -3377,6 +4648,13 @@
               "2025-06-30"
             ],
             "format": "date"
+          },
+          "includeUnverified": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
           },
           "instrumentType": {
             "anyOf": [
@@ -3527,7 +4805,11 @@
                     "concurrent_resolution",
                     "memorial",
                     "initiated_bill",
-                    "constitutional_amendment"
+                    "constitutional_amendment",
+                    "private",
+                    "constitutional_resolution",
+                    "competing_measure_resolution",
+                    "resolution_act"
                   ],
                   "type": "string"
                 },
@@ -3570,7 +4852,57 @@
     },
     "search_us_statutes": {
       "inputSchema": {
+        "$defs": {
+          "CorpusType": {
+            "enum": [
+              "USC",
+              "CFR",
+              "STATE",
+              "CONSTITUTION",
+              "FEDERAL_RULES",
+              "FEDERAL_LOCAL_RULES",
+              "STATE_CONSTITUTION",
+              "STATE_RULES",
+              "EXECUTIVE_ACTION",
+              "REGULATION",
+              "FEDERAL_REGISTER",
+              "FEDERAL_REGISTER_NOTICE",
+              "AGENCY_GUIDANCE",
+              "SENTENCING_GUIDELINES",
+              "US_TAX_TREATY",
+              "US_TREATY",
+              "STATE_AGENCY_GUIDANCE",
+              "STATE_AG_OPINION",
+              "STATE_REGISTER",
+              "SESSION_LAW",
+              "STATUTE_COMPILATION",
+              "AGENCY_ADJUDICATION",
+              "CFR_ANNUAL",
+              "USC_ANNUAL",
+              "FEDERAL_BILL",
+              "FEDERAL_RULES_ANNUAL",
+              "FEDERAL_RULES_PROPOSED"
+            ],
+            "type": "string"
+          }
+        },
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "actStatus": {
             "anyOf": [
               {
@@ -3744,61 +5076,11 @@
           "corpusType": {
             "anyOf": [
               {
-                "enum": [
-                  "USC",
-                  "CFR",
-                  "STATE",
-                  "CONSTITUTION",
-                  "FEDERAL_RULES",
-                  "FEDERAL_LOCAL_RULES",
-                  "STATE_CONSTITUTION",
-                  "STATE_RULES",
-                  "EXECUTIVE_ACTION",
-                  "REGULATION",
-                  "FEDERAL_REGISTER",
-                  "FEDERAL_REGISTER_NOTICE",
-                  "AGENCY_GUIDANCE",
-                  "SENTENCING_GUIDELINES",
-                  "US_TAX_TREATY",
-                  "STATE_AGENCY_GUIDANCE",
-                  "STATE_AG_OPINION",
-                  "STATE_REGISTER",
-                  "SESSION_LAW",
-                  "STATUTE_COMPILATION",
-                  "AGENCY_ADJUDICATION",
-                  "CFR_ANNUAL",
-                  "USC_ANNUAL"
-                ],
-                "type": "string"
+                "$ref": "#/$defs/CorpusType"
               },
               {
                 "items": {
-                  "enum": [
-                    "USC",
-                    "CFR",
-                    "STATE",
-                    "CONSTITUTION",
-                    "FEDERAL_RULES",
-                    "FEDERAL_LOCAL_RULES",
-                    "STATE_CONSTITUTION",
-                    "STATE_RULES",
-                    "EXECUTIVE_ACTION",
-                    "REGULATION",
-                    "FEDERAL_REGISTER",
-                    "FEDERAL_REGISTER_NOTICE",
-                    "AGENCY_GUIDANCE",
-                    "SENTENCING_GUIDELINES",
-                    "US_TAX_TREATY",
-                    "STATE_AGENCY_GUIDANCE",
-                    "STATE_AG_OPINION",
-                    "STATE_REGISTER",
-                    "SESSION_LAW",
-                    "STATUTE_COMPILATION",
-                    "AGENCY_ADJUDICATION",
-                    "CFR_ANNUAL",
-                    "USC_ANNUAL"
-                  ],
-                  "type": "string"
+                  "$ref": "#/$defs/CorpusType"
                 },
                 "type": "array"
               },
@@ -3830,7 +5112,7 @@
           },
           "excerptChars": {
             "default": 500,
-            "maximum": 4000.0,
+            "maximum": 600.0,
             "minimum": 100.0,
             "type": "integer"
           },
@@ -3856,6 +5138,7 @@
                     "agencySlugs",
                     "alternateCitations",
                     "amendmentHistory",
+                    "amendmentHistoryNote",
                     "amendmentNote",
                     "amendmentYears",
                     "amendmentsCount",
@@ -3863,16 +5146,22 @@
                     "articleNumber",
                     "audience",
                     "body",
+                    "bodyNote",
+                    "bodyServedNote",
+                    "bodyUnavailable",
+                    "bodyUnavailableReason",
                     "breadcrumb",
                     "caseName",
                     "chapter",
                     "chapterName",
                     "citation",
+                    "citationNote",
                     "citationShort",
                     "committeeNote",
                     "corpusType",
                     "court",
                     "crossReferencesCfr",
+                    "crossReferencesCfrChecked",
                     "crossReferencesUsc",
                     "currencyNote",
                     "currencyYear",
@@ -3888,10 +5177,12 @@
                     "effectiveDate",
                     "effectiveDateRaw",
                     "excerpt",
+                    "executiveOrderNumber",
                     "expirationDate",
                     "expirationDateRaw",
                     "externalUrl",
                     "federalRegisterCitations",
+                    "fieldAbsenceNote",
                     "forum",
                     "frCommentsCloseOn",
                     "frCorrectionOf",
@@ -3902,9 +5193,11 @@
                     "frRegulationIdNumbers",
                     "frRegulationsDotGovUrl",
                     "frRelatedDocuments",
+                    "frRelatedDocumentsNote",
                     "frSignificant",
                     "frStartPage",
                     "frVolume",
+                    "goodLawBasis",
                     "goodLawStatus",
                     "govInfoHtmlUrl",
                     "govInfoPdfUrl",
@@ -3913,6 +5206,7 @@
                     "historyEffectiveDate",
                     "htmlUrl",
                     "implementingRegulations",
+                    "instrumentNumberSource",
                     "issueDate",
                     "issueDateRaw",
                     "issuingAgency",
@@ -3921,7 +5215,9 @@
                     "lastAmendedDateRaw",
                     "lastAmendedYear",
                     "lawImplemented",
-                    "licenseNote",
+                    "matchContexts",
+                    "matchNoteYear",
+                    "matchSegment",
                     "originalEnactmentDate",
                     "originalEnactmentDateRaw",
                     "packageId",
@@ -3930,9 +5226,12 @@
                     "partName",
                     "pdfUrl",
                     "pendingAdoptions",
+                    "pendingAmendments",
                     "popularName",
                     "president",
                     "priorEffectiveDates",
+                    "priorEffectiveDatesRaw",
+                    "proclamationNumber",
                     "program",
                     "publicLawCites",
                     "publicLaws",
@@ -3950,6 +5249,7 @@
                     "requesters",
                     "rescindedOn",
                     "rescindedOnRaw",
+                    "responseBounds",
                     "reviewDate",
                     "reviewDateRaw",
                     "ruleSet",
@@ -3967,6 +5267,7 @@
                     "sourcePageEnd",
                     "sourcePageStart",
                     "sourceUrl",
+                    "sourceUrlNote",
                     "state",
                     "stateHtmlUrl",
                     "statutoryAuthority",
@@ -4013,6 +5314,7 @@
                     "agencySlugs",
                     "alternateCitations",
                     "amendmentHistory",
+                    "amendmentHistoryNote",
                     "amendmentNote",
                     "amendmentYears",
                     "amendmentsCount",
@@ -4020,16 +5322,22 @@
                     "articleNumber",
                     "audience",
                     "body",
+                    "bodyNote",
+                    "bodyServedNote",
+                    "bodyUnavailable",
+                    "bodyUnavailableReason",
                     "breadcrumb",
                     "caseName",
                     "chapter",
                     "chapterName",
                     "citation",
+                    "citationNote",
                     "citationShort",
                     "committeeNote",
                     "corpusType",
                     "court",
                     "crossReferencesCfr",
+                    "crossReferencesCfrChecked",
                     "crossReferencesUsc",
                     "currencyNote",
                     "currencyYear",
@@ -4045,10 +5353,12 @@
                     "effectiveDate",
                     "effectiveDateRaw",
                     "excerpt",
+                    "executiveOrderNumber",
                     "expirationDate",
                     "expirationDateRaw",
                     "externalUrl",
                     "federalRegisterCitations",
+                    "fieldAbsenceNote",
                     "forum",
                     "frCommentsCloseOn",
                     "frCorrectionOf",
@@ -4059,9 +5369,11 @@
                     "frRegulationIdNumbers",
                     "frRegulationsDotGovUrl",
                     "frRelatedDocuments",
+                    "frRelatedDocumentsNote",
                     "frSignificant",
                     "frStartPage",
                     "frVolume",
+                    "goodLawBasis",
                     "goodLawStatus",
                     "govInfoHtmlUrl",
                     "govInfoPdfUrl",
@@ -4070,6 +5382,7 @@
                     "historyEffectiveDate",
                     "htmlUrl",
                     "implementingRegulations",
+                    "instrumentNumberSource",
                     "issueDate",
                     "issueDateRaw",
                     "issuingAgency",
@@ -4078,7 +5391,9 @@
                     "lastAmendedDateRaw",
                     "lastAmendedYear",
                     "lawImplemented",
-                    "licenseNote",
+                    "matchContexts",
+                    "matchNoteYear",
+                    "matchSegment",
                     "originalEnactmentDate",
                     "originalEnactmentDateRaw",
                     "packageId",
@@ -4087,9 +5402,12 @@
                     "partName",
                     "pdfUrl",
                     "pendingAdoptions",
+                    "pendingAmendments",
                     "popularName",
                     "president",
                     "priorEffectiveDates",
+                    "priorEffectiveDatesRaw",
+                    "proclamationNumber",
                     "program",
                     "publicLawCites",
                     "publicLaws",
@@ -4107,6 +5425,7 @@
                     "requesters",
                     "rescindedOn",
                     "rescindedOnRaw",
+                    "responseBounds",
                     "reviewDate",
                     "reviewDateRaw",
                     "ruleSet",
@@ -4124,6 +5443,7 @@
                     "sourcePageEnd",
                     "sourcePageStart",
                     "sourceUrl",
+                    "sourceUrlNote",
                     "state",
                     "stateHtmlUrl",
                     "statutoryAuthority",
@@ -4175,6 +5495,13 @@
             ],
             "type": "boolean"
           },
+          "includePinpoint": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
           "limit": {
             "default": 10,
             "maximum": 50.0,
@@ -4186,7 +5513,8 @@
             "enum": [
               "any",
               "all",
-              "phrase"
+              "phrase",
+              "boolean"
             ],
             "examples": [
               "phrase"
@@ -4195,7 +5523,7 @@
           },
           "offset": {
             "default": 0,
-            "maximum": 70.0,
+            "maximum": 10000.0,
             "minimum": 0.0,
             "type": "integer"
           },
@@ -4327,6 +5655,7 @@
                   "olc_opinion",
                   "sct",
                   "sec_commission_opinion",
+                  "senate_executive_report",
                   "senate_treaty",
                   "senate_treaty_document",
                   "senate_treaty_resolution",
@@ -4336,6 +5665,7 @@
                   "tmep",
                   "us_tax_treaty",
                   "us_tax_treaty_technical_explanation",
+                  "us_treaty",
                   "uscis_policy_manual",
                   "whd_foh",
                   "whd_opinion_letter"
@@ -4412,6 +5742,7 @@
                     "olc_opinion",
                     "sct",
                     "sec_commission_opinion",
+                    "senate_executive_report",
                     "senate_treaty",
                     "senate_treaty_document",
                     "senate_treaty_resolution",
@@ -4421,6 +5752,7 @@
                     "tmep",
                     "us_tax_treaty",
                     "us_tax_treaty_technical_explanation",
+                    "us_treaty",
                     "uscis_policy_manual",
                     "whd_foh",
                     "whd_opinion_letter"

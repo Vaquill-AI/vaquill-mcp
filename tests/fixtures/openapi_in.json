@@ -737,10 +737,22 @@
           "actStatus": {
             "anyOf": [
               {
+                "enum": [
+                  "in_force",
+                  "repealed",
+                  "superseded",
+                  "spent"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "in_force",
+                    "repealed",
+                    "superseded",
+                    "spent"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -750,12 +762,6 @@
               }
             ],
             "description": "Filter by the publisher's lifecycle status. Accepts one value or a list. This is the publisher's claim, not our verdict: see GET /acts/{actId}/status. Values: `in_force`, `repealed`, `superseded`, `spent`.",
-            "enum": [
-              "in_force",
-              "repealed",
-              "superseded",
-              "spent"
-            ],
             "examples": [
               "repealed"
             ],
@@ -779,6 +785,13 @@
           "category": {
             "anyOf": [
               {
+                "enum": [
+                  "central",
+                  "state",
+                  "regulatory",
+                  "repealed",
+                  "spent"
+                ],
                 "type": "string"
               },
               {
@@ -786,13 +799,6 @@
               }
             ],
             "description": "Jurisdictional class. `repealed` and `spent` are accepted for backward compatibility and resolve against `actStatus` instead. Values: `central`, `state`, `regulatory`, `repealed`, `spent`.",
-            "enum": [
-              "central",
-              "state",
-              "regulatory",
-              "repealed",
-              "spent"
-            ],
             "examples": [
               "central"
             ],
@@ -840,10 +846,42 @@
           "legalSubject": {
             "anyOf": [
               {
+                "enum": [
+                  "administrative_law",
+                  "banking_finance",
+                  "civil_procedure",
+                  "constitutional_law",
+                  "corporate_law",
+                  "criminal_law",
+                  "environmental_law",
+                  "family_law",
+                  "general",
+                  "information_technology",
+                  "intellectual_property",
+                  "labour_law",
+                  "property_law",
+                  "tax_law"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "administrative_law",
+                    "banking_finance",
+                    "civil_procedure",
+                    "constitutional_law",
+                    "corporate_law",
+                    "criminal_law",
+                    "environmental_law",
+                    "family_law",
+                    "general",
+                    "information_technology",
+                    "intellectual_property",
+                    "labour_law",
+                    "property_law",
+                    "tax_law"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -853,22 +891,6 @@
               }
             ],
             "description": "Filter by subject area, classified at ingest. Accepts one value or a list. Values: `administrative_law`, `banking_finance`, `civil_procedure`, `constitutional_law`, `corporate_law`, `criminal_law`, `environmental_law`, `family_law`, `general`, `information_technology`, `intellectual_property`, `labour_law`, `property_law`, `tax_law`.",
-            "enum": [
-              "administrative_law",
-              "banking_finance",
-              "civil_procedure",
-              "constitutional_law",
-              "corporate_law",
-              "criminal_law",
-              "environmental_law",
-              "family_law",
-              "general",
-              "information_technology",
-              "intellectual_property",
-              "labour_law",
-              "property_law",
-              "tax_law"
-            ],
             "examples": [
               "tax_law"
             ],
@@ -912,10 +934,26 @@
           "provisionType": {
             "anyOf": [
               {
+                "enum": [
+                  "mandatory",
+                  "general",
+                  "prohibitory",
+                  "overriding",
+                  "discretionary",
+                  "declaratory"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "mandatory",
+                    "general",
+                    "prohibitory",
+                    "overriding",
+                    "discretionary",
+                    "declaratory"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -925,14 +963,6 @@
               }
             ],
             "description": "Filter by what the provision DOES. Accepts one value or a list. Values: `mandatory`, `general`, `prohibitory`, `overriding`, `discretionary`, `declaratory`.",
-            "enum": [
-              "mandatory",
-              "general",
-              "prohibitory",
-              "overriding",
-              "discretionary",
-              "declaratory"
-            ],
             "examples": [
               "mandatory"
             ],
@@ -966,10 +996,38 @@
           "sectionType": {
             "anyOf": [
               {
+                "enum": [
+                  "amendment_provision",
+                  "article",
+                  "body",
+                  "chapter_heading",
+                  "definition_clause",
+                  "definitions",
+                  "part_heading",
+                  "preamble",
+                  "schedule",
+                  "section",
+                  "short_title",
+                  "sub_section"
+                ],
                 "type": "string"
               },
               {
                 "items": {
+                  "enum": [
+                    "amendment_provision",
+                    "article",
+                    "body",
+                    "chapter_heading",
+                    "definition_clause",
+                    "definitions",
+                    "part_heading",
+                    "preamble",
+                    "schedule",
+                    "section",
+                    "short_title",
+                    "sub_section"
+                  ],
                   "type": "string"
                 },
                 "type": "array"
@@ -979,20 +1037,6 @@
               }
             ],
             "description": "Filter by structural kind of the passage. Accepts one value or a list. Values: `amendment_provision`, `article`, `body`, `chapter_heading`, `definition_clause`, `definitions`, `part_heading`, `preamble`, `schedule`, `section`, `short_title`, `sub_section`.",
-            "enum": [
-              "amendment_provision",
-              "article",
-              "body",
-              "chapter_heading",
-              "definition_clause",
-              "definitions",
-              "part_heading",
-              "preamble",
-              "schedule",
-              "section",
-              "short_title",
-              "sub_section"
-            ],
             "examples": [
               "definitions"
             ],
@@ -1001,6 +1045,48 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "andaman-and-nicobar-islands",
+                  "andaman-nicobar",
+                  "andhra-pradesh",
+                  "arunachal-pradesh",
+                  "assam",
+                  "bihar",
+                  "central",
+                  "chandigarh",
+                  "chhattisgarh",
+                  "dadra-and-nagar-haveli-and-daman-and-diu",
+                  "dadra-nagar-haveli",
+                  "delhi",
+                  "goa",
+                  "gujarat",
+                  "haryana",
+                  "himachal-pradesh",
+                  "jammu-and-kashmir",
+                  "jammu-kashmir",
+                  "jharkhand",
+                  "karnataka",
+                  "kerala",
+                  "ladakh",
+                  "lakshadweep",
+                  "madhya-pradesh",
+                  "maharashtra",
+                  "manipur",
+                  "meghalaya",
+                  "mizoram",
+                  "nagaland",
+                  "odisha",
+                  "puducherry",
+                  "punjab",
+                  "rajasthan",
+                  "sikkim",
+                  "tamil-nadu",
+                  "telangana",
+                  "tripura",
+                  "uttar-pradesh",
+                  "uttarakhand",
+                  "west-bengal"
+                ],
                 "type": "string"
               },
               {
@@ -1008,48 +1094,6 @@
               }
             ],
             "description": "Jurisdiction slug. `central` is a value here, for Union legislation. Live counts per jurisdiction are on GET /acts/coverage.",
-            "enum": [
-              "andaman-and-nicobar-islands",
-              "andaman-nicobar",
-              "andhra-pradesh",
-              "arunachal-pradesh",
-              "assam",
-              "bihar",
-              "central",
-              "chandigarh",
-              "chhattisgarh",
-              "dadra-and-nagar-haveli-and-daman-and-diu",
-              "dadra-nagar-haveli",
-              "delhi",
-              "goa",
-              "gujarat",
-              "haryana",
-              "himachal-pradesh",
-              "jammu-and-kashmir",
-              "jammu-kashmir",
-              "jharkhand",
-              "karnataka",
-              "kerala",
-              "ladakh",
-              "lakshadweep",
-              "madhya-pradesh",
-              "maharashtra",
-              "manipur",
-              "meghalaya",
-              "mizoram",
-              "nagaland",
-              "odisha",
-              "puducherry",
-              "punjab",
-              "rajasthan",
-              "sikkim",
-              "tamil-nadu",
-              "telangana",
-              "tripura",
-              "uttar-pradesh",
-              "uttarakhand",
-              "west-bengal"
-            ],
             "examples": [
               "maharashtra"
             ],
@@ -4200,6 +4244,48 @@
           "state": {
             "anyOf": [
               {
+                "enum": [
+                  "andaman-and-nicobar-islands",
+                  "andaman-nicobar",
+                  "andhra-pradesh",
+                  "arunachal-pradesh",
+                  "assam",
+                  "bihar",
+                  "central",
+                  "chandigarh",
+                  "chhattisgarh",
+                  "dadra-and-nagar-haveli-and-daman-and-diu",
+                  "dadra-nagar-haveli",
+                  "delhi",
+                  "goa",
+                  "gujarat",
+                  "haryana",
+                  "himachal-pradesh",
+                  "jammu-and-kashmir",
+                  "jammu-kashmir",
+                  "jharkhand",
+                  "karnataka",
+                  "kerala",
+                  "ladakh",
+                  "lakshadweep",
+                  "madhya-pradesh",
+                  "maharashtra",
+                  "manipur",
+                  "meghalaya",
+                  "mizoram",
+                  "nagaland",
+                  "odisha",
+                  "puducherry",
+                  "punjab",
+                  "rajasthan",
+                  "sikkim",
+                  "tamil-nadu",
+                  "telangana",
+                  "tripura",
+                  "uttar-pradesh",
+                  "uttarakhand",
+                  "west-bengal"
+                ],
                 "type": "string"
               },
               {
@@ -4207,48 +4293,6 @@
               }
             ],
             "description": "Narrow to one jurisdiction. Required for a State-universal title.",
-            "enum": [
-              "andaman-and-nicobar-islands",
-              "andaman-nicobar",
-              "andhra-pradesh",
-              "arunachal-pradesh",
-              "assam",
-              "bihar",
-              "central",
-              "chandigarh",
-              "chhattisgarh",
-              "dadra-and-nagar-haveli-and-daman-and-diu",
-              "dadra-nagar-haveli",
-              "delhi",
-              "goa",
-              "gujarat",
-              "haryana",
-              "himachal-pradesh",
-              "jammu-and-kashmir",
-              "jammu-kashmir",
-              "jharkhand",
-              "karnataka",
-              "kerala",
-              "ladakh",
-              "lakshadweep",
-              "madhya-pradesh",
-              "maharashtra",
-              "manipur",
-              "meghalaya",
-              "mizoram",
-              "nagaland",
-              "odisha",
-              "puducherry",
-              "punjab",
-              "rajasthan",
-              "sikkim",
-              "tamil-nadu",
-              "telangana",
-              "tripura",
-              "uttar-pradesh",
-              "uttarakhand",
-              "west-bengal"
-            ],
             "examples": [
               "maharashtra"
             ],
@@ -5213,6 +5257,13 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "central",
+                    "state",
+                    "regulatory",
+                    "repealed",
+                    "spent"
+                  ],
                   "type": "string"
                 },
                 {
@@ -5220,13 +5271,6 @@
                 }
               ],
               "description": "Jurisdictional class of the instrument. `repealed` and `spent` are accepted for backward compatibility and resolve against the act's status instead. Values: `central`, `state`, `regulatory`, `repealed`, `spent`.",
-              "enum": [
-                "central",
-                "state",
-                "regulatory",
-                "repealed",
-                "spent"
-              ],
               "examples": [
                 "central"
               ],
@@ -5241,6 +5285,48 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "andaman-and-nicobar-islands",
+                    "andaman-nicobar",
+                    "andhra-pradesh",
+                    "arunachal-pradesh",
+                    "assam",
+                    "bihar",
+                    "central",
+                    "chandigarh",
+                    "chhattisgarh",
+                    "dadra-and-nagar-haveli-and-daman-and-diu",
+                    "dadra-nagar-haveli",
+                    "delhi",
+                    "goa",
+                    "gujarat",
+                    "haryana",
+                    "himachal-pradesh",
+                    "jammu-and-kashmir",
+                    "jammu-kashmir",
+                    "jharkhand",
+                    "karnataka",
+                    "kerala",
+                    "ladakh",
+                    "lakshadweep",
+                    "madhya-pradesh",
+                    "maharashtra",
+                    "manipur",
+                    "meghalaya",
+                    "mizoram",
+                    "nagaland",
+                    "odisha",
+                    "puducherry",
+                    "punjab",
+                    "rajasthan",
+                    "sikkim",
+                    "tamil-nadu",
+                    "telangana",
+                    "tripura",
+                    "uttar-pradesh",
+                    "uttarakhand",
+                    "west-bengal"
+                  ],
                   "type": "string"
                 },
                 {
@@ -5248,48 +5334,6 @@
                 }
               ],
               "description": "Jurisdiction slug. `central` is a value here, for Union legislation. Live counts per jurisdiction are on GET /acts/coverage.",
-              "enum": [
-                "andaman-and-nicobar-islands",
-                "andaman-nicobar",
-                "andhra-pradesh",
-                "arunachal-pradesh",
-                "assam",
-                "bihar",
-                "central",
-                "chandigarh",
-                "chhattisgarh",
-                "dadra-and-nagar-haveli-and-daman-and-diu",
-                "dadra-nagar-haveli",
-                "delhi",
-                "goa",
-                "gujarat",
-                "haryana",
-                "himachal-pradesh",
-                "jammu-and-kashmir",
-                "jammu-kashmir",
-                "jharkhand",
-                "karnataka",
-                "kerala",
-                "ladakh",
-                "lakshadweep",
-                "madhya-pradesh",
-                "maharashtra",
-                "manipur",
-                "meghalaya",
-                "mizoram",
-                "nagaland",
-                "odisha",
-                "puducherry",
-                "punjab",
-                "rajasthan",
-                "sikkim",
-                "tamil-nadu",
-                "telangana",
-                "tripura",
-                "uttar-pradesh",
-                "uttarakhand",
-                "west-bengal"
-              ],
               "examples": [
                 "maharashtra"
               ],
@@ -5369,6 +5413,12 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "in_force",
+                    "repealed",
+                    "superseded",
+                    "spent"
+                  ],
                   "type": "string"
                 },
                 {
@@ -5376,12 +5426,6 @@
                 }
               ],
               "description": "The publisher's lifecycle status for the act. Their claim, not our verdict: see GET /acts/{actId}/status. Values: `in_force`, `repealed`, `superseded`, `spent`.",
-              "enum": [
-                "in_force",
-                "repealed",
-                "superseded",
-                "spent"
-              ],
               "examples": [
                 "repealed"
               ],
@@ -5610,6 +5654,48 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "andaman-and-nicobar-islands",
+                    "andaman-nicobar",
+                    "andhra-pradesh",
+                    "arunachal-pradesh",
+                    "assam",
+                    "bihar",
+                    "central",
+                    "chandigarh",
+                    "chhattisgarh",
+                    "dadra-and-nagar-haveli-and-daman-and-diu",
+                    "dadra-nagar-haveli",
+                    "delhi",
+                    "goa",
+                    "gujarat",
+                    "haryana",
+                    "himachal-pradesh",
+                    "jammu-and-kashmir",
+                    "jammu-kashmir",
+                    "jharkhand",
+                    "karnataka",
+                    "kerala",
+                    "ladakh",
+                    "lakshadweep",
+                    "madhya-pradesh",
+                    "maharashtra",
+                    "manipur",
+                    "meghalaya",
+                    "mizoram",
+                    "nagaland",
+                    "odisha",
+                    "puducherry",
+                    "punjab",
+                    "rajasthan",
+                    "sikkim",
+                    "tamil-nadu",
+                    "telangana",
+                    "tripura",
+                    "uttar-pradesh",
+                    "uttarakhand",
+                    "west-bengal"
+                  ],
                   "type": "string"
                 },
                 {
@@ -5617,48 +5703,6 @@
                 }
               ],
               "description": "Narrow to one jurisdiction. Required for a State-universal title, where the same short title names a different act in each State.",
-              "enum": [
-                "andaman-and-nicobar-islands",
-                "andaman-nicobar",
-                "andhra-pradesh",
-                "arunachal-pradesh",
-                "assam",
-                "bihar",
-                "central",
-                "chandigarh",
-                "chhattisgarh",
-                "dadra-and-nagar-haveli-and-daman-and-diu",
-                "dadra-nagar-haveli",
-                "delhi",
-                "goa",
-                "gujarat",
-                "haryana",
-                "himachal-pradesh",
-                "jammu-and-kashmir",
-                "jammu-kashmir",
-                "jharkhand",
-                "karnataka",
-                "kerala",
-                "ladakh",
-                "lakshadweep",
-                "madhya-pradesh",
-                "maharashtra",
-                "manipur",
-                "meghalaya",
-                "mizoram",
-                "nagaland",
-                "odisha",
-                "puducherry",
-                "punjab",
-                "rajasthan",
-                "sikkim",
-                "tamil-nadu",
-                "telangana",
-                "tripura",
-                "uttar-pradesh",
-                "uttarakhand",
-                "west-bengal"
-              ],
               "examples": [
                 "maharashtra"
               ],
@@ -6226,6 +6270,18 @@
             "schema": {
               "anyOf": [
                 {
+                  "enum": [
+                    "substitution",
+                    "insertion",
+                    "omission",
+                    "renumbering",
+                    "addition",
+                    "repeal",
+                    "deletion",
+                    "adaptation",
+                    "amendment",
+                    "note"
+                  ],
                   "type": "string"
                 },
                 {
@@ -6233,18 +6289,6 @@
                 }
               ],
               "description": "Amendment action class. Served in the NOMINAL spelling; the corpus stores the verbal form (`substituted`) and either is accepted. Values: `substitution`, `insertion`, `omission`, `renumbering`, `addition`, `repeal`, `deletion`, `adaptation`, `amendment`, `note`.",
-              "enum": [
-                "substitution",
-                "insertion",
-                "omission",
-                "renumbering",
-                "addition",
-                "repeal",
-                "deletion",
-                "adaptation",
-                "amendment",
-                "note"
-              ],
               "examples": [
                 "substitution"
               ],
