@@ -237,5 +237,28 @@ def _in_memory_oauth_store(monkeypatch):
         import fastmcp.server.auth.oauth_proxy.proxy as proxy_module
     except ImportError:  # a layout this fixture does not know: leave the default
         return
+
+    class _CullableMemoryStore(MemoryStore):
+        """A `MemoryStore` that also answers `cull()`, the way the real store does.
+
+        fastmcp 4.1 reaps expired state from the store it created itself by calling
+        `FileTreeStore.cull()` on its OAuth write paths (`_maybe_cull_expired_state`),
+        and the proxy keeps that store in `_default_file_store`. Substituting a bare
+        `MemoryStore` leaves that call with nothing to call, so every test that
+        reached `/token` or a consent page died with `AttributeError: ... 'cull'`
+        on 4.1.7 while passing on 4.0.1, which has no such call. That is a fault in
+        this substitute and not in the code under test, and the failure was loud
+        enough to be mistaken for a regression in the OAuth work.
+
+        A no-op is the honest implementation: a memory store has no files to
+        reclaim, and it already drops an expired entry when that key is next read,
+        so nothing here is reachable only through a cull. Nothing asserts on it.
+        """
+
+        async def cull(self) -> None:
+            return None
+
     if hasattr(proxy_module, "FileTreeStore"):
-        monkeypatch.setattr(proxy_module, "FileTreeStore", lambda **_kw: MemoryStore())
+        monkeypatch.setattr(
+            proxy_module, "FileTreeStore", lambda **_kw: _CullableMemoryStore()
+        )

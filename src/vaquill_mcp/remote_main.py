@@ -100,6 +100,7 @@ def build_app() -> Starlette:
 
     from vaquill_mcp.brand_assets import asset_routes
     from vaquill_mcp.oauth import (
+        AuthDiagnosticsMiddleware,
         BrandSkinMiddleware,
         build_auth_provider,
         build_connector_key_resolver,
@@ -162,7 +163,11 @@ def build_app() -> Starlette:
         mcp_app = mcp_server.http_app(
             path="/mcp",
             transport="streamable-http",
-            middleware=[Middleware(RegistrationRateLimit), Middleware(BrandSkinMiddleware)],
+            middleware=[
+                Middleware(AuthDiagnosticsMiddleware),
+                Middleware(RegistrationRateLimit),
+                Middleware(BrandSkinMiddleware),
+            ],
         )
         sub_apps.extend((key_app, mcp_app))
 

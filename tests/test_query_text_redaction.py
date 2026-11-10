@@ -391,6 +391,20 @@ async def test_fastmcp_tool_failure_log_carries_no_argument_text() -> None:
 
 
 async def test_fastmcp_invalid_arguments_warning_carries_no_input() -> None:
+    """The leak check comes FIRST, and the format check accepts both shapes.
+
+    fastmcp changed what this warning carries. 4.0.1 logs pydantic's error
+    list, which names the field; 4.1.7 logs a summary (`error_count`,
+    `error_types`) that our filter does not recognise, so the whole message
+    becomes `[message redacted]` and the field name goes with it. Measured
+    2026-11-10: this test asserted `"query" in out` and FAILED on 4.1.7, which
+    is the version a fresh resolve installs and therefore what production runs.
+
+    4.1.7 logs LESS than 4.0.1, so the regression was in the assertion, never
+    in the protection. Ordering the leak assertion first makes that impossible
+    to confuse: the test fails loudly if the secret ever appears, and is
+    tolerant only about how much detail fastmcp chooses to keep.
+    """
     install_key_redaction()
     lg, stream = _capture("fastmcp.server.server")
     server = FastMCP("t")
@@ -402,9 +416,13 @@ async def test_fastmcp_invalid_arguments_warning_carries_no_input() -> None:
     with pytest.raises(Exception):
         await server.call_tool("search", {"query": _SECRET})
     out = stream.getvalue()
-    assert "Invalid arguments for tool 'search'" in out
-    assert "query" in out
+    # 1. What this file exists for.
     assert _SECRET_WORD not in out
+    assert _SECRET not in out
+    # 2. The failure is still reported at all.
+    assert "Invalid arguments for tool 'search'" in out
+    # 3. Either fastmcp kept the field name, or the filter redacted the lot.
+    assert "query" in out or "[message redacted]" in out, out
 
 
 async def test_the_real_fetch_alias_upstream_error_leaks_no_citation(
@@ -430,9 +448,20 @@ async def test_the_real_fetch_alias_upstream_error_leaks_no_citation(
         await server.call_tool("fetch", {"id": _SECRET})
 
     out = stream.getvalue()
-    assert "Error calling tool 'fetch'" in out
-    assert "HTTPStatusError: [message redacted]" in out
+    # 1. What this file exists for: the citation reaches no log, by any route.
     assert _SECRET_WORD not in out
+    assert _SECRET not in out
     leaked = [r for r in caplog.records if _SECRET_WORD in r.getMessage()]
     assert not leaked, [f"{r.name}: {r.getMessage()}" for r in leaked]
     assert not [r for r in caplog.records if r.name.startswith("httpx")]
+    # 2. The failure is still reported.
+    assert "Error calling tool 'fetch'" in out
+    # 3. If a traceback was logged, its message must be redacted. fastmcp 4.1.7
+    #    passes `exc_info=status_code is None`, so an upstream HTTP error gets
+    #    NO traceback and this line is simply absent; 4.0.1 logs one. Measured
+    #    2026-11-10: asserting the line unconditionally failed on 4.1.7, the
+    #    version a fresh resolve installs. Absent is strictly safer than
+    #    redacted, so both pass, but a traceback that is present and NOT
+    #    redacted still fails here.
+    if "HTTPStatusError" in out:
+        assert "HTTPStatusError: [message redacted]" in out, out

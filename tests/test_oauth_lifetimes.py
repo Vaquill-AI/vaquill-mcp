@@ -7,8 +7,10 @@ registration is open to anyone. These tests pin the three fixes:
 
 * `/revoke` (RFC 7009) is published and mounted, and revoking a refresh token
   deletes it from the store so it cannot be exchanged again;
-* refresh tokens expire after 30 days by default, renewed by each refresh;
-* a registered client expires after 90 days by default, renewed by each refresh
+* refresh tokens expire after 365 days by default and the window SLIDES on each
+  refresh (that part is `test_oauth_refresh_slide.py`: FastMCP alone keeps the
+  original expiry, so the lifetime was a hard ceiling);
+* a registered client expires after 730 days by default, renewed by each refresh
   that client makes, so one in use never loses its record.
 """
 
@@ -70,10 +72,10 @@ async def test_revoking_a_refresh_token_deletes_it_from_the_store(
     assert deleted == [_hash_token("abc.def.ghi")]
 
 
-def test_a_refresh_token_lasts_30_days_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_refresh_token_lasts_365_days_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("VAQUILL_OAUTH_REFRESH_TOKEN_DAYS", raising=False)
-    assert refresh_token_seconds() == 30 * _DAY
-    assert _auth(monkeypatch).server._fallback_refresh_token_expiry_seconds == 30 * _DAY
+    assert refresh_token_seconds() == 365 * _DAY
+    assert _auth(monkeypatch).server._fallback_refresh_token_expiry_seconds == 365 * _DAY
 
 
 def test_the_lifetimes_can_be_set_and_a_bad_value_fails_at_start_up(
@@ -102,6 +104,7 @@ def test_the_lifetimes_can_be_set_and_a_bad_value_fails_at_start_up(
 
 def test_a_registration_outlives_the_refresh_tokens_it_can_hold() -> None:
     """Otherwise an active session could outlive its own client record."""
+    assert client_registration_seconds() == 730 * _DAY
     assert client_registration_seconds() > refresh_token_seconds()
 
 
@@ -129,7 +132,7 @@ async def test_a_registered_client_is_stored_with_an_expiry(
     )
     assert puts[0].get("ttl") is None, "FastMCP stores it without an expiry first"
     assert puts[-1]["key"] == "client-under-test"
-    assert puts[-1]["ttl"] == 90 * _DAY, "we then set the expiry"
+    assert puts[-1]["ttl"] == 730 * _DAY, "we then set the expiry"
 
 
 async def test_a_refresh_renews_the_client_and_a_renewal_failure_never_breaks_it(
@@ -159,7 +162,7 @@ async def test_a_refresh_renews_the_client_and_a_renewal_failure_never_breaks_it
 
     result = await proxy.exchange_refresh_token(SimpleNamespace(client_id="c1"), object(), [])
     assert result is sentinel
-    assert puts == [{"key": "c1", "value": stored, "ttl": 90 * _DAY}]
+    assert puts == [{"key": "c1", "value": stored, "ttl": 730 * _DAY}]
 
     async def broken_put(**_kw):
         raise RuntimeError("redis is down")

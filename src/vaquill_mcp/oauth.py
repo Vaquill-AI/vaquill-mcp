@@ -74,6 +74,7 @@ authorization server cannot half-enable it.
 from __future__ import annotations
 
 import functools
+import hashlib
 import logging
 import os
 import re
@@ -298,25 +299,55 @@ def _days_from_env(name: str, default: int, *, low: int, high: int) -> int:
 
 
 def refresh_token_seconds() -> int:
-    """How long a refresh token lives after it was issued. Default 30 days.
+    """How long a connection survives without being used. Default 365 days.
 
-    FastMCP's own default is 365 days, and Supabase gives no expiry of its own,
-    so a stolen refresh token used to work for a year. Every refresh issues a
-    fresh token, so a client in regular use never reaches the limit; one idle
-    for this long signs in again.
+    This is a SLIDING window, and that is not something FastMCP does for us.
+    Supabase (GoTrue) answers a refresh with no `refresh_expires_in`, and
+    `OAuthProxy.exchange_refresh_token` then takes its `elif` branch
+    (fastmcp 4.0.1, oauth_proxy/proxy.py:1886-1890, "Keep existing expiry if
+    upstream doesn't provide new one") and carries the ORIGINAL expiry forward
+    on every rotation. The clock starts once, at authorization, and never
+    resets: measured 2026-11-10 by running the real exchange against a
+    GoTrue-shaped upstream, where a connection with 1 day left came out of a
+    successful refresh with 1.00 day left. An earlier version of this docstring
+    said "every refresh issues a fresh token, so a client in regular use never
+    reaches the limit". It was false: the 30-day value shipped 2026-10-14 was a
+    hard ceiling, and measured usage (average working session 23.8 days, 39 of
+    133 past 30, longest 57) meant forced sign-outs from 2026-11-13.
+    `VaquillOAuthProxy._slide_refresh_expiry` is what makes the window slide.
+
+    Supabase imposes no cap of its own (0 of 2,909 sessions carry `not_after`,
+    the longest has run 203.7 days), so this value is the only ceiling there is.
+    365 is the most `_days_from_env` allows and FastMCP's own default. A stolen
+    refresh token is bounded by `/revoke` and by rotation (each is single use),
+    not by shortening the lifetime of everyone's session.
     """
-    return _days_from_env("VAQUILL_OAUTH_REFRESH_TOKEN_DAYS", 30, low=1, high=365) * _DAY
+    return _days_from_env("VAQUILL_OAUTH_REFRESH_TOKEN_DAYS", 365, low=1, high=365) * _DAY
 
 
 def client_registration_seconds() -> int:
-    """How long a dynamically registered client is kept. Default 90 days.
+    """How long a dynamically registered client is kept. Default 730 days.
 
     Registration is open (the point of DCR), so without an expiry every
     registration lives forever. A record is renewed each time that client
     refreshes a token, so a client in use never loses it. Keep this longer than
-    `refresh_token_seconds`, or an active session could outlive its client.
+    `refresh_token_seconds`, or an active session could outlive its client: the
+    client lookup then fails and `/token` answers 401 `invalid_client` for a
+    refresh token that is itself still good. 730 days is the ceiling
+    `_days_from_env` allows and twice the refresh lifetime.
     """
-    return _days_from_env("VAQUILL_OAUTH_CLIENT_REGISTRATION_DAYS", 90, low=1, high=730) * _DAY
+    return _days_from_env("VAQUILL_OAUTH_CLIENT_REGISTRATION_DAYS", 730, low=1, high=730) * _DAY
+
+
+def _token_fingerprint(token: object) -> str:
+    """First 8 hex of the token's SHA-256: enough to match log lines, useless to replay.
+
+    The same shape FastMCP prints in its own `token_hash=` warning, so a line
+    from here and one from the library can be matched. NEVER log the token.
+    """
+    if not isinstance(token, str) or not token:
+        return "none"
+    return hashlib.sha256(token.encode()).hexdigest()[:8]
 
 
 def _allowed_redirect_uris() -> list[str] | None:
@@ -324,6 +355,17 @@ def _allowed_redirect_uris() -> list[str] | None:
     raw = os.environ.get("VAQUILL_OAUTH_ALLOWED_REDIRECT_URIS", "")
     patterns = [p.strip() for p in raw.split(",") if p.strip()]
     return patterns or None
+
+
+#: FastMCP's fixed refusal texts from `exchange_refresh_token` (4.0.1), mapped to a
+#: reason we can log. Matched whole, so a reworded message degrades to
+#: `error:invalid_grant` rather than to a wrong reason.
+_FASTMCP_REFUSALS = {
+    "Invalid refresh token": "jwt_invalid",
+    "Refresh token mapping not found": "mapping_not_found",
+    "Upstream token not found": "upstream_record_not_found",
+    "Refresh not supported for this token": "no_upstream_refresh_token",
+}
 
 
 @functools.cache
@@ -421,6 +463,98 @@ def _refresh_safe_proxy_class():
             except Exception:
                 logger.warning("oauth_client_renew_failed client_id=%s", client_id, exc_info=True)
 
+        async def _slide_refresh_expiry(self, refresh_token) -> None:
+            """Give the stored upstream record a FULL refresh lifetime, from now.
+
+            Runs BEFORE `super().exchange_refresh_token`, which derives everything
+            from `upstream_token_set.refresh_token_expires_at`: the new refresh
+            JWT's `exp`, the TTL of the JTI mapping, of the refresh-token
+            metadata and of the record itself. Resetting that one field therefore
+            slides all four together, where patching them one by one afterwards
+            would leave the JWT's `exp` at the old value. See
+            `refresh_token_seconds` for the defect (Supabase sends no
+            `refresh_expires_in`, so FastMCP preserves the original expiry).
+
+            Only a refresh token this server signed and has not expired reaches
+            the write, so it cannot revive a lapsed connection. If upstream then
+            refuses the refresh the record stays extended, which is harmless: the
+            old token is still the one that failed, and a transient upstream
+            outage should not shorten a session either.
+
+            Never raises. A fastmcp release that renames these internals degrades
+            to the old hard ceiling, loudly, rather than breaking every refresh.
+            """
+            try:
+                payload = self.jwt_issuer.verify_token(
+                    refresh_token.token, expected_token_use="refresh"
+                )
+                mapping = await self._jti_mapping_store.get(key=payload["jti"])
+                if mapping is None:
+                    return
+                record = await self._upstream_token_store.get(key=mapping.upstream_token_id)
+                if record is None or not record.refresh_token:
+                    return
+                lifetime = refresh_token_seconds()
+                record.refresh_token_expires_at = time.time() + lifetime
+                await self._upstream_token_store.put(
+                    key=record.upstream_token_id, value=record, ttl=lifetime
+                )
+            except Exception as exc:
+                logger.warning(
+                    "oauth_refresh_slide_skipped reason=%s client_id=%s token=%s",
+                    type(exc).__name__,
+                    getattr(refresh_token, "client_id", None),
+                    _token_fingerprint(getattr(refresh_token, "token", None)),
+                )
+
+        async def get_client(self, client_id: str):
+            client = await super().get_client(client_id)
+            if client is None:
+                # `/token` answers 401 `invalid_client` for this and says nothing
+                # else. The usual cause is a registration that lapsed (see
+                # `client_registration_seconds`) or a redeploy without durable storage.
+                logger.warning("oauth_client_unknown client_id=%.120r", client_id)
+            return client
+
+        async def load_refresh_token(self, client, refresh_token):
+            loaded = await super().load_refresh_token(client, refresh_token)
+            if loaded is None:
+                await self._log_refresh_rejected(client, refresh_token)
+            return loaded
+
+        async def _log_refresh_rejected(self, client, token: str) -> None:
+            """Say WHICH client and token a refresh rejection was, and why. Hash prefix only."""
+            try:
+                jwt_valid = True
+                try:
+                    self.jwt_issuer.verify_token(token, expected_token_use="refresh")
+                except Exception:
+                    jwt_valid = False
+                from fastmcp.server.auth.oauth_proxy.proxy import _hash_token
+
+                stored = await self._refresh_token_store.get(key=_hash_token(token))
+                if stored is None:
+                    # With `jwt_valid=True` the token is ours and unexpired but the
+                    # store has lost it: rotated already, revoked, or evicted. With
+                    # `jwt_valid=False` it is expired or signed by a key this
+                    # process no longer has (a redeploy without durable storage).
+                    reason = "not_in_store"
+                else:
+                    reason = "client_mismatch"
+                logger.warning(
+                    "oauth_refresh_token_rejected client_id=%s token=%s reason=%s jwt_valid=%s",
+                    getattr(client, "client_id", None),
+                    _token_fingerprint(token),
+                    reason,
+                    jwt_valid,
+                )
+            except Exception:
+                logger.warning(
+                    "oauth_refresh_token_rejected client_id=%s token=%s reason=unclassified",
+                    getattr(client, "client_id", None),
+                    _token_fingerprint(token),
+                )
+
         async def register_client(self, client_info):
             await super().register_client(client_info)
             await self._renew_client(client_info.client_id)
@@ -428,21 +562,112 @@ def _refresh_safe_proxy_class():
         def _create_upstream_oauth_client(self):
             return _RefusalAwareClient(super()._create_upstream_oauth_client())
 
+        async def _upstream_token_id_for(self, refresh_token) -> str | None:
+            """The upstream record a presented refresh token points at. Read-only; never raises."""
+            try:
+                payload = self.jwt_issuer.verify_token(
+                    refresh_token.token, expected_token_use="refresh"
+                )
+                mapping = await self._jti_mapping_store.get(key=payload["jti"])
+                return mapping.upstream_token_id if mapping is not None else None
+            except Exception:
+                return None
+
+        def _jwt_failure(self, token) -> str | None:
+            """Why our own signature check rejects `token`, as an exception CLASS name."""
+            try:
+                self.jwt_issuer.verify_token(token, expected_token_use="refresh")
+            except Exception as exc:
+                return type(exc).__name__
+            return None
+
         async def exchange_refresh_token(self, client, refresh_token, scopes):
+            client_id = getattr(client, "client_id", None)
+            token = getattr(refresh_token, "token", None)
+            fingerprint = _token_fingerprint(token)
+
+            # SHARE `load_access_token`'s per-record lock (fastmcp 4.0.1,
+            # oauth_proxy/proxy.py:2217, `_get_refresh_lock`). Its transparent
+            # refresh rotates the upstream refresh token under that lock while
+            # this method, which takes none, reads the record and presents the
+            # SAME upstream token to Supabase: two rotations of one token.
+            # Serialising them makes the second read the rotation the first
+            # wrote. The lock is per record, so one user's refresh never waits
+            # on another's, and nothing called under it calls back into here.
+            # PER PROCESS: sufficient for the one replica / one uvicorn worker
+            # this runs as, and only narrows the race under more.
+            # The fallback LOGS. Both halves of this override lean on private
+            # fastmcp members, and a silent fallback is the same shape of defect
+            # as the hard cap it replaced: the protection stops working while
+            # every test still passes and nothing in production says so. The
+            # slide already logs `oauth_refresh_slide_skipped`; without the line
+            # below, a renamed `_get_refresh_lock` would reopen the rotation race
+            # invisibly. Measured on fastmcp 4.0.1 and 4.1.7 (2026-11-10): the
+            # member exists on both and the lock engages, so this is a guard
+            # against a future release, not a live path.
+            get_lock = getattr(self, "_get_refresh_lock", None)
+            upstream_id = await self._upstream_token_id_for(refresh_token) if get_lock else None
+            lock = get_lock(upstream_id) if (get_lock and upstream_id) else None
+            if lock is None:
+                logger.warning(
+                    "oauth_refresh_lock_skipped reason=%s client_id=%s token=%s",
+                    "no_lock_helper" if get_lock is None else "no_upstream_id",
+                    client_id,
+                    fingerprint,
+                )
+                return await self._exchange_refresh_token(client, refresh_token, scopes, client_id, fingerprint)
+            async with lock:
+                return await self._exchange_refresh_token(client, refresh_token, scopes, client_id, fingerprint)
+
+        async def _exchange_refresh_token(self, client, refresh_token, scopes, client_id, fingerprint):
+            await self._slide_refresh_expiry(refresh_token)
             try:
                 result = await super().exchange_refresh_token(client, refresh_token, scopes)
-                await self._renew_client(getattr(client, "client_id", None))
+                await self._renew_client(client_id)
                 return result
             except _UpstreamRefreshRefused:
+                logger.warning(
+                    "oauth_refresh_refused client_id=%s token=%s reason=upstream_refused",
+                    client_id,
+                    fingerprint,
+                )
                 raise TokenError("invalid_grant", _REFUSED) from None
             except KeyError as exc:
                 if exc.args != ("access_token",):
                     raise
                 logger.warning(
-                    "oauth_refresh_upstream_returned_no_access_token client_id=%s",
-                    getattr(client, "client_id", None),
+                    "oauth_refresh_upstream_returned_no_access_token client_id=%s token=%s",
+                    client_id,
+                    fingerprint,
                 )
                 raise TokenError("invalid_grant", _REFUSED) from exc
+            except TokenError as exc:
+                # FastMCP's own refusals, which it logs at DEBUG (invisible in
+                # production) or not at all. The reason is taken from its fixed
+                # description strings only: the dynamic one ("Upstream refresh
+                # failed: ...") carries the upstream's text and is replaced by
+                # the cause's class. Never the description itself.
+                description = getattr(exc, "error_description", "") or ""
+                cause = exc.__cause__
+                if isinstance(cause, _UpstreamRefreshRefused):
+                    reason = "upstream_refused"
+                elif description.startswith("Upstream refresh failed"):
+                    reason = f"upstream_error:{type(cause).__name__}"
+                elif description in _FASTMCP_REFUSALS:
+                    reason = _FASTMCP_REFUSALS[description]
+                else:
+                    reason = f"error:{exc.error}"
+                detail = ""
+                if reason == "jwt_invalid":
+                    detail = f" jwt_error={self._jwt_failure(getattr(refresh_token, 'token', None))}"
+                logger.warning(
+                    "oauth_refresh_refused client_id=%s token=%s reason=%s%s",
+                    client_id,
+                    fingerprint,
+                    reason,
+                    detail,
+                )
+                raise
 
     return VaquillOAuthProxy
 
@@ -489,6 +714,17 @@ def build_auth_provider():
 
     from fastmcp.server.auth import MultiAuth
     from fastmcp.server.auth.providers.jwt import JWTVerifier
+
+    if client_registration_seconds() <= refresh_token_seconds():
+        # Not fatal (a deployment that set only one of the two days would stop
+        # starting), but it is the defect `client_registration_seconds` warns of.
+        logger.warning(
+            "VAQUILL_OAUTH_CLIENT_REGISTRATION_DAYS (%d) is not longer than "
+            "VAQUILL_OAUTH_REFRESH_TOKEN_DAYS (%d): a session can outlive its client "
+            "record, and /token then answers 401 invalid_client for a good refresh token.",
+            client_registration_seconds() // _DAY,
+            refresh_token_seconds() // _DAY,
+        )
 
     required = {
         "VAQUILL_OAUTH_UPSTREAM_JWKS_URI": os.environ.get(
@@ -556,7 +792,8 @@ def build_auth_provider():
         # never read an ID token, so asking for one would buy a failure mode and
         # nothing else.
         valid_scopes=["offline_access"],
-        # Our own refresh tokens expire (30 days by default, renewed on each use).
+        # Our own refresh tokens expire (365 days by default) and the window slides on
+        # every refresh; see `refresh_token_seconds` for why that needs our code.
         fallback_refresh_token_expiry_seconds=refresh_token_seconds(),
         enable_cimd=True,
         # "remember", NOT False, and not True either.
@@ -1070,3 +1307,113 @@ class BrandSkinMiddleware(BaseHTTPMiddleware):
         ] + [(b"content-length", str(len(skinned)).encode())]
         skinned_response.background = response.background
         return skinned_response
+
+
+#: `grant_type` values worth printing. The field is client-chosen text, so anything
+#: else is logged as `other` rather than echoed into a log line.
+_GRANT_TYPES = frozenset({"authorization_code", "refresh_token", "client_credentials"})
+
+
+def _credential_kind(authorization: str | None) -> str:
+    """What SHAPE of credential an Authorization header held, never the credential.
+
+    `none` is the case the 2026-11 re-authorization investigation could not tell
+    apart from the others: a client that went 401 -> discovery -> authorize
+    without ever calling `/token` may have held nothing at all, or an expired
+    token it then gave up on. The two need opposite fixes.
+    """
+    if not authorization:
+        return "none"
+    scheme, _, credential = authorization.partition(" ")
+    credential = credential.strip()
+    if scheme.lower() != "bearer" or not credential:
+        return "other"
+    if credential.startswith("vq_key_"):
+        return "vq_key"
+    return "jwt" if credential.count(".") == 2 else "other"
+
+
+class AuthDiagnosticsMiddleware:
+    """Log who a `/token` call was and what a `/mcp` 401 held. Never a value.
+
+    Two unexplained 401s (2026-11-08 14:32:32 and 19:59:55) could not be tied to
+    a client or a cause, because a `/token` 401 does not name the client, the
+    grant, or the credential. This logs, per request:
+
+    * `POST .../token`: the `grant_type` (from a fixed set) and the form's
+      `client_id` when it sends one, with the response status. 4xx is a WARNING;
+      anything else INFO. The form's `refresh_token`, `code`, `client_secret`
+      and `code_verifier` are never read out of the buffer.
+    * a `401` from `.../mcp`: whether an `Authorization` header was present and
+      what shape it had (`none`, `vq_key`, `jwt`, `other`). Never the header.
+
+    Pure ASGI and tee-only: it copies the first 8 KiB of a `/token` body as it
+    flows past and replays nothing, so the application sees exactly what it
+    would without this. It never raises; a failure to log is not a failure to
+    serve. `/s/{api_key}` paths are not logged at all: the key is in the path.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        path = (scope.get("path") or "").rstrip("/")
+        is_token = scope.get("method") == "POST" and path.endswith("/token")
+        is_mcp = path == "/mcp" or path.endswith("/mcp")
+        if not (is_token or is_mcp):
+            return await self.app(scope, receive, send)
+
+        status: list[int] = []
+        body = bytearray()
+
+        async def tee_receive():
+            message = await receive()
+            if is_token and message.get("type") == "http.request" and len(body) < 8192:
+                body.extend(message.get("body", b"")[: 8192 - len(body)])
+            return message
+
+        async def tee_send(message):
+            if message.get("type") == "http.response.start":
+                status.append(message["status"])
+            await send(message)
+
+        try:
+            return await self.app(scope, tee_receive, tee_send)
+        finally:
+            try:
+                code = status[0] if status else None
+                if is_token:
+                    self._log_token(body, code)
+                elif code == 401:
+                    headers = dict(scope.get("headers") or [])
+                    authorization = headers.get(b"authorization", b"").decode("latin-1")
+                    logger.warning(
+                        "mcp_unauthorized authorization_present=%s credential_kind=%s",
+                        bool(authorization),
+                        _credential_kind(authorization),
+                    )
+            except Exception:
+                pass
+
+    @staticmethod
+    def _log_token(body: bytearray, code: int | None) -> None:
+        from urllib.parse import parse_qs
+
+        try:
+            form = parse_qs(bytes(body).decode("utf-8", "replace"), keep_blank_values=True)
+        except Exception:
+            form = {}
+        grant = (form.get("grant_type") or ["absent"])[0]
+        if grant not in _GRANT_TYPES and grant != "absent":
+            grant = "other"
+        client_id = (form.get("client_id") or [None])[0]
+        level = logging.WARNING if code is None or code >= 400 else logging.INFO
+        logger.log(
+            level,
+            "oauth_token_request grant_type=%s client_id=%.120r status=%s",
+            grant,
+            client_id,
+            code,
+        )
