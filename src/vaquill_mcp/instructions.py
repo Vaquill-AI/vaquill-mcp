@@ -18,6 +18,14 @@ _CORPUS = {
     # US text below, silently, so a corpus that is not listed here tells every
     # client it serves United States law.
     "REG": "Indian regulatory publications collected from government publishers",
+    # The tribunals server (tribunals.py). "case records" and not "decisions":
+    # the corpus holds no judgment text, and a model told it serves decisions
+    # will report a false negative when a search of title and party names misses
+    # a matter whose document discusses the point at length.
+    "TRIB": (
+        "records of matters before Indian tribunals, regulators and boards, "
+        "collected from their own publications"
+    ),
 }
 
 _TEMPLATE = (
