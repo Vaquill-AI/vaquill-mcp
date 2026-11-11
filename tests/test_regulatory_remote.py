@@ -19,9 +19,12 @@ What the corpus does for a given tool call is not re-asserted here.
 
 from __future__ import annotations
 
+import ast
 import contextlib
+import importlib.util
 import logging
 import pathlib
+import re
 import sys
 from collections.abc import AsyncIterator
 
@@ -393,3 +396,46 @@ def test_the_dockerfile_defaults_to_the_live_server_and_can_build_the_other() ->
     assert "ENV VAQUILL_SERVER=${SERVER}" in text
     assert 'exec \\"$VAQUILL_SERVER\\""]' in text
     assert "vaquill-mcp-regulatory" in text
+
+
+def _hosted_console_scripts() -> set[str]:
+    """Every `vaquill-mcp-*` console script whose module defines `build_app`.
+
+    `build_app` is what makes a server HOSTED: it returns the Starlette app that
+    uvicorn serves on its own origin. The stdio entry (`vaquill-mcp`) has none,
+    so the distinction is read from the code and not from a name blocklist. The
+    module is parsed, not imported, so collecting this test starts no server and
+    reads no environment.
+    """
+    scripts = tomllib.loads((_ROOT / "pyproject.toml").read_text())["project"]["scripts"]
+    hosted: set[str] = set()
+    for name, target in scripts.items():
+        if not name.startswith("vaquill-mcp-"):
+            continue
+        module = target.split(":", 1)[0]
+        spec = importlib.util.find_spec(module)
+        assert spec is not None and spec.origin is not None, f"{name}: {module} not found"
+        tree = ast.parse(pathlib.Path(spec.origin).read_text())
+        if any(isinstance(n, ast.FunctionDef) and n.name == "build_app" for n in tree.body):
+            hosted.add(name)
+    return hosted
+
+
+def test_the_dockerfile_names_every_hosted_server_it_can_build() -> None:
+    """The comment above `ARG SERVER` is the only place an operator learns which
+    value builds which origin, and it is a hand-kept list beside the real one
+    (`[project.scripts]`). It went stale once already: `vaquill-mcp-tribunals`
+    existed and was not listed, so nobody setting up that Dokploy application
+    could tell what to pass. The expected set is parsed, never retyped."""
+    hosted = _hosted_console_scripts()
+    # Zero must be loud: an empty set would make the loop below pass vacuously.
+    assert hosted, "no hosted console script found; the derivation is broken"
+    # The stdio entry is deliberately outside the list.
+    assert "vaquill-mcp" not in hosted
+
+    text = (_ROOT / "Dockerfile").read_text()
+    start = text.index("# WHICH SERVER THIS IMAGE RUNS")
+    block = text[start : text.index("ARG SERVER=", start)]
+    # `(?![\w-])` so `vaquill-mcp-remote` cannot be satisfied by a longer name.
+    missing = sorted(n for n in hosted if not re.search(rf"{re.escape(n)}(?![\w-])", block))
+    assert not missing, f"Dockerfile server list does not name: {missing}"

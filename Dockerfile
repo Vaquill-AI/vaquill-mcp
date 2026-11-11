@@ -87,12 +87,13 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["python", "-c", "import http.client; c = http.client.HTTPConnection('localhost', 8000); c.request('GET', '/health'); r = c.getresponse(); exit(0 if r.status < 500 else 1)"]
 
-# WHICH SERVER THIS IMAGE RUNS. One Dockerfile builds both hosted servers, so a
-# second Dokploy application is the SAME build with a different build argument
+# WHICH SERVER THIS IMAGE RUNS. One Dockerfile builds every hosted server, so an
+# additional Dokploy application is the SAME build with a different build argument
 # rather than a second file that would drift from this one:
 #
 #   mcp.vaquill.ai (US + India)    SERVER=vaquill-mcp-remote       (the default)
 #   the regulatory origin          SERVER=vaquill-mcp-regulatory
+#   the tribunals origin           SERVER=vaquill-mcp-tribunals
 #
 # The default is the previous hard-coded command, so an image built with no
 # argument runs exactly what it ran before. The value is baked at build time and
