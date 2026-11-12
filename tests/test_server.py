@@ -256,6 +256,14 @@ class TestRouteExclusion:
         assert is_excluded_route("POST", "/api/v1/ask/stream")
         assert not is_excluded_route("POST", "/api/v1/ask")
 
+    def test_agent_signup_routes_excluded(self) -> None:
+        # Keyless key-acquisition routes: an MCP session already holds a key.
+        assert is_excluded_route("POST", "/api/v1/agent/signup")
+        assert is_excluded_route("POST", "/api/v1/agent/verify")
+        assert is_excluded_route("POST", "/api/v1/agent/token")
+        assert is_excluded_route("POST", "/api/v1/agent/x402/credits")
+        assert not is_excluded_route("GET", "/api/v1/agent/keys")
+
     def test_every_route_map_excludes(self) -> None:
         """Nothing here re-types a route; each map exists only to drop one."""
         from fastmcp.server.providers.openapi import MCPType

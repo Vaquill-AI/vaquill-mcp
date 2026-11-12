@@ -179,6 +179,12 @@ _ROUTE_MAPS: list[RouteMap] = [
     RouteMap(pattern=r".*/ask/stream$", mcp_type=MCPType.EXCLUDE),
     RouteMap(pattern=r"^/api/v1/boards/?$", mcp_type=MCPType.EXCLUDE),
     RouteMap(pattern=r"^/api/v1/watches(?:/.*)?$", mcp_type=MCPType.EXCLUDE),
+    # Agent signup (keyless, published in the US document since 2026-11-12) is how an
+    # agent GETS a key; an MCP session already has one, so it is never a tool.
+    RouteMap(
+        pattern=r"^/api/v1/agent/(?:signup|verify|token|x402/credits)$",
+        mcp_type=MCPType.EXCLUDE,
+    ),
 ]
 
 _HTTP_METHODS = frozenset({"get", "put", "post", "delete", "patch", "head", "options", "trace"})

@@ -105,6 +105,7 @@ def build_app() -> Starlette:
         build_auth_provider,
         build_connector_key_resolver,
     )
+    from vaquill_mcp.path_key_deprecation import PathKeyDeprecation
     from vaquill_mcp.registration_guard import RegistrationRateLimit
     from vaquill_mcp.remote import create_remote_server
 
@@ -144,6 +145,12 @@ def build_app() -> Starlette:
         # `vq_key_` bearer or the path form. Giving it OAuth needs its own
         # origin (a subdomain) or the well-known routes hoisted to the parent,
         # and neither is in scope for making the US plugin work in Cowork.
+        #
+        # DECISION (Phase 4 review): `/in` STAYS key-only. Do not add OAuth
+        # discovery here. The README already puts the regulatory server on its
+        # own subdomain for exactly this reason, and a subdomain is the shape
+        # India would need. India work is parked, so nothing changes until that
+        # is asked for.
         mount_auth = auth if prefix == "" else None
         key_server = create_remote_server(jurisdiction, resolver=resolver)
         mcp_server = create_remote_server(
@@ -154,7 +161,16 @@ def build_app() -> Starlette:
         # a mount prefix -- Starlette hands a request to the FIRST Mount whose
         # prefix matches and never falls through to a later one, so a second app
         # mounted alongside would simply be unreachable.
-        key_app = key_server.http_app(path="/{api_key}", transport="streamable-http")
+        # The path-key mount is deprecated (a credential in the URL): every
+        # response carries `Deprecation` and `Link` headers and each use is
+        # logged with a key prefix only. It keeps working.
+        key_app = key_server.http_app(
+            path="/{api_key}",
+            transport="streamable-http",
+            middleware=[
+                Middleware(PathKeyDeprecation, mount=f"{prefix}/s"),
+            ],
+        )
         # The brand skin goes on the `/mcp` app only, because only that app
         # serves HTML: FastMCP renders the OAuth consent screen there and
         # exposes no way to style it. The middleware passes everything that

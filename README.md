@@ -8,7 +8,7 @@ MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Covers US f
 
 ### Prerequisites
 
-Sign up at [vaquill.ai](https://www.vaquill.ai) to get your API key.
+Sign up at [app.vaquill.ai/auth/signup](https://app.vaquill.ai/auth/signup) to get your API key (new accounts get 1,000 free API credits, no card required). Steps for AI agents: [vaquill.ai/agents](https://www.vaquill.ai/agents).
 
 ### Claude.ai (Web)
 
@@ -466,6 +466,7 @@ wrong one outlives the misconfiguration that produced it.
 | `VAQUILL_OAUTH_CLIENT_SECRET` | With OAuth | - | Secret for that client |
 | `VAQUILL_OAUTH_ALGORITHM` | No | `ES256` | Must match the upstream signing key. `RS256` if the project was migrated to RSA. |
 | `VAQUILL_OAUTH_AUDIENCE` | No | `authenticated` | Expected `aud` on upstream tokens |
+| `VAQUILL_OAUTH_ALLOWED_REDIRECT_URIS` | No | unset (any redirect accepted) | Comma-separated redirect URI patterns a client may register, e.g. `https://claude.ai/api/mcp/auth_callback,http://localhost:*,http://127.0.0.1:*`. Unset keeps today's behaviour so no client changes; set it only after connecting each client by hand. |
 
 The only redirect URI registered upstream is `https://mcp.vaquill.ai/auth/callback`.
 Do NOT also register Claude's (`https://claude.ai/api/mcp/auth_callback`) or Claude
