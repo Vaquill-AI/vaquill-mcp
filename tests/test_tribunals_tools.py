@@ -122,9 +122,10 @@ async def test_every_tool_has_a_title_a_description_and_all_three_hints(
     assert found.title and found.description
     hints = found.annotations
     assert hints is not None
-    assert hints.readOnlyHint is True
-    assert hints.destructiveHint is False
-    assert hints.openWorldHint is False
+    # MCP SDK v2 field names; the camelCase ones are deprecated (and an error in CI).
+    assert hints.read_only_hint is True
+    assert hints.destructive_hint is False
+    assert hints.open_world_hint is False
 
 
 @pytest.mark.parametrize("tool", TOOL_NAMES)
