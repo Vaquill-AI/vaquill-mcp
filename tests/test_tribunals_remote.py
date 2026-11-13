@@ -99,10 +99,16 @@ _OAUTH_ENV = (
 
 @pytest.fixture(autouse=True)
 def _no_oauth(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Start every test bearer-only, whatever the developer's shell holds."""
+    """Start every test bearer-only, whatever the developer's shell holds.
+
+    The key is pinned too: `create_tribunals_server()` with no client builds the
+    stdio one, which reads VAQUILL_API_KEY, so a real key in a developer's shell
+    passed these tests locally while CI (no key) failed them.
+    """
     for name in (*_OAUTH_ENV, "VAQUILL_INTERNAL_SECRET"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("VAQUILL_BASE_URL", _BASE)
+    monkeypatch.setenv("VAQUILL_API_KEY", "vq_key_test")
 
 
 @pytest.fixture
