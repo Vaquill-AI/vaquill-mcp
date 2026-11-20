@@ -272,6 +272,79 @@ async def test_fetch_accepts_a_bare_act_id(
     assert payload["metadata"]["goodLawStatus"] == "good_law"
 
 
+async def test_fetch_returns_images_in_place_not_placeholders(
+    monkeypatch: pytest.MonkeyPatch, respx_mock
+) -> None:
+    """A section with images reaches the model as Markdown with the image URLs.
+
+    Before 2026-11-20 `fetch` asked for the default `both` and returned `plain`,
+    where an image is only `[Equation]`: the model could not see it, link it or
+    say where it sat. It now asks for `format=markdown`, which returns the
+    Markdown on a section with a structured rendering and `plain` otherwise.
+    """
+    server = _mount("US", monkeypatch, respx_mock)
+    act = "CFR_T14_P25_S25_533"
+    image = "https://statutes-us.vaquill.ai/figures/abc.png"
+    respx_mock.get(f"{_BASE}/api/v1/us/statutes/section/{act}").mock(
+        return_value=httpx.Response(200, json={"section": {"citation": "14 CFR 25.533"}})
+    )
+
+    def _body(request: httpx.Request) -> httpx.Response:
+        if request.url.params.get("format") == "markdown":
+            return httpx.Response(
+                200,
+                json={
+                    "markdown": f"(a) The load is ![Equation]({image}) where...",
+                    "html": None,
+                    "plain": None,
+                    "source": "r2_render",
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "plain": "(a) The load is [Equation] where...",
+                "html": f'<p>(a) The load is <img class="eq" src="{image}"></p>',
+                "markdown": None,
+            },
+        )
+
+    body = respx_mock.get(f"{_BASE}/api/v1/us/statutes/section/{act}/body").mock(
+        side_effect=_body
+    )
+    result = await server.call_tool("fetch", {"id": act})
+    payload = result.structured_content or json.loads(result.content[0].text)
+    assert body.calls.last.request.url.params.get("format") == "markdown"
+    assert f"![Equation]({image})" in payload["text"]
+    assert "[Equation] where" not in payload["text"]
+
+
+async def test_fetch_falls_back_to_plain_without_a_rendering(
+    monkeypatch: pytest.MonkeyPatch, respx_mock
+) -> None:
+    """`format=markdown` on a section with no rendering answers `plain`, and `text` takes it."""
+    server = _mount("US", monkeypatch, respx_mock)
+    act = "USC_T42_C21_S1983"
+    respx_mock.get(f"{_BASE}/api/v1/us/statutes/section/{act}").mock(
+        return_value=httpx.Response(200, json={"section": {"citation": "42 U.S.C. 1983"}})
+    )
+    respx_mock.get(f"{_BASE}/api/v1/us/statutes/section/{act}/body").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "markdown": None,
+                "html": None,
+                "plain": "Every person who, under color of any statute...",
+                "note": "`format=markdown` is only available for sections with a "
+                "structured rendering.",
+            },
+        )
+    )
+    result = await server.call_tool("fetch", {"id": act})
+    payload = result.structured_content or json.loads(result.content[0].text)
+    assert payload["text"].startswith("Every person who")
+
+
 async def test_fetch_resolves_a_citation_instead_of_404ing(
     monkeypatch: pytest.MonkeyPatch, respx_mock
 ) -> None:

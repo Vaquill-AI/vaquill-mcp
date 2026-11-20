@@ -1203,7 +1203,7 @@
       },
       "fetch": {
         "annotationTitle": "Fetch Document",
-        "description": "Fetch the full text of one US law section by the `id` from a `search` result, returning `{id, title, text, url, metadata}`. Also accepts a citation URL, a bare path, or a Bluebook citation such as '42 U.S.C. 1983'. Present for clients that require the standard search/fetch pair; prefer `get_us_statute_section_text` if available. Charged as a section lookup plus a body read.",
+        "description": "Fetch the full text of one US law section by the `id` from a `search` result, returning `{id, title, text, url, metadata}`. Also accepts a citation URL, a bare path, or a Bluebook citation such as '42 U.S.C. 1983'. `text` is Markdown, with tables and images (`![alt](url)`) where the publisher printed them, when the section has them; otherwise plain text. Present for clients that require the standard search/fetch pair; prefer `get_us_statute_section_text` if available. Charged as a section lookup plus a body read.",
         "schema": {},
         "title": "Fetch Document"
       },

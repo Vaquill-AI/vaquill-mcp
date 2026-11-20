@@ -173,9 +173,11 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "Fetch the full text of one US law section by the `id` from a `search` "
             "result, returning `{id, title, text, url, metadata}`. Also accepts a "
             "citation URL, a bare path, or a Bluebook citation such as "
-            "'42 U.S.C. 1983'. Present for clients that require the standard "
-            "search/fetch pair; prefer `get_us_statute_section_text` if available. "
-            "Charged as a section lookup plus a body read."
+            "'42 U.S.C. 1983'. `text` is Markdown, with tables and images "
+            "(`![alt](url)`) where the publisher printed them, when the section "
+            "has them; otherwise plain text. Present for clients that require the "
+            "standard search/fetch pair; prefer `get_us_statute_section_text` if "
+            "available. Charged as a section lookup plus a body read."
         ),
         annotations={
             "readOnlyHint": True,
@@ -205,7 +207,16 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
         meta_response.raise_for_status()
         section = meta_response.json().get("section") or {}
 
-        body_response = await client.get(f"/api/v1/us/statutes/section/{act_id}/body")
+        # `format=markdown` returns ONE copy of the text: the Markdown, with
+        # tables and images where the publisher printed them, on a section
+        # with a structured rendering, and `plain` (with a `note`) on one
+        # without. Same price as the default. Without it the default `both`
+        # sent html and plain, `text` took plain, and an image reached the
+        # model only as a `[Figure 1]` placeholder with no URL.
+        body_response = await client.get(
+            f"/api/v1/us/statutes/section/{act_id}/body",
+            params={"format": "markdown"},
+        )
         body_response.raise_for_status()
         body = body_response.json()
 
@@ -214,7 +225,7 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "title": _first_url(section.get("sectionTitle"), section.get("citation"))
             or act_id,
             "text": _first_url(
-                body.get("plain"), body.get("markdown"), body.get("html")
+                body.get("markdown"), body.get("plain"), body.get("html")
             )
             or "",
             "url": _first_url(
