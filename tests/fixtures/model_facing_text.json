@@ -1383,7 +1383,7 @@
             21
           ],
           "properties.years.default": 5,
-          "properties.years.description": "How many CALENDAR years of Federal Register publications to read: the current calendar year and the `years - 1` before it. It is not a trailing window of 365-day periods, so early in a year `years=1` covers only the days elapsed so far. The years read are echoed in `years`."
+          "properties.years.description": "Calendar years of Federal Register publications to read, counting the current year (default 5). Not a trailing window: in January, 1 covers only the days so far. Echoed in `years`."
         },
         "title": "Federal Register Documents for a CFR Part"
       },
@@ -1619,7 +1619,7 @@
             true
           ],
           "properties.layout.default": "reflowed",
-          "properties.layout.description": "Line-break layout of each inline `body`. It only matters with `includeBody`. `reflowed` (the default) joins hard-wrapped lines into paragraphs, keeping a break before headings, `(a)` / `1.` labels, table rows and signature blocks. `source` keeps the publisher's line breaks exactly as extracted. Same cost. Each row's `bodyLayout` says which one it was served in.",
+          "properties.layout.description": "Line breaks in each inline `body`, read only with includeBody. `reflowed` (default) joins hard-wrapped lines, `source` keeps the publisher's. Same cost. `bodyLayout` on each row says which was served.",
           "properties.layout.enum": [
             "reflowed",
             "source"
@@ -2020,7 +2020,7 @@
           "properties.Idempotency-Key.examples": [
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
-          "properties.include.description": "`stats` adds `stats` to the judge: the number of cases by year, by court, by role (authored, panel) and by normalized outcome. Costs more, in the same charge; the extra part is refunded if the count times out and the profile then comes back with `stats: null`. Omit for the profile alone.",
+          "properties.include.description": "`stats` adds case counts by year, court, role and outcome, at extra cost. That extra is refunded if the count times out and `stats` is null. Omit for the profile alone.",
           "properties.include.examples": [
             "stats"
           ],
@@ -2123,7 +2123,7 @@
             "operative"
           ],
           "properties.layout.default": "reflowed",
-          "properties.layout.description": "Line-break layout of the returned text. `reflowed` (the default) joins hard-wrapped lines into paragraphs, keeping a break before headings, `(a)` / `1.` labels, table rows and signature blocks. `source` returns the line breaks exactly as extracted from the publisher's document. Same cost. The response's `layout` says which one was served. Reflow never changes the words, and a structured `r2_render` body (tables and figures) is returned as rendered under either value. `pinpoint` offsets index into the text of the layout you asked for.",
+          "properties.layout.description": "Line breaks in the returned text. `reflowed` (default) joins page-width wraps into sentences. `source` keeps the publisher's line breaks exactly. Same cost. `pinpoint` offsets (`charStart`, `charEnd`) belong to the layout you asked for, so never mix offsets across layouts. The response's `layout` says which was served.",
           "properties.layout.enum": [
             "reflowed",
             "source"
@@ -2802,7 +2802,7 @@
             "coverage",
             "coverage.years"
           ],
-          "properties.include.description": "`coverage` adds what we hold for each court: the dated decisions, the first and last year, the newest decision date, when we last added a decision and a note on how the court is collected. `coverage.years` adds the dated decisions per year as well. Omit for the court record alone. Free either way.",
+          "properties.include.description": "`coverage` adds what we hold for each court: dated decisions, first and last year, newest decision and last addition. `coverage.years` also counts them per year. Free either way.",
           "properties.include.examples": [
             "coverage"
           ],
@@ -3023,7 +3023,7 @@
             "STATE_RULES",
             "US_TREATY"
           ],
-          "properties.corpusType.description": "Optional corpus to resolve WITHIN: `STATE`, `REGULATION`, `STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`. Narrows a citation whose form several corpora share; like `state`, a citation belonging to another corpus resolves to nothing instead.",
+          "properties.corpusType.description": "Optional corpus to resolve WITHIN: `STATE`, `REGULATION`, `STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`, `US_TREATY`, or `FEDERAL_BILL` (119th Congress, a proposal and not law). Narrows a citation whose form several corpora share; like `state`, a citation belonging to another corpus resolves to nothing instead.",
           "properties.corpusType.examples": [
             "REGULATION"
           ],
@@ -3118,7 +3118,7 @@
             "STATE_RULES",
             "US_TREATY"
           ],
-          "properties.corpusType.description": "Restricts every citation to one corpus: `STATE`, `REGULATION`, `STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`. `STATE` covers federal and state statutes, and the two constitution values are synonyms here, with `state` distinguishing the jurisdiction.",
+          "properties.corpusType.description": "Restricts every citation to one corpus: `STATE`, `REGULATION`, `STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`, `US_TREATY`, or `FEDERAL_BILL` (119th Congress, a proposal and not law). `STATE` covers federal and state statutes, and the two constitution values are synonyms here, with `state` distinguishing the jurisdiction.",
           "properties.corpusType.examples": [
             "REGULATION"
           ],
@@ -3443,7 +3443,7 @@
             "qualified immunity excessive force"
           ],
           "properties.sort.default": "relevance",
-          "properties.sort.description": "`relevance` (default, best match first), `decision_date` (newest first), `decision_date_asc` (oldest first) or `cited_by` (most cited first). A sort other than `relevance` orders the best matching opinions the search ranks, not every match in the corpus: narrow the query or the filters when the order matters.",
+          "properties.sort.description": "`relevance` (default), `decision_date` (newest first), `decision_date_asc` or `cited_by`. The last three reorder the best matches, not every match, so narrow the query when order matters.",
           "properties.sort.enum": [
             "relevance",
             "decision_date",
@@ -3991,7 +3991,7 @@
             true
           ],
           "properties.layout.default": "reflowed",
-          "properties.layout.description": "Line-break layout of each inline `body`. It only matters with `includeBody`. `reflowed` (the default) joins hard-wrapped lines into paragraphs, keeping a break before headings, `(a)` / `1.` labels, table rows and signature blocks. `source` keeps the publisher's line breaks exactly as extracted. Same cost. Each row's `bodyLayout` says which one it was served in.",
+          "properties.layout.description": "Line breaks in each inline `body`, read only with includeBody. `reflowed` (default) joins hard-wrapped lines, `source` keeps the publisher's. Same cost. `bodyLayout` on each row says which was served.",
           "properties.layout.enum": [
             "reflowed",
             "source"

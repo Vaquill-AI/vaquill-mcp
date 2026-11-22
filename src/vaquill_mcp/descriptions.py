@@ -780,7 +780,8 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     ("resolve_statute_citations_batch", "corpusType"): (
         "Restricts every citation to one corpus: `STATE`, `REGULATION`, "
-        "`STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`. `STATE` "
+        "`STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`, `US_TREATY`, "
+        "or `FEDERAL_BILL` (119th Congress, a proposal and not law). `STATE` "
         "covers federal and state statutes, and the two constitution values "
         "are synonyms here, with `state` distinguishing the jurisdiction."
     ),
@@ -832,6 +833,43 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "the split text, about 1 KB instead of 30 KB on a long section, but ONLY "
         "United States Code sections can be split: elsewhere they return `plain` with a "
         "`note`, and `content` is null, so read `note` instead of assuming it is empty."
+    ),
+    ("search_us_statutes", "layout"): (
+        "Line breaks in each inline `body`, read only with includeBody. `reflowed` "
+        "(default) joins hard-wrapped lines, `source` keeps the publisher's. Same "
+        "cost. `bodyLayout` on each row says which was served."
+    ),
+    ("get_sections_batch", "layout"): (
+        "Line breaks in each inline `body`, read only with includeBody. `reflowed` "
+        "(default) joins hard-wrapped lines, `source` keeps the publisher's. Same "
+        "cost. `bodyLayout` on each row says which was served."
+    ),
+    ("get_part_rulemaking", "years"): (
+        "Calendar years of Federal Register publications to read, counting the "
+        "current year (default 5). Not a trailing window: in January, 1 covers only "
+        "the days so far. Echoed in `years`."
+    ),
+    ("get_us_judge", "include"): (
+        "`stats` adds case counts by year, court, role and outcome, at extra cost. "
+        "That extra is refunded if the count times out and `stats` is null. Omit for "
+        "the profile alone."
+    ),
+    ("list_us_courts", "include"): (
+        "`coverage` adds what we hold for each court: dated decisions, first and "
+        "last year, newest decision and last addition. `coverage.years` also counts "
+        "them per year. Free either way."
+    ),
+    ("search_us_cases", "sort"): (
+        "`relevance` (default), `decision_date` (newest first), `decision_date_asc` "
+        "or `cited_by`. The last three reorder the best matches, not every match, "
+        "so narrow the query when order matters."
+    ),
+    ("get_us_statute_section_text", "layout"): (
+        "Line breaks in the returned text. `reflowed` (default) joins page-width "
+        "wraps into sentences. `source` keeps the publisher's line breaks exactly. "
+        "Same cost. `pinpoint` offsets (`charStart`, `charEnd`) belong to the "
+        "layout you asked for, so never mix offsets across layouts. The response's "
+        "`layout` says which was served."
     ),
     ("get_us_statute_section_text", "structured"): (
         "When true, also returns a `subsections` tree for pincite addressing and "
@@ -1083,7 +1121,8 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     ("resolve_statute_citation", "corpusType"): (
         "Optional corpus to resolve WITHIN: `STATE`, `REGULATION`, `STATE_RULES`, "
-        "`CONSTITUTION`, `STATE_CONSTITUTION`. Narrows a citation whose form several "
+        "`CONSTITUTION`, `STATE_CONSTITUTION`, `US_TREATY`, or `FEDERAL_BILL` (119th "
+        "Congress, a proposal and not law). Narrows a citation whose form several "
         "corpora share; like `state`, a citation belonging to another corpus resolves "
         "to nothing instead."
     ),

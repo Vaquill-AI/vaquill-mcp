@@ -65,13 +65,24 @@ def _proxy(monkeypatch: pytest.MonkeyPatch, upstream: _GoTrueUpstream):
 
 
 async def _connection(
-    proxy, *, days_left: float, jwt_expires_in: int | None = None, record: str = "u1", jti: str = "rj1"
+    proxy,
+    *,
+    days_left: float,
+    jwt_expires_in: int | None = None,
+    record: str = "u1",
+    jti: str = "rj1",
+    stored: bool = True,
 ):
     """A connection authorized long ago whose refresh token has `days_left` to run.
 
-    Returns the presented `RefreshToken` and the upstream record's id.
+    Returns the presented `RefreshToken`. `stored=False` is a token the store has lost.
     """
-    from fastmcp.server.auth.oauth_proxy.models import JTIMapping, UpstreamTokenSet
+    from fastmcp.server.auth.oauth_proxy.models import (
+        JTIMapping,
+        RefreshTokenMetadata,
+        UpstreamTokenSet,
+        _hash_token,
+    )
     from mcp.server.auth.provider import RefreshToken
 
     now = time.time()
@@ -103,6 +114,19 @@ async def _connection(
         value=JTIMapping(jti=jti, upstream_token_id=record, created_at=now),
         ttl=max(left, 1),
     )
+    if stored:
+        # The issue path stores this and `load_refresh_token` requires it. Since fastmcp
+        # 4.2 the exchange consumes it: without it the token reads as already used.
+        await proxy._refresh_token_store.put(
+            key=_hash_token(token),
+            value=RefreshTokenMetadata(
+                client_id=_CLIENT,
+                scopes=["offline_access"],
+                expires_at=int(now + left),
+                created_at=now - 100 * _DAY,
+            ),
+            ttl=max(left, 1),
+        )
     return RefreshToken(
         token=token, client_id=_CLIENT, scopes=["offline_access"], expires_at=int(now + left)
     )
@@ -384,7 +408,7 @@ async def test_load_refresh_token_rejection_says_why(
     from fastmcp.server.auth.oauth_proxy.models import RefreshTokenMetadata
 
     proxy = _proxy(monkeypatch, _GoTrueUpstream())
-    presented = await _connection(proxy, days_left=10)
+    presented = await _connection(proxy, days_left=10, stored=False)
     fingerprint = _token_fingerprint(presented.token)
 
     # A valid token the store has lost (already rotated, revoked or evicted).
