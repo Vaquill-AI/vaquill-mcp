@@ -147,7 +147,10 @@ async def test_the_hosted_us_app_publishes_no_alert_tools(_live_api: None) -> No
     # rulemaking tools (section and part).
     # 37 since 2026-11-07: 35, plus list_rulemaking_committee_records and
     # get_rulemaking_committee_record.
-    assert len(us) == 37, sorted(us)
+    # 53 since 2026-11-22: 37, plus the sixteen US case-law tools listed in
+    # `test_us_case_law_tools.CASE_TOOLS`. Several case-law routes are deliberately
+    # not tools (see `_ROUTE_MAPS`).
+    assert len(us) == 53, sorted(us)
     assert len(india) == 22, sorted(india)
 
 

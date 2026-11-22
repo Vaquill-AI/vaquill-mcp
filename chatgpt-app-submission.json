@@ -451,6 +451,198 @@
         "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
+    },
+    "search_us_cases": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Searches the text of stored court opinions and returns matches without changing data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_case": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one stored court decision record and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_opinion": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the stored text of one court opinion and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "resolve_case_citations": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Looks up which stored cases carry the given reporter citations and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_cases_batch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns several stored court decision records at once and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_case_citations": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the citation graph of a stored decision and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_opinion_citations": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the citation graph of a stored opinion and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_case_parentheticals": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns how stored decisions describe a case and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_us_cases": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists stored court decisions and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_opinions_batch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns several stored opinions at once and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_us_judges": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists stored judge records and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_us_courts": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists the stored courts and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_judge": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one stored judge profile and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "list_us_dockets": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Lists stored court dockets and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_docket": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns one stored court docket record and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
+    },
+    "get_us_docket_entries": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Returns the entries of one stored court docket and does not change data.",
+        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
+        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
+      }
     }
   },
   "test_cases": [

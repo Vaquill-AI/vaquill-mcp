@@ -170,7 +170,10 @@ async def test_law_change_alert_tools_are_absent_from_the_us_catalogue(
     # rulemaking tools (section and part).
     # 37 since 2026-11-07: 35, plus list_rulemaking_committee_records and
     # get_rulemaking_committee_record.
-    assert len(published) == 37, sorted(published)
+    # 53 since 2026-11-22: 37, plus the sixteen US case-law tools listed in
+    # `test_us_case_law_tools.CASE_TOOLS`. Several case-law routes are deliberately
+    # not tools (see `_ROUTE_MAPS`).
+    assert len(published) == 53, sorted(published)
 
 
 # ---------------------------------------------------------------------------

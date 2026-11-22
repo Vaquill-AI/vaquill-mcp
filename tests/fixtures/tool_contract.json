@@ -1845,6 +1845,171 @@
       "method": "POST",
       "path": "/api/v1/us/statutes/extract-citations"
     },
+    "get_case_citations": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "case_id": {
+            "examples": [
+              "USCASE_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USCASE_[0-9A-F]{20}$",
+            "type": "string"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "negative",
+                  "caution",
+                  "neutral"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "negative"
+            ]
+          },
+          "direction": {
+            "default": "cited_by",
+            "enum": [
+              "cites",
+              "cited_by"
+            ],
+            "examples": [
+              "cites"
+            ],
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "treatment": {
+            "anyOf": [
+              {
+                "enum": [
+                  "overruled",
+                  "abrogated",
+                  "reversed",
+                  "vacated",
+                  "superseded",
+                  "disapproved",
+                  "distinguished",
+                  "criticized",
+                  "questioned",
+                  "limited",
+                  "declined_to_follow",
+                  "followed",
+                  "cited",
+                  "explained",
+                  "relied_on"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "overruled"
+            ]
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/cases/{case_id}/citations"
+    },
+    "get_case_parentheticals": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "case_id": {
+            "examples": [
+              "USCASE_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USCASE_[0-9A-F]{20}$",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/cases/{case_id}/parentheticals"
+    },
     "get_credit_balance": {
       "inputSchema": {
         "properties": {},
@@ -1853,6 +2018,118 @@
       },
       "method": "GET",
       "path": "/api/v1/credits/balance"
+    },
+    "get_opinion_citations": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "negative",
+                  "caution",
+                  "neutral"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "negative"
+            ]
+          },
+          "direction": {
+            "default": "cited_by",
+            "enum": [
+              "cites",
+              "cited_by"
+            ],
+            "examples": [
+              "cites"
+            ],
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "opinion_id": {
+            "examples": [
+              "USOP_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USOP_[0-9A-F]{20}$",
+            "type": "string"
+          },
+          "treatment": {
+            "anyOf": [
+              {
+                "enum": [
+                  "overruled",
+                  "abrogated",
+                  "reversed",
+                  "vacated",
+                  "superseded",
+                  "disapproved",
+                  "distinguished",
+                  "criticized",
+                  "questioned",
+                  "limited",
+                  "declined_to_follow",
+                  "followed",
+                  "cited",
+                  "explained",
+                  "relied_on"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "overruled"
+            ]
+          }
+        },
+        "required": [
+          "opinion_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/opinions/{opinion_id}/citations"
     },
     "get_part_rulemaking": {
       "inputSchema": {
@@ -2048,8 +2325,7 @@
             "examples": [
               "2060-AV16"
             ],
-            "maxLength": 9,
-            "minLength": 9,
+            "maxLength": 32,
             "pattern": "^[0-9]{4}[- ][A-Za-z]{2}[0-9]{2}$",
             "type": "string"
           }
@@ -2092,6 +2368,7 @@
           "beforeId": {
             "anyOf": [
               {
+                "maximum": 9.223372036854776e+18,
                 "minimum": 0.0,
                 "type": "integer"
               },
@@ -2138,6 +2415,7 @@
           "sinceId": {
             "anyOf": [
               {
+                "maximum": 9.223372036854776e+18,
                 "minimum": 0.0,
                 "type": "integer"
               },
@@ -2447,6 +2725,17 @@
               true
             ],
             "type": "boolean"
+          },
+          "layout": {
+            "default": "reflowed",
+            "enum": [
+              "reflowed",
+              "source"
+            ],
+            "examples": [
+              "source"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -2846,6 +3135,7 @@
             "items": {
               "type": "string"
             },
+            "maxDistinctItems": 50,
             "maxItems": 200,
             "minItems": 1,
             "type": "array"
@@ -2936,6 +3226,352 @@
       },
       "method": "POST",
       "path": "/api/v1/us/session-laws/batch"
+    },
+    "get_us_case": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "case_id": {
+            "examples": [
+              "USCASE_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USCASE_[0-9A-F]{20}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/cases/{case_id}"
+    },
+    "get_us_cases_batch": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseIds": {
+            "examples": [
+              [
+                "USCASE_0123456789ABCDEF0123"
+              ]
+            ],
+            "items": {
+              "pattern": "^USCASE_[0-9A-F]{20}$",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "caseIds"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/cases/batch"
+    },
+    "get_us_docket": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "docket_id": {
+            "examples": [
+              "USDKT_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USDKT_[0-9A-F]{20}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "docket_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/dockets/{docket_id}"
+    },
+    "get_us_docket_entries": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "docket_id": {
+            "examples": [
+              "USDKT_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USDKT_[0-9A-F]{20}$",
+            "type": "string"
+          },
+          "entryNumberAfter": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              41
+            ]
+          },
+          "filedAfter": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-11-01"
+            ]
+          },
+          "includeDocuments": {
+            "default": false,
+            "examples": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "docket_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/dockets/{docket_id}/entries"
+    },
+    "get_us_judge": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "include": {
+            "anyOf": [
+              {
+                "const": "stats",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "stats"
+            ]
+          },
+          "judge_id": {
+            "examples": [
+              "USJDG_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USJDG_[0-9A-F]{20}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "judge_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/judges/{judge_id}"
+    },
+    "get_us_opinion": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "format": {
+            "default": "html",
+            "enum": [
+              "html",
+              "text"
+            ],
+            "examples": [
+              "text"
+            ],
+            "type": "string"
+          },
+          "opinion_id": {
+            "examples": [
+              "USOP_3F9A2B1C4D5E6F708192"
+            ],
+            "pattern": "^USOP_[0-9A-F]{20}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "opinion_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/opinions/{opinion_id}"
+    },
+    "get_us_opinions_batch": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "format": {
+            "default": "html",
+            "enum": [
+              "html",
+              "text"
+            ],
+            "type": "string"
+          },
+          "opinionIds": {
+            "examples": [
+              [
+                "USOP_0123456789ABCDEF0123"
+              ]
+            ],
+            "items": {
+              "pattern": "^USOP_[0-9A-F]{20}$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "opinionIds"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/opinions/batch"
     },
     "get_us_statute_section": {
       "inputSchema": {
@@ -3029,6 +3665,17 @@
             ],
             "examples": [
               "operative"
+            ],
+            "type": "string"
+          },
+          "layout": {
+            "default": "reflowed",
+            "enum": [
+              "reflowed",
+              "source"
+            ],
+            "examples": [
+              "source"
             ],
             "type": "string"
           },
@@ -3222,8 +3869,7 @@
             "examples": [
               "2060-AV16"
             ],
-            "maxLength": 9,
-            "minLength": 9,
+            "maxLength": 32,
             "pattern": "^[0-9]{4}[- ][A-Za-z]{2}[0-9]{2}$",
             "type": "string"
           },
@@ -3469,7 +4115,7 @@
           "rin": {
             "anyOf": [
               {
-                "pattern": "^[0-9]{4}-[A-Z]{2}[0-9]{2}$",
+                "maxLength": 32,
                 "type": "string"
               },
               {
@@ -3478,7 +4124,8 @@
             ],
             "examples": [
               "2060-AV35"
-            ]
+            ],
+            "pattern": "^[0-9]{4}[- ][A-Za-z]{2}[0-9]{2}$"
           }
         },
         "required": [],
@@ -4211,6 +4858,7 @@
           "titleNumber": {
             "anyOf": [
               {
+                "maximum": 9999.0,
                 "minimum": 1.0,
                 "type": "integer"
               },
@@ -4333,6 +4981,713 @@
       "method": "GET",
       "path": "/api/v1/us/statutes/coverage"
     },
+    "list_us_cases": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "courtId": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^US_[A-Z0-9_]{2,40}$",
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "US_FED_CA9",
+                "US_FED_CA2"
+              ]
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "MjAyNi0xMS0wMVQwMDowMDowMCswMDowMHxVU0NBU0VfM0Y5QTJCMUM0RDVFNkY3MDgxOTI"
+            ]
+          },
+          "dateFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-01-01"
+            ]
+          },
+          "dateTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-12-31"
+            ]
+          },
+          "judgeId": {
+            "anyOf": [
+              {
+                "pattern": "^USJDG_[0-9A-F]{20}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "USJDG_3F9A2B1C4D5E6F708192"
+            ]
+          },
+          "judgeRole": {
+            "default": "any",
+            "enum": [
+              "any",
+              "authored",
+              "panel"
+            ],
+            "examples": [
+              "authored"
+            ],
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "publicationStatus": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "published",
+                    "unpublished",
+                    "unknown",
+                    "errata",
+                    "separate",
+                    "in_chambers",
+                    "relating_to"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 7,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "published"
+              ]
+            ]
+          },
+          "sort": {
+            "default": "decision_date",
+            "enum": [
+              "decision_date",
+              "decision_date_asc"
+            ],
+            "examples": [
+              "decision_date_asc"
+            ],
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "CA"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/cases/list"
+    },
+    "list_us_courts": {
+      "inputSchema": {
+        "properties": {
+          "include": {
+            "anyOf": [
+              {
+                "enum": [
+                  "coverage",
+                  "coverage.years"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "coverage"
+            ]
+          },
+          "isActive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "supreme",
+                  "appellate",
+                  "trial",
+                  "bankruptcy",
+                  "bankruptcy_appellate",
+                  "special",
+                  "attorney_general",
+                  "agency",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "appellate"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "ninth"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "CA"
+            ]
+          },
+          "system": {
+            "anyOf": [
+              {
+                "enum": [
+                  "federal",
+                  "state",
+                  "territorial",
+                  "tribal",
+                  "military"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "federal"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/courts"
+    },
+    "list_us_dockets": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "appealFromCourtId": {
+            "anyOf": [
+              {
+                "pattern": "^US_[A-Z0-9_]{2,40}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "US_FED_CA9"
+            ]
+          },
+          "assignedJudgeId": {
+            "anyOf": [
+              {
+                "pattern": "^USJDG_[0-9A-F]{20}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "USJDG_3F9A2B1C4D5E6F708192"
+            ]
+          },
+          "cause": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "42:1983"
+            ]
+          },
+          "courtId": {
+            "anyOf": [
+              {
+                "pattern": "^US_[A-Z0-9_]{2,40}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "US_FED_CA9"
+            ]
+          },
+          "dateFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-01-01"
+            ]
+          },
+          "dateTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-12-31"
+            ]
+          },
+          "docketNumber": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "22-1234"
+            ]
+          },
+          "jurisdictionBasis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "federal_question",
+                  "diversity",
+                  "us_government_plaintiff",
+                  "us_government_defendant",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "federal_question"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Acme"
+            ]
+          },
+          "natureOfSuit": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "civil rights"
+            ]
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "sort": {
+            "default": "filed_desc",
+            "enum": [
+              "filed_desc",
+              "filed_asc"
+            ],
+            "examples": [
+              "filed_asc"
+            ],
+            "type": "string"
+          },
+          "terminated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "terminatedFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-01-01"
+            ]
+          },
+          "terminatedTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-12-31"
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/dockets/list"
+    },
+    "list_us_judges": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "courtId": {
+            "anyOf": [
+              {
+                "pattern": "^US_[A-Z0-9_]{2,40}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "US_FED_CA9"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Sotomayor"
+            ]
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/us/judges"
+    },
+    "resolve_case_citations": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "citations": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "410 U.S. 113"
+              ]
+            ]
+          },
+          "includeStatus": {
+            "default": false,
+            "type": "boolean"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "maxLength": 200000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "See Roe v. Wade, 410 U.S. 113, 120 (1973). Id. at 125."
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/cases/resolve"
+    },
     "resolve_statute_citation": {
       "inputSchema": {
         "properties": {
@@ -4365,10 +5720,12 @@
               {
                 "enum": [
                   "CONSTITUTION",
+                  "FEDERAL_BILL",
                   "REGULATION",
                   "STATE",
                   "STATE_CONSTITUTION",
-                  "STATE_RULES"
+                  "STATE_RULES",
+                  "US_TREATY"
                 ],
                 "type": "string"
               },
@@ -4442,8 +5799,7 @@
                   "wi",
                   "wy"
                 ],
-                "maxLength": 7,
-                "minLength": 2,
+                "maxLength": 64,
                 "type": "string"
               },
               {
@@ -4502,10 +5858,12 @@
               {
                 "enum": [
                   "CONSTITUTION",
+                  "FEDERAL_BILL",
                   "REGULATION",
                   "STATE",
                   "STATE_CONSTITUTION",
-                  "STATE_RULES"
+                  "STATE_RULES",
+                  "US_TREATY"
                 ],
                 "type": "string"
               },
@@ -4579,8 +5937,7 @@
                   "wi",
                   "wy"
                 ],
-                "maxLength": 7,
-                "minLength": 2,
+                "maxLength": 64,
                 "type": "string"
               },
               {
@@ -4849,6 +6206,275 @@
       },
       "method": "POST",
       "path": "/api/v1/us/session-laws/search"
+    },
+    "search_us_cases": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseName": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "Miranda"
+            ]
+          },
+          "courtIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "pattern": "^US_[A-Z0-9_]{2,40}$",
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "US_FED_SCOTUS"
+              ]
+            ]
+          },
+          "courtLevel": {
+            "anyOf": [
+              {
+                "enum": [
+                  "supreme",
+                  "appellate",
+                  "trial",
+                  "bankruptcy",
+                  "bankruptcy_appellate",
+                  "special",
+                  "attorney_general",
+                  "agency",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "appellate"
+            ]
+          },
+          "courtSystem": {
+            "anyOf": [
+              {
+                "enum": [
+                  "federal",
+                  "state",
+                  "territorial",
+                  "tribal",
+                  "military"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "federal"
+            ]
+          },
+          "dateFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "1990-01-01"
+            ]
+          },
+          "dateTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-12-31"
+            ]
+          },
+          "docketNumber": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "70-18"
+            ]
+          },
+          "judgeId": {
+            "anyOf": [
+              {
+                "pattern": "^USJDG_[0-9A-F]{20}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "USJDG_0123456789ABCDEF0123"
+            ]
+          },
+          "limit": {
+            "default": 20,
+            "examples": [
+              10
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "minCitedBy": {
+            "anyOf": [
+              {
+                "maximum": 1000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              10
+            ]
+          },
+          "offset": {
+            "default": 0,
+            "examples": [
+              20
+            ],
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "passages": {
+            "default": 1,
+            "examples": [
+              3
+            ],
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "publicationStatus": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "published",
+                    "unpublished",
+                    "unknown",
+                    "errata",
+                    "separate",
+                    "in_chambers",
+                    "relating_to"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 7,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              [
+                "published"
+              ]
+            ]
+          },
+          "query": {
+            "examples": [
+              "qualified immunity excessive force"
+            ],
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sort": {
+            "default": "relevance",
+            "enum": [
+              "relevance",
+              "decision_date",
+              "decision_date_asc",
+              "cited_by"
+            ],
+            "examples": [
+              "decision_date"
+            ],
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "CA"
+            ]
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/us/cases/search"
     },
     "search_us_statutes": {
       "inputSchema": {
@@ -5146,6 +6772,7 @@
                     "articleNumber",
                     "audience",
                     "body",
+                    "bodyLayout",
                     "bodyNote",
                     "bodyServedNote",
                     "bodyUnavailable",
@@ -5322,6 +6949,7 @@
                     "articleNumber",
                     "audience",
                     "body",
+                    "bodyLayout",
                     "bodyNote",
                     "bodyServedNote",
                     "bodyUnavailable",
@@ -5501,6 +7129,17 @@
               true
             ],
             "type": "boolean"
+          },
+          "layout": {
+            "default": "reflowed",
+            "enum": [
+              "reflowed",
+              "source"
+            ],
+            "examples": [
+              "source"
+            ],
+            "type": "string"
           },
           "limit": {
             "default": 10,

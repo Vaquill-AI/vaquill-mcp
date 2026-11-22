@@ -12,8 +12,9 @@ startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
-SCOPE: both jurisdictions. US (35 published tools: statutes, regulations,
-constitutions, court rules, agency guidance, state session laws and citation extraction) and
+SCOPE: both jurisdictions. US (53 published tools: statutes, regulations,
+constitutions, court rules, agency guidance, state session laws, rulemaking, citation
+extraction and 16 case-law tools) and
 India (22 published tools: Central and State Acts plus regulator
 instruments). Both counts include the
 `search` / `fetch` aliases, which are titled here but described in aliases.py.
@@ -238,6 +239,7 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "'Cal. Code Regs. tit. 22, 76227') to the exact section, confirmed, with an official "
         "source link and the act_id. Use this whenever the user gives you a citation rather "
         "than a question -- it is far more reliable than searching for the citation text. "
+        "Case cites: resolve_case_citations. "
         "`matchLevel` means `section` is NOT the exact unit cited. A shared acronym "
         "(`G.S. 52-577`) is resolved: false until you pass `state`."
     ),
@@ -473,11 +475,140 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "extract_statute_citations": (
         "Paste text (a brief, memo or answer) and get each distinct US statute, "
         "regulation, court rule and constitution citation, resolved to its "
-        "section. Not case citations; extraction can miss one. Extraction is "
+        "section. Not case citations (resolve_case_citations); extraction can miss one. Extraction is "
         "free (resolve=false); each distinct citation resolved is charged. Rows "
         "carry charStart/charEnd, rangeRole/rangePartner (range ends are two "
         "charged rows; `interior` rows are never charged) and counts."
         "distinctSections. Up to 200,000 characters, never stored."
+    ),
+    # ------------------------------------------------------------------
+    # US case law (court opinions), added 2026-11-21. Federal and state courts.
+    # An entry is inert until the live document carries its route. `get_us_court` has no
+    # entry: that route is excluded from the catalogue (see `_ROUTE_MAPS`).
+    # The graph tools list citations and counts only and never promise "good law".
+    # The citator and statute-link tools are not served, so no text may send a
+    # model to them.
+    # ------------------------------------------------------------------
+    "search_us_cases": (
+        "Full-text keyword search over the opinions of US federal and state "
+        "courts, best match first: one result per case, with the opinion that "
+        "matched and a snippet. Use to find decisions by topic, phrase, party or "
+        "judge. Narrow with courtIds (ids from list_us_courts), state, "
+        "dateFrom/dateTo, publicationStatus, judgeId. For a known citation use "
+        "resolve_case_citations; for statutes use search_us_statutes. Page with "
+        "limit and offset while hasMore; an empty page is charged."
+    ),
+    "get_us_case": (
+        "One US court decision by caseId (from a search or a citation resolve): "
+        "court, dates, parties, publication status, reporter citations, "
+        "citedByCount, the judges who sat and its opinions with their opinionIds. "
+        "No opinion text: get_us_opinion. Several ids: get_us_cases_batch. "
+        "An unknown id is a 404, not charged."
+    ),
+    "get_us_opinion": (
+        "The text of one opinion by opinionId (listed on the case record), as "
+        "`html` (default; a citation to a case we hold carries data-case-id, "
+        "which get_us_case accepts) or plain `text`. A decision can have several "
+        "opinions (majority, concurrence, dissent): read each by its own id. "
+        "textFromOcr true means the text was recognised from a scan, so check a "
+        "quotation before relying on it. An unknown id is a 404, not charged."
+    ),
+    "resolve_case_citations": (
+        "Resolve reporter citations such as `410 U.S. 113` or `347 F.3d 1000, "
+        "1004` to cases, up to 100 per call, one result per entry in the order "
+        "sent (`index`). `status`: `resolved` (one case), `ambiguous` (every "
+        "candidate listed, none picked), `not_found`, or `unparsed` (not a volume "
+        "reporter page citation, not charged). Use first when given a case "
+        "citation, then get_us_case. Statute citations such as `42 U.S.C. 1983` "
+        "go to resolve_statute_citation."
+    ),
+    "get_us_cases_batch": (
+        "Read up to 50 distinct US cases by caseIds in one call: the record "
+        "get_us_case returns, for each, in the order sent. Use instead of a loop "
+        "when you hold several ids, for example every hit of one search. "
+        "Duplicates collapse (duplicatesCollapsed); an id that matches no case "
+        "is listed in notFound and not charged. No opinion text: use "
+        "get_us_opinion."
+    ),
+    "get_case_citations": (
+        "The cases a decision cites (direction=cites) or the cases that cite it "
+        "(direction=cited_by, the default), most-mentioned first, each with "
+        "mentionCount. Use to follow the authority a court relied on or find later "
+        "decisions applying it. Lists citations only: to learn how a later case "
+        "used it, read that opinion. Page with limit and offset while hasMore; an "
+        "empty page is charged. An unknown id is a 404, not charged."
+    ),
+    "get_opinion_citations": (
+        "The opinions one opinion cites (direction=cites) or that cite it "
+        "(direction=cited_by, the default), most-mentioned first, each with "
+        "mentionCount. Use when one opinion of a decision matters, such as a "
+        "dissent; for the whole decision use get_case_citations. Lists citations "
+        "only. Page with limit and offset while hasMore; an empty page is charged. "
+        "An unknown id is a 404, not charged."
+    ),
+    "get_case_parentheticals": (
+        "How later decisions describe a case in a parenthetical, such as (holding "
+        "that ...): the text and the decision and opinion that wrote it, best "
+        "scored first. Use for a short account of what a case is cited for, then "
+        "read the opinion before relying on it. Page with limit and offset while "
+        "hasMore; an empty page is charged. An unknown id is a 404, not charged."
+    ),
+    "list_us_cases": (
+        "Decisions by filter, with no text query, newest first: courtId, state, "
+        "judgeId with judgeRole, dateFrom/dateTo and publicationStatus. Use to "
+        "browse a court's or a judge's decisions. For words or a topic use "
+        "search_us_cases. Page by passing nextCursor as cursor with the same "
+        "filters until it is null; an empty page is charged."
+    ),
+    "get_us_opinions_batch": (
+        "Read up to 20 opinions by opinionIds in one call, as html or text, in the "
+        "order sent. An id that matches none is in notFound and one with no text "
+        "is in bodyUnavailable; neither is charged. Opinions past the 2,000,000 "
+        "character limit are listed in deferred, not charged: ask for those again."
+    ),
+    "list_us_judges": (
+        "Judges by last name, narrowed by name words, courtId and active. Use to "
+        "find the judgeId that get_us_judge, list_us_cases and search_us_cases "
+        "take. Page with limit and offset while hasMore; an empty page is charged."
+    ),
+    "list_us_courts": (
+        "List US courts by courtId, with level, system, state and dates; narrow by "
+        "those or by q, words of the name. Use to find the courtId search_us_cases "
+        "takes. Pass include=coverage for what we hold per court (decisions, first "
+        "and last year, newest date) before saying we have or lack a court's "
+        "decisions: a thin court is not proof no decisions exist. "
+        "include=coverage.years adds counts per year. Page with limit and offset "
+        "while hasMore."
+    ),
+    "get_us_judge": (
+        "One judge's profile by judgeId (from the panel on a case record): name, "
+        "birth and death, positions held with court and dates, education and "
+        "political affiliations. Use to learn who a judge is. To find a judge's "
+        "decisions pass the id as judgeId to search_us_cases. An unknown id is a "
+        "404, not charged."
+    ),
+    "list_us_dockets": (
+        "Court dockets, newest filing first, narrowed by courtId, an exact "
+        "docketNumber, words of the case caption (name, 3 characters or more) "
+        "and a dateFrom/dateTo filing window. Use to find a docket from a docket "
+        "number or party names. Party names and docket text are served with "
+        "personal identifiers masked. Read one with get_us_docket. Page with "
+        "limit and offset while hasMore; an empty page is charged."
+    ),
+    "get_us_docket": (
+        "One docket by docketId: court, docket number, caption, filing and "
+        "termination dates, assigned judge, nature of suit, the decisions issued "
+        "in it (caseIds, for get_us_case) and its oral argument ids. No filings "
+        "are held yet, so get_us_docket_entries is empty today. Personal "
+        "identifiers are masked. An unknown id is a 404, not charged."
+    ),
+    "get_us_docket_entries": (
+        "The entries of one docket in filing order, with personal identifiers "
+        "masked; filed documents are not returned. Empty for every docket today: "
+        "no entries are held yet, so do not call it to look for filings, and "
+        "never read an empty page as nothing filed. Page with limit and offset "
+        "while hasMore; an empty page is charged. An unknown id is a 404, not "
+        "charged."
     ),
 }
 
@@ -527,6 +658,38 @@ _IN_SECTION_NUMBER = (
 )
 
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
+    # US case law, added 2026-11-21. Only the parameters whose inherited text says too
+    # little for a model to use them well; the rest keep the API's own short prose.
+    ("search_us_cases", "query"): (
+        "Words, or a quoted phrase, matched against opinion text. Keyword matching, "
+        "not meaning: use the opinion's own vocabulary (`qualified immunity`, not "
+        "`police cannot be sued`)."
+    ),
+    ("search_us_cases", "dateFrom"): "Earliest decision date, YYYY-MM-DD. Optional.",
+    ("search_us_cases", "dateTo"): "Latest decision date, YYYY-MM-DD. Optional.",
+    ("search_us_cases", "publicationStatus"): (
+        "Only decisions with one of these publication statuses; omit for all. A "
+        "result's `publicationStatus` says which one it has."
+    ),
+    # Inputs the document publishes ahead of what is served (checked 2026-11-22).
+    ("resolve_case_citations", "includeStatus"): (
+        "Not served yet: leave false. `true` is refused with a 422, not charged."
+    ),
+    ("get_case_citations", "category"): (
+        "Not served yet: leave it out. A value is refused with a 422, not charged."
+    ),
+    ("get_case_citations", "treatment"): (
+        "Not served yet: leave it out. A value is refused with a 422, not charged."
+    ),
+    ("get_opinion_citations", "category"): (
+        "Not served yet: leave it out. A value is refused with a 422, not charged."
+    ),
+    ("get_opinion_citations", "treatment"): (
+        "Not served yet: leave it out. A value is refused with a 422, not charged."
+    ),
+    ("get_us_docket_entries", "includeDocuments"): (
+        "Leave false: no documents are held yet, and true costs more."
+    ),
     # --- Added 2026-09-19 -------------------------------------------------
     # Twelve parameters the API had been publishing with descriptions of 262
     # to 513 characters and no curated entry, riding in every agent's context on
@@ -1189,6 +1352,23 @@ TOOL_TITLES: dict[str, str] = {
     "search_session_laws": "Search State Session Laws",
     "get_session_law_changes": "Session Law Change Feed",
     "get_session_law_versions": "State Session Law Versions",
+    # --- US: case law ---------------------------------------------------------
+    "search_us_cases": "Search US Case Law",
+    "get_us_case": "US Case Record",
+    "get_us_opinion": "US Opinion Text",
+    "resolve_case_citations": "Resolve Case Citations",
+    "get_us_cases_batch": "US Cases (Batch)",
+    "get_case_citations": "Case Citation Graph",
+    "get_opinion_citations": "Opinion Citation Graph",
+    "get_case_parentheticals": "How Later Cases Describe a Case",
+    "list_us_cases": "US Cases by Filter",
+    "get_us_opinions_batch": "US Opinions (Batch)",
+    "list_us_judges": "US Judges",
+    "list_us_courts": "US Courts",
+    "get_us_judge": "US Judge Profile",
+    "list_us_dockets": "US Dockets",
+    "get_us_docket": "US Docket Record",
+    "get_us_docket_entries": "US Docket Entries",
     "get_section_rulemaking": "Federal Register Documents for a CFR Section",
     "get_part_rulemaking": "Federal Register Documents for a CFR Part",
     "get_rulemaking_docket": "Regulations.gov Docket",

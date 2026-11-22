@@ -87,6 +87,22 @@ _FUNC_OVERRIDES: dict[str, str] = {
     # so the tools are named for the family they sit in beside the dockets.
     "list_committee_records": "list_rulemaking_committee_records",
     "get_committee_record": "get_rulemaking_committee_record",
+    # US case law (court opinions), added 2026-11-21. The handlers are named for
+    # their route, and "case" alone reads as any lawsuit, so the single-record
+    # tools say US. `get_case_citations` already reads well.
+    "search_cases": "search_us_cases",
+    "get_case": "get_us_case",
+    "get_opinion": "get_us_opinion",
+    "resolve_citations": "resolve_case_citations",
+    "batch_cases": "get_us_cases_batch",
+    "list_courts": "list_us_courts",
+    "get_judge": "get_us_judge",
+    "list_dockets": "list_us_dockets",
+    "get_docket": "get_us_docket",
+    "get_docket_entries": "get_us_docket_entries",
+    "list_cases": "list_us_cases",
+    "list_judges": "list_us_judges",
+    "batch_opinions": "get_us_opinions_batch",
 }
 
 
@@ -179,6 +195,34 @@ _ROUTE_MAPS: list[RouteMap] = [
     RouteMap(pattern=r".*/ask/stream$", mcp_type=MCPType.EXCLUDE),
     RouteMap(pattern=r"^/api/v1/boards/?$", mcp_type=MCPType.EXCLUDE),
     RouteMap(pattern=r"^/api/v1/watches(?:/.*)?$", mcp_type=MCPType.EXCLUDE),
+    # One court by id is not a tool: `list_us_courts` already returns every court
+    # record and narrows by state, level and system, and a case carries its own
+    # court name, so a second tool would only widen the catalogue a model chooses
+    # from. The REST route stays live. Anchored at both ends so it cannot swallow
+    # `/us/courts` (the list, which also answers coverage through `include=coverage`)
+    # or a future `/us/courts/{id}/...` route.
+    RouteMap(pattern=r"^/api/v1/us/courts/[^/]+$", mcp_type=MCPType.EXCLUDE),
+    # The rest of the case-law surface that is NOT a tool, a product decision of 2026-11-21 like
+    # the alerts. The REST API keeps every route; the catalogue a model chooses from does not.
+    #   cases/changes            a sync feed for programs that mirror the data, not research
+    #   docket-entries/{id}/documents, files/{id}, oral-arguments/*
+    #                            file and audio links are short-lived signed URLs a model cannot
+    #                            open, and the oral argument record is metadata that is of no use
+    #                            without its recording
+    #   judges/{id}/disclosures, disclosures/{id}
+    #                            report records whose substance is a file behind a signed link
+    # Anchored at both ends, one alternative per route.
+    RouteMap(
+        pattern=(
+            r"^/api/v1/us/(?:cases/changes"
+            r"|docket-entries/[^/]+/documents"
+            r"|files/[^/]+"
+            r"|oral-arguments(?:/.+)?"
+            r"|judges/[^/]+/disclosures"
+            r"|disclosures/[^/]+)$"
+        ),
+        mcp_type=MCPType.EXCLUDE,
+    ),
     # Agent signup (keyless, published in the US document since 2026-11-12) is how an
     # agent GETS a key; an MCP session already has one, so it is never a tool.
     RouteMap(
@@ -484,6 +528,12 @@ _READ_ONLY_POSTS: frozenset[str] = frozenset(
         # guard reads predated them.
         "/us/session-laws/search",
         "/us/session-laws/batch",
+        # US case law, added 2026-11-21: all four are POST-as-query (a search, a
+        # citation resolve and two batch reads by id) and write nothing.
+        "/us/cases/search",
+        "/us/cases/resolve",
+        "/us/cases/batch",
+        "/us/opinions/batch",
         "/in/acts/search",
         # POST-as-query: resolves a batch of citations and writes nothing.
         "/in/acts/resolve",

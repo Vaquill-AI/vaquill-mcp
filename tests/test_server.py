@@ -153,6 +153,21 @@ _PROD_PRICING_ENDPOINTS = {
     "/us/session-laws/changes",
     "/us/statutes/section/enactments",
     "/us/statutes/extract-citations",
+    "/us/cases",
+    "/us/cases/search",
+    "/us/cases/resolve",
+    "/us/cases/batch",
+    "/us/cases/list",
+    "/us/cases/citations",
+    "/us/cases/parentheticals",
+    "/us/opinions",
+    "/us/opinions/batch",
+    "/us/opinions/citations",
+    "/us/courts",
+    "/us/judges",
+    "/us/dockets",
+    "/us/dockets/list",
+    "/us/dockets/entries",
 }
 
 
@@ -234,6 +249,26 @@ class TestRouteExclusion:
         ("POST", "/api/v1/watches/{watch_id}/test"),
     }
 
+    # The case-law routes the catalogue drops, a product decision (2026-11-21) like
+    # the alerts and not a technical limit. A single court by id (the list tool
+    # returns every court record and filters), the change feed, oral arguments and
+    # judges' disclosure reports. Written out, not derived, for the same reason as
+    # the alerts.
+    _CASE_LAW_EXCLUDED_ROUTES = {
+        ("GET", "/api/v1/us/courts/{court_id}"),
+        ("GET", "/api/v1/us/cases/changes"),
+        ("GET", "/api/v1/us/oral-arguments/list"),
+        ("GET", "/api/v1/us/oral-arguments/{argument_id}"),
+        ("GET", "/api/v1/us/judges/{judge_id}/disclosures"),
+    }
+
+    # Keyless agent signup is how an agent gets a key, so never a tool.
+    _AGENT_ROUTES = {
+        ("POST", "/api/v1/agent/signup"),
+        ("POST", "/api/v1/agent/verify"),
+        ("POST", "/api/v1/agent/token"),
+    }
+
     @staticmethod
     def _routes(jurisdiction: str) -> set[tuple[str, str]]:
         import json
@@ -282,8 +317,32 @@ class TestRouteExclusion:
             "the US fixture no longer carries every alert route, so this check "
             f"would pass vacuously: missing {sorted(self._ALERT_ROUTES - routes)}"
         )
+        assert self._CASE_LAW_EXCLUDED_ROUTES <= routes, (
+            "the US fixture no longer carries every excluded case-law route, so "
+            "their exclusion would pass vacuously: missing "
+            f"{sorted(self._CASE_LAW_EXCLUDED_ROUTES - routes)}"
+        )
         excluded = {r for r in routes if is_excluded_route(*r)}
-        assert excluded == self._ALERT_ROUTES
+        assert self._AGENT_ROUTES <= routes, sorted(self._AGENT_ROUTES - routes)
+        assert excluded == (
+            self._ALERT_ROUTES | self._CASE_LAW_EXCLUDED_ROUTES | self._AGENT_ROUTES
+        )
+
+    def test_the_published_case_law_neighbours_are_not_excluded(self) -> None:
+        """The by-id and feed patterns must not swallow the routes beside them."""
+        for path in (
+            "/api/v1/us/courts",
+            "/api/v1/us/cases/list",
+            "/api/v1/us/dockets/list",
+            "/api/v1/us/dockets/{docket_id}",
+            "/api/v1/us/dockets/{docket_id}/entries",
+            "/api/v1/us/cases/{case_id}",
+            "/api/v1/us/cases/{case_id}/citations",
+            "/api/v1/us/judges",
+            "/api/v1/us/judges/{judge_id}",
+            "/api/v1/us/opinions/{opinion_id}",
+        ):
+            assert not is_excluded_route("GET", path), path
 
     def test_no_india_route_is_excluded(self) -> None:
         routes = self._routes("IN")
@@ -512,6 +571,22 @@ class TestCostInjection:
             and is_excluded_route(method, path)
         }
         assert excluded_ops, "the fixture no longer carries an excluded route"
+        # An excluded route can share its pricing row with a published one (the
+        # court by id and the courts list are one row), and that row then
+        # rightly prices the published tool. Only a row nothing published reads
+        # can prove the builder skips excluded operations.
+        published_endpoints = {
+            _pricing_endpoint_for_route(path)
+            for op_id, path in _PROD_OPERATIONS.items()
+            if op_id not in excluded_ops
+        }
+        excluded_ops = {
+            op_id
+            for op_id in excluded_ops
+            if _pricing_endpoint_for_route(_PROD_OPERATIONS[op_id])
+            not in published_endpoints
+        }
+        assert excluded_ops, "every excluded route shares a row with a published one"
         entries = [
             {
                 "endpoint": _pricing_endpoint_for_route(_PROD_OPERATIONS[op_id]),

@@ -238,7 +238,7 @@ set always matches the current API. For the **authoritative, up-to-date list and
 per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
 client's tool list.
 
-The US server publishes 37 tools and the India server 22, counting `search` and
+The US server publishes 53 tools and the India server 22, counting `search` and
 `fetch`. Every one is read-only. Law change alerts (boards and watches) are deliberately **not** MCP
 tools: the API still serves them, so create and manage alerts in the Vaquill
 console or over the REST API directly.
@@ -260,6 +260,39 @@ Register, and agency guidance.
 | `resolve_statute_citation` | Resolve a Bluebook citation (e.g. `42 U.S.C. § 1983`) straight to its section. Optional `state` (a 2-letter code or `federal`) and `corpusType` are constraints, and a real citation they exclude comes back with `citationOutsideFilters`. |
 | `list_statute_divisions` | Browse the statutory hierarchy one level at a time. |
 | `list_statutes_coverage` | Self-describing coverage matrix: which corpora exist in which jurisdiction. |
+
+### US case law
+
+Court opinions from federal and state courts: search the text, resolve a reporter
+citation to a case, read a decision and each of its opinions, and follow the cases it
+cites and the cases that cite it. Costs are appended to each tool's description at
+startup from the live pricing table. Start with `resolve_case_citations` when you hold a
+citation (`410 U.S. 113`) and `search_us_cases` when you hold a topic; statutes and
+regulations, including `42 U.S.C. 1983`, stay on the statute tools above.
+
+| Tool | Description |
+|------|-------------|
+| `search_us_cases` | Full-text keyword search over opinion text, best match first, one result per case with the matching opinion and a snippet. Filter by `courtIds`, `state`, `dateFrom` / `dateTo`, `publicationStatus` and `judgeId`. Paged with `limit` and `offset` while `hasMore`. |
+| `resolve_case_citations` | Up to 100 reporter citations to cases, one result per entry (`resolved`, `ambiguous`, `not_found` or `unparsed`; an unparsed string is not charged). |
+| `get_us_case` | One decision by `caseId`: court, dates, parties, publication status, reporter citations, panel, `citedByCount` and its opinions with their ids. |
+| `get_us_cases_batch` | Up to 50 decisions in one call; a missing id is listed in `notFound` and not charged. |
+| `get_us_opinion` | The text of one opinion by `opinionId`, as `html` (a citation to a case we hold carries its `caseId`) or `text`. |
+| `get_us_opinions_batch` | The text of up to 20 opinions in one call. |
+| `get_case_citations` | The cases a decision cites (`direction=cites`) or that cite it (`direction=cited_by`), most-mentioned first, with `mentionCount`. |
+| `get_opinion_citations` | The same citation graph for one opinion. |
+| `get_case_parentheticals` | How later decisions describe a case in a parenthetical. |
+| `list_us_cases` | Decisions by court, state, judge, date or publication status, with no text query. |
+| `list_us_judges` | Judges by name, court and whether they still sit. |
+| `list_us_courts` | The courts we hold decisions for, filtered by `state`, `level` or `system`, with what we hold per court on `include=coverage`. Gives the `courtId` that `search_us_cases` takes. |
+| `get_us_judge` | One judge's profile: positions held, education and affiliations. |
+| `list_us_dockets` | Court dockets by `courtId`, `docketNumber`, caption words and filing window. Personal identifiers are masked. |
+| `get_us_docket` | One docket: court, caption, dates, assigned judge, `caseIds` of its decisions. |
+| `get_us_docket_entries` | The entries of one docket in filing order. Empty for every docket today, as no entries are held yet, and an empty page is charged. |
+
+The REST API also serves routes that are not MCP tools, to keep the catalogue a model
+chooses from small: one court by id (`list_us_courts` returns the same records), the change
+feed (`GET /us/cases/changes`),
+oral argument records and the list of a judge's disclosure reports.
 
 ### Reading a section in context
 

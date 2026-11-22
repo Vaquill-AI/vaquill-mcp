@@ -1116,7 +1116,7 @@
       },
       "extract_statute_citations": {
         "annotationTitle": "Extract Citations from Text",
-        "description": "Paste text (a brief, memo or answer) and get each distinct US statute, regulation, court rule and constitution citation, resolved to its section. Not case citations; extraction can miss one. Extraction is free (resolve=false); each distinct citation resolved is charged. Rows carry charStart/charEnd, rangeRole/rangePartner (range ends are two charged rows; `interior` rows are never charged) and counts.distinctSections. Up to 200,000 characters, never stored.",
+        "description": "Paste text (a brief, memo or answer) and get each distinct US statute, regulation, court rule and constitution citation, resolved to its section. Not case citations (resolve_case_citations); extraction can miss one. Extraction is free (resolve=false); each distinct citation resolved is charged. Rows carry charStart/charEnd, rangeRole/rangePartner (range ends are two charged rows; `interior` rows are never charged) and counts.distinctSections. Up to 200,000 characters, never stored.",
         "schema": {
           "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
           "properties.Idempotency-Key.examples": [
@@ -1207,11 +1207,164 @@
         "schema": {},
         "title": "Fetch Document"
       },
+      "get_case_citations": {
+        "annotationTitle": "Case Citation Graph",
+        "description": "The cases a decision cites (direction=cites) or the cases that cite it (direction=cited_by, the default), most-mentioned first, each with mentionCount. Use to follow the authority a court relied on or find later decisions applying it. Lists citations only: to learn how a later case used it, read that opinion. Page with limit and offset while hasMore; an empty page is charged. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.case_id.description": "The caseId: `USCASE_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.case_id.examples": [
+            "USCASE_3F9A2B1C4D5E6F708192"
+          ],
+          "properties.category.anyOf[0].enum": [
+            "negative",
+            "caution",
+            "neutral"
+          ],
+          "properties.category.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
+          "properties.category.examples": [
+            "negative"
+          ],
+          "properties.direction.default": "cited_by",
+          "properties.direction.description": "`cited_by` (default): the decisions that cite this one. `cites`: the decisions this one cites.",
+          "properties.direction.enum": [
+            "cites",
+            "cited_by"
+          ],
+          "properties.direction.examples": [
+            "cites"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ],
+          "properties.treatment.anyOf[0].enum": [
+            "overruled",
+            "abrogated",
+            "reversed",
+            "vacated",
+            "superseded",
+            "disapproved",
+            "distinguished",
+            "criticized",
+            "questioned",
+            "limited",
+            "declined_to_follow",
+            "followed",
+            "cited",
+            "explained",
+            "relied_on"
+          ],
+          "properties.treatment.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
+          "properties.treatment.examples": [
+            "overruled"
+          ]
+        },
+        "title": "Case Citation Graph"
+      },
+      "get_case_parentheticals": {
+        "annotationTitle": "How Later Cases Describe a Case",
+        "description": "How later decisions describe a case in a parenthetical, such as (holding that ...): the text and the decision and opinion that wrote it, best scored first. Use for a short account of what a case is cited for, then read the opinion before relying on it. Page with limit and offset while hasMore; an empty page is charged. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.case_id.description": "The caseId: `USCASE_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.case_id.examples": [
+            "USCASE_3F9A2B1C4D5E6F708192"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ]
+        },
+        "title": "How Later Cases Describe a Case"
+      },
       "get_credit_balance": {
         "annotationTitle": "Credit Balance",
         "description": "The credits this API key can spend now, calculated from live credit buckets under the same expiry rules used for billing. Use for pre-flight checks or low-balance alerts. creditsRemaining is a spendable balance, not a cached estimate. Any valid API key works without a particular scope, and normal rate limits still apply. ",
         "schema": {},
         "title": "Credit Balance"
+      },
+      "get_opinion_citations": {
+        "annotationTitle": "Opinion Citation Graph",
+        "description": "The opinions one opinion cites (direction=cites) or that cite it (direction=cited_by, the default), most-mentioned first, each with mentionCount. Use when one opinion of a decision matters, such as a dissent; for the whole decision use get_case_citations. Lists citations only. Page with limit and offset while hasMore; an empty page is charged. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.category.anyOf[0].enum": [
+            "negative",
+            "caution",
+            "neutral"
+          ],
+          "properties.category.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
+          "properties.category.examples": [
+            "negative"
+          ],
+          "properties.direction.default": "cited_by",
+          "properties.direction.description": "`cited_by` (default): the decisions that cite this one. `cites`: the decisions this one cites.",
+          "properties.direction.enum": [
+            "cites",
+            "cited_by"
+          ],
+          "properties.direction.examples": [
+            "cites"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ],
+          "properties.opinion_id.description": "The opinionId: `USOP_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.opinion_id.examples": [
+            "USOP_3F9A2B1C4D5E6F708192"
+          ],
+          "properties.treatment.anyOf[0].enum": [
+            "overruled",
+            "abrogated",
+            "reversed",
+            "vacated",
+            "superseded",
+            "disapproved",
+            "distinguished",
+            "criticized",
+            "questioned",
+            "limited",
+            "declined_to_follow",
+            "followed",
+            "cited",
+            "explained",
+            "relied_on"
+          ],
+          "properties.treatment.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
+          "properties.treatment.examples": [
+            "overruled"
+          ]
+        },
+        "title": "Opinion Citation Graph"
       },
       "get_part_rulemaking": {
         "annotationTitle": "Federal Register Documents for a CFR Part",
@@ -1230,7 +1383,7 @@
             21
           ],
           "properties.years.default": 5,
-          "properties.years.description": "How many recent publication years to read."
+          "properties.years.description": "How many CALENDAR years of Federal Register publications to read: the current calendar year and the `years - 1` before it. It is not a trailing window of 365-day periods, so early in a year `years=1` covers only the days elapsed so far. The years read are echoed in `years`."
         },
         "title": "Federal Register Documents for a CFR Part"
       },
@@ -1255,6 +1408,7 @@
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
           "properties.pageFrom.default": 1,
+          "properties.pageFrom.description": "First page of the record's text to return, counting from 1. Page through a long record by passing the page after the last one you received.",
           "properties.pageLimit.default": 50,
           "properties.pageLimit.description": "Pages per call.",
           "properties.record_id.description": "Committee record id from the list, `rcr_` and 24 hex characters.",
@@ -1293,7 +1447,7 @@
           "properties.Idempotency-Key.examples": [
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
-          "properties.rin.description": "Regulation Identifier Number `NNNN-AANN`; lower case is accepted.",
+          "properties.rin.description": "Regulation Identifier Number `NNNN-XXNN`; lower case is accepted.",
           "properties.rin.examples": [
             "2060-AV16"
           ]
@@ -1463,6 +1617,15 @@
           "properties.includeBody.description": "Adds the ordinary body price for each row that returns text. Unresolved text returns `body: null` with no body charge. Use `creditsConsumed` for the total rather than calculating from the number of IDs.",
           "properties.includeBody.examples": [
             true
+          ],
+          "properties.layout.default": "reflowed",
+          "properties.layout.description": "Line-break layout of each inline `body`. It only matters with `includeBody`. `reflowed` (the default) joins hard-wrapped lines into paragraphs, keeping a break before headings, `(a)` / `1.` labels, table rows and signature blocks. `source` keeps the publisher's line breaks exactly as extracted. Same cost. Each row's `bodyLayout` says which one it was served in.",
+          "properties.layout.enum": [
+            "reflowed",
+            "source"
+          ],
+          "properties.layout.examples": [
+            "source"
           ]
         },
         "title": "Statute Sections (Batch)"
@@ -1764,6 +1927,157 @@
         },
         "title": "State Session Laws (Batch)"
       },
+      "get_us_case": {
+        "annotationTitle": "US Case Record",
+        "description": "One US court decision by caseId (from a search or a citation resolve): court, dates, parties, publication status, reporter citations, citedByCount, the judges who sat and its opinions with their opinionIds. No opinion text: get_us_opinion. Several ids: get_us_cases_batch. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.case_id.description": "The caseId: `USCASE_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.case_id.examples": [
+            "USCASE_3F9A2B1C4D5E6F708192"
+          ]
+        },
+        "title": "US Case Record"
+      },
+      "get_us_cases_batch": {
+        "annotationTitle": "US Cases (Batch)",
+        "description": "Read up to 50 distinct US cases by caseIds in one call: the record get_us_case returns, for each, in the order sent. Use instead of a loop when you hold several ids, for example every hit of one search. Duplicates collapse (duplicatesCollapsed); an id that matches no case is listed in notFound and not charged. No opinion text: use get_us_opinion.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.caseIds.description": "Up to 50 distinct case ids.",
+          "properties.caseIds.examples": [
+            [
+              "USCASE_0123456789ABCDEF0123"
+            ]
+          ]
+        },
+        "title": "US Cases (Batch)"
+      },
+      "get_us_docket": {
+        "annotationTitle": "US Docket Record",
+        "description": "One docket by docketId: court, docket number, caption, filing and termination dates, assigned judge, nature of suit, the decisions issued in it (caseIds, for get_us_case) and its oral argument ids. No filings are held yet, so get_us_docket_entries is empty today. Personal identifiers are masked. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.docket_id.description": "The docketId: `USDKT_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.docket_id.examples": [
+            "USDKT_3F9A2B1C4D5E6F708192"
+          ]
+        },
+        "title": "US Docket Record"
+      },
+      "get_us_docket_entries": {
+        "annotationTitle": "US Docket Entries",
+        "description": "The entries of one docket in filing order, with personal identifiers masked; filed documents are not returned. Empty for every docket today: no entries are held yet, so do not call it to look for filings, and never read an empty page as nothing filed. Page with limit and offset while hasMore; an empty page is charged. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.docket_id.description": "The docketId: `USDKT_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.docket_id.examples": [
+            "USDKT_3F9A2B1C4D5E6F708192"
+          ],
+          "properties.entryNumberAfter.description": "Only entries with a higher entry number than this (exclusive). For monitoring a docket without a date gap: pass the highest `entryNumber` you hold. An entry with no number is never returned by this filter.",
+          "properties.entryNumberAfter.examples": [
+            41
+          ],
+          "properties.filedAfter.description": "Only entries filed on a later date than this (YYYY-MM-DD, exclusive). For monitoring a docket: pass the newest `dateFiled` you hold. Entries filed on that same day are not returned, so combine with `entryNumberAfter` to be sure of those.",
+          "properties.filedAfter.examples": [
+            "2026-11-01"
+          ],
+          "properties.includeDocuments.default": false,
+          "properties.includeDocuments.description": "Leave false: no documents are held yet, and true costs more.",
+          "properties.includeDocuments.examples": [
+            true
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ]
+        },
+        "title": "US Docket Entries"
+      },
+      "get_us_judge": {
+        "annotationTitle": "US Judge Profile",
+        "description": "One judge's profile by judgeId (from the panel on a case record): name, birth and death, positions held with court and dates, education and political affiliations. Use to learn who a judge is. To find a judge's decisions pass the id as judgeId to search_us_cases. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.include.description": "`stats` adds `stats` to the judge: the number of cases by year, by court, by role (authored, panel) and by normalized outcome. Costs more, in the same charge; the extra part is refunded if the count times out and the profile then comes back with `stats: null`. Omit for the profile alone.",
+          "properties.include.examples": [
+            "stats"
+          ],
+          "properties.judge_id.description": "The judgeId: `USJDG_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.judge_id.examples": [
+            "USJDG_3F9A2B1C4D5E6F708192"
+          ]
+        },
+        "title": "US Judge Profile"
+      },
+      "get_us_opinion": {
+        "annotationTitle": "US Opinion Text",
+        "description": "The text of one opinion by opinionId (listed on the case record), as `html` (default; a citation to a case we hold carries data-case-id, which get_us_case accepts) or plain `text`. A decision can have several opinions (majority, concurrence, dissent): read each by its own id. textFromOcr true means the text was recognised from a scan, so check a quotation before relying on it. An unknown id is a 404, not charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.format.default": "html",
+          "properties.format.description": "`html` is our markup: paragraphs, footnotes, and a `cite` element carrying `data-case-id` where the citation points to a case we hold. `text` is the same opinion as plain text.",
+          "properties.format.enum": [
+            "html",
+            "text"
+          ],
+          "properties.format.examples": [
+            "text"
+          ],
+          "properties.opinion_id.description": "The opinionId: `USOP_` and 20 uppercase hex characters. Malformed is a 422.",
+          "properties.opinion_id.examples": [
+            "USOP_3F9A2B1C4D5E6F708192"
+          ]
+        },
+        "title": "US Opinion Text"
+      },
+      "get_us_opinions_batch": {
+        "annotationTitle": "US Opinions (Batch)",
+        "description": "Read up to 20 opinions by opinionIds in one call, as html or text, in the order sent. An id that matches none is in notFound and one with no text is in bodyUnavailable; neither is charged. Opinions past the 2,000,000 character limit are listed in deferred, not charged: ask for those again.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.format.default": "html",
+          "properties.format.description": "`html` (our markup) or plain `text`, the same two formats as `GET /us/opinions/{opinionId}`.",
+          "properties.format.enum": [
+            "html",
+            "text"
+          ],
+          "properties.opinionIds.description": "Up to 20 distinct opinion ids.",
+          "properties.opinionIds.examples": [
+            [
+              "USOP_0123456789ABCDEF0123"
+            ]
+          ]
+        },
+        "title": "US Opinions (Batch)"
+      },
       "get_us_statute_section": {
         "annotationTitle": "Statute Section Metadata",
         "description": "Metadata for one US statute, regulation or rule section by act_id: citation, title hierarchy, breadcrumb, amendment history, and links to HTML, PDF and XML. Does NOT include the section text -- use get_us_statute_section_text for that. Good for confirming you have the right section before paying for its full body.",
@@ -1808,6 +2122,15 @@
           "properties.format.examples": [
             "operative"
           ],
+          "properties.layout.default": "reflowed",
+          "properties.layout.description": "Line-break layout of the returned text. `reflowed` (the default) joins hard-wrapped lines into paragraphs, keeping a break before headings, `(a)` / `1.` labels, table rows and signature blocks. `source` returns the line breaks exactly as extracted from the publisher's document. Same cost. The response's `layout` says which one was served. Reflow never changes the words, and a structured `r2_render` body (tables and figures) is returned as rendered under either value. `pinpoint` offsets index into the text of the layout you asked for.",
+          "properties.layout.enum": [
+            "reflowed",
+            "source"
+          ],
+          "properties.layout.examples": [
+            "source"
+          ],
           "properties.pinpoint.description": "Return one subsection in `pinpoint` beside the whole body. Parenthesised labels, outermost first, without the section number: `(c)`, `(c)(1)`, `(d-1)`. Same cost. Malformed, or sent with `asOf`, is an uncharged 422. Read `pinpoint.matched`: a missing subsection is `matched: false`, never the whole section.",
           "properties.pinpoint.examples": [
             "(c)(1)"
@@ -1833,7 +2156,7 @@
           "properties.docket_id.examples": [
             "EPA-HQ-OAR-2021-0208"
           ],
-          "properties.documentType.description": "Only documents of this Regulations.gov document type.",
+          "properties.documentType.description": "Only documents of this Regulations.gov document type. Case is ignored.",
           "properties.documentType.examples": [
             "Proposed Rule"
           ],
@@ -1847,7 +2170,7 @@
           "properties.postedFrom.examples": [
             "2026-01-01T00:00:00Z"
           ],
-          "properties.postedTo.description": "Only documents posted before this ISO-8601 instant (exclusive). Must be after `postedFrom`.",
+          "properties.postedTo.description": "Only documents posted before this ISO-8601 instant (exclusive). The window is half-open, `postedFrom` <= posted < `postedTo`, so equal bounds select nothing and are refused with a 422: `postedTo` must be after `postedFrom`.",
           "properties.postedTo.examples": [
             "2026-07-01T00:00:00Z"
           ]
@@ -1863,11 +2186,14 @@
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
           "properties.cursor.description": "`nextCursor` of the previous page; same filters.",
+          "properties.from.description": "Oldest Unified Agenda edition to include, as an edition id `YYYYMM`, for example `202010`. Must not be later than `to`.",
           "properties.limit.default": 25,
-          "properties.rin.description": "Regulation Identifier Number `NNNN-AANN`; lower case is accepted.",
+          "properties.limit.description": "Editions per page, 1 to 100. Default 25.",
+          "properties.rin.description": "Regulation Identifier Number `NNNN-XXNN`; lower case is accepted.",
           "properties.rin.examples": [
             "2060-AV16"
-          ]
+          ],
+          "properties.to.description": "Newest Unified Agenda edition to include, as an edition id `YYYYMM`, for example `202510`. Must not be earlier than `from`."
         },
         "title": "Unified Agenda History of a RIN"
       },
@@ -1879,12 +2205,15 @@
           "properties.Idempotency-Key.examples": [
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
+          "properties.committee.description": "The Judicial Conference committee that produced the record: Standing, Appellate, Bankruptcy, Civil, Criminal, Evidence or General.",
           "properties.cursor.description": "`nextCursor` of the previous page; same filters.",
           "properties.docType.description": "One of: meeting_minutes, agenda_books, committee_reports, rules_packages, preliminary_drafts, superseded_pamphlets, rules_comments, rules_suggestions, fjc_studies, past_members, special_projects, style_resources, transcripts_testimony, rules_comments_archive.",
+          "properties.docketId.description": "Only records linked to this rulemaking docket id, for example `USC-RULES-CV-2025-0004`.",
           "properties.limit.default": 50,
           "properties.limit.description": "Page size, 1 to 100.",
           "properties.rule.description": "Rule number, for example `26`; needs `ruleSet`.",
-          "properties.ruleSet.description": "FRCP, FRAP, FRBP, FRCRP or FRE: records that discuss a rule of this set."
+          "properties.ruleSet.description": "FRCP, FRAP, FRBP, FRCRP or FRE: records that discuss a rule of this set.",
+          "properties.year.description": "Year of the record, for example `2024`."
         },
         "title": "Rules Committee Records"
       },
@@ -1896,7 +2225,7 @@
           "properties.Idempotency-Key.examples": [
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
-          "properties.agencyId.description": "Only dockets of this agency, by Regulations.gov agency acronym.",
+          "properties.agencyId.description": "Only dockets of this agency, by Regulations.gov agency acronym. Case is ignored.",
           "properties.agencyId.examples": [
             "EPA"
           ],
@@ -1915,11 +2244,11 @@
           "properties.modifiedSince.examples": [
             "2026-01-01T00:00:00Z"
           ],
-          "properties.modifiedUntil.description": "Only dockets modified before this ISO-8601 instant (exclusive). Must be after `modifiedSince`.",
+          "properties.modifiedUntil.description": "Only dockets modified before this ISO-8601 instant (exclusive). The window is half-open, `modifiedSince` <= modified < `modifiedUntil`, so equal bounds select nothing and are refused with a 422: `modifiedUntil` must be after `modifiedSince`.",
           "properties.modifiedUntil.examples": [
             "2026-07-01T00:00:00Z"
           ],
-          "properties.rin.description": "Normalised RIN.",
+          "properties.rin.description": "Regulation Identifier Number `NNNN-XXNN`; lower case is accepted.",
           "properties.rin.examples": [
             "2060-AV35"
           ]
@@ -2307,7 +2636,7 @@
             "5a",
             "18a"
           ],
-          "properties.titleNumber.description": "USC/CFR title number to drill into. On the U.S. Code, `5a` and `18a` name the Appendix to Title 5 and Title 18 (a title list returns them as their own rows).",
+          "properties.titleNumber.description": "USC/CFR title number to drill into (1 to 9999). On the U.S. Code, `5a` and `18a` name the Appendix to Title 5 and Title 18 (a title list returns them as their own rows).",
           "properties.titleNumber.examples": [
             42
           ],
@@ -2388,9 +2717,294 @@
         },
         "title": "Corpus Coverage"
       },
+      "list_us_cases": {
+        "annotationTitle": "US Cases by Filter",
+        "description": "Decisions by filter, with no text query, newest first: courtId, state, judgeId with judgeRole, dateFrom/dateTo and publicationStatus. Use to browse a court's or a judge's decisions. For words or a topic use search_us_cases. Page by passing nextCursor as cursor with the same filters until it is null; an empty page is charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.courtId.description": "Only these courts. Repeat the parameter for several, such as `courtId=US_FED_CA9&courtId=US_FED_CA2`, up to 50.",
+          "properties.courtId.examples": [
+            [
+              "US_FED_CA9",
+              "US_FED_CA2"
+            ]
+          ],
+          "properties.cursor.description": "The `nextCursor` of the previous page. Omit it for the first page.",
+          "properties.cursor.examples": [
+            "MjAyNi0xMS0wMVQwMDowMDowMCswMDowMHxVU0NBU0VfM0Y5QTJCMUM0RDVFNkY3MDgxOTI"
+          ],
+          "properties.dateFrom.description": "Earliest date, inclusive (YYYY-MM-DD).",
+          "properties.dateFrom.examples": [
+            "2020-01-01"
+          ],
+          "properties.dateTo.description": "Latest date, inclusive (YYYY-MM-DD).",
+          "properties.dateTo.examples": [
+            "2024-12-31"
+          ],
+          "properties.judgeId.description": "Only cases this judge sat on or wrote an opinion in (a `judgeId`).",
+          "properties.judgeId.examples": [
+            "USJDG_3F9A2B1C4D5E6F708192"
+          ],
+          "properties.judgeRole.default": "any",
+          "properties.judgeRole.description": "With `judgeId`: `authored` keeps cases where the judge wrote an opinion, `panel` cases where the judge sat on the panel, `any` (default) either. Ignored without `judgeId`.",
+          "properties.judgeRole.enum": [
+            "any",
+            "authored",
+            "panel"
+          ],
+          "properties.judgeRole.examples": [
+            "authored"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.publicationStatus.anyOf[0].items.enum": [
+            "published",
+            "unpublished",
+            "unknown",
+            "errata",
+            "separate",
+            "in_chambers",
+            "relating_to"
+          ],
+          "properties.publicationStatus.description": "Only cases with one of these publication statuses. Repeat the parameter for several.",
+          "properties.publicationStatus.examples": [
+            [
+              "published"
+            ]
+          ],
+          "properties.sort.default": "decision_date",
+          "properties.sort.description": "`decision_date` (default): newest decision first. `decision_date_asc`: oldest first. Ties are broken by `caseId`, so a page never repeats or skips a row. A case with no decision date comes last either way.",
+          "properties.sort.enum": [
+            "decision_date",
+            "decision_date_asc"
+          ],
+          "properties.sort.examples": [
+            "decision_date_asc"
+          ],
+          "properties.state.description": "Two-letter state code: only that state's courts.",
+          "properties.state.examples": [
+            "CA"
+          ]
+        },
+        "title": "US Cases by Filter"
+      },
+      "list_us_courts": {
+        "annotationTitle": "US Courts",
+        "description": "List US courts by courtId, with level, system, state and dates; narrow by those or by q, words of the name. Use to find the courtId search_us_cases takes. Pass include=coverage for what we hold per court (decisions, first and last year, newest date) before saying we have or lack a court's decisions: a thin court is not proof no decisions exist. include=coverage.years adds counts per year. Page with limit and offset while hasMore.",
+        "schema": {
+          "properties.include.anyOf[0].enum": [
+            "coverage",
+            "coverage.years"
+          ],
+          "properties.include.description": "`coverage` adds what we hold for each court: the dated decisions, the first and last year, the newest decision date, when we last added a decision and a note on how the court is collected. `coverage.years` adds the dated decisions per year as well. Omit for the court record alone. Free either way.",
+          "properties.include.examples": [
+            "coverage"
+          ],
+          "properties.isActive.description": "`true` for courts that still sit, `false` for courts that have ended. Omit for both.",
+          "properties.isActive.examples": [
+            true
+          ],
+          "properties.level.anyOf[0].enum": [
+            "supreme",
+            "appellate",
+            "trial",
+            "bankruptcy",
+            "bankruptcy_appellate",
+            "special",
+            "attorney_general",
+            "agency",
+            "other"
+          ],
+          "properties.level.description": "Only courts of this level.",
+          "properties.level.examples": [
+            "appellate"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ],
+          "properties.q.description": "Words of a court's name, short name or citation abbreviation, such as `ninth` or `5th Cir.`. Matches anywhere in those three, 2 characters or more.",
+          "properties.q.examples": [
+            "ninth"
+          ],
+          "properties.state.description": "Two-letter state code: only that state's courts.",
+          "properties.state.examples": [
+            "CA"
+          ],
+          "properties.system.anyOf[0].enum": [
+            "federal",
+            "state",
+            "territorial",
+            "tribal",
+            "military"
+          ],
+          "properties.system.description": "Only courts of this system.",
+          "properties.system.examples": [
+            "federal"
+          ]
+        },
+        "title": "US Courts"
+      },
+      "list_us_dockets": {
+        "annotationTitle": "US Dockets",
+        "description": "Court dockets, newest filing first, narrowed by courtId, an exact docketNumber, words of the case caption (name, 3 characters or more) and a dateFrom/dateTo filing window. Use to find a docket from a docket number or party names. Party names and docket text are served with personal identifiers masked. Read one with get_us_docket. Page with limit and offset while hasMore; an empty page is charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.appealFromCourtId.description": "Only dockets appealed from this court (a `courtId`).",
+          "properties.appealFromCourtId.examples": [
+            "US_FED_CA9"
+          ],
+          "properties.assignedJudgeId.description": "Only dockets assigned to this judge (a `judgeId`).",
+          "properties.assignedJudgeId.examples": [
+            "USJDG_3F9A2B1C4D5E6F708192"
+          ],
+          "properties.cause.description": "Words of the cause of action as the docket states it, such as `42:1983`. Matches anywhere in the text, 3 characters or more.",
+          "properties.cause.examples": [
+            "42:1983"
+          ],
+          "properties.courtId.description": "Only this court, such as `US_FED_CA9`.",
+          "properties.courtId.examples": [
+            "US_FED_CA9"
+          ],
+          "properties.dateFrom.description": "Earliest date, inclusive (YYYY-MM-DD).",
+          "properties.dateFrom.examples": [
+            "2020-01-01"
+          ],
+          "properties.dateTo.description": "Latest date, inclusive (YYYY-MM-DD).",
+          "properties.dateTo.examples": [
+            "2024-12-31"
+          ],
+          "properties.docketNumber.description": "An exact docket number, such as `22-1234` or `1:21-cv-00123`.",
+          "properties.docketNumber.examples": [
+            "22-1234"
+          ],
+          "properties.jurisdictionBasis.anyOf[0].enum": [
+            "federal_question",
+            "diversity",
+            "us_government_plaintiff",
+            "us_government_defendant",
+            "other"
+          ],
+          "properties.jurisdictionBasis.description": "Only dockets filed on this basis of jurisdiction.",
+          "properties.jurisdictionBasis.examples": [
+            "federal_question"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.name.description": "Words of the case caption (party names). Matches anywhere in the name, 3 characters or more.",
+          "properties.name.examples": [
+            "Acme"
+          ],
+          "properties.natureOfSuit.description": "Words of the docket's nature of suit, such as `civil rights`. Matches anywhere in the text, 2 characters or more.",
+          "properties.natureOfSuit.examples": [
+            "civil rights"
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ],
+          "properties.sort.default": "filed_desc",
+          "properties.sort.description": "`filed_desc` (default): newest filing first. `filed_asc`: oldest filing first. Ties are broken by `docketId`, so a page never repeats or skips a row. A docket with no filing date comes last either way.",
+          "properties.sort.enum": [
+            "filed_desc",
+            "filed_asc"
+          ],
+          "properties.sort.examples": [
+            "filed_asc"
+          ],
+          "properties.terminated.description": "`true` for dockets with a termination date, `false` for dockets still open. Omit for both.",
+          "properties.terminated.examples": [
+            true
+          ],
+          "properties.terminatedFrom.description": "Earliest termination date, inclusive (YYYY-MM-DD). A docket with no termination date never matches.",
+          "properties.terminatedFrom.examples": [
+            "2020-01-01"
+          ],
+          "properties.terminatedTo.description": "Latest termination date, inclusive (YYYY-MM-DD). A docket with no termination date never matches.",
+          "properties.terminatedTo.examples": [
+            "2024-12-31"
+          ]
+        },
+        "title": "US Dockets"
+      },
+      "list_us_judges": {
+        "annotationTitle": "US Judges",
+        "description": "Judges by last name, narrowed by name words, courtId and active. Use to find the judgeId that get_us_judge, list_us_cases and search_us_cases take. Page with limit and offset while hasMore; an empty page is charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.active.description": "`true` for judges who hold a position with no end date, `false` for judges whose every position has ended or who hold none. Omit for both.",
+          "properties.active.examples": [
+            true
+          ],
+          "properties.courtId.description": "Only this court, such as `US_FED_CA9`.",
+          "properties.courtId.examples": [
+            "US_FED_CA9"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.name.description": "Words of the judge's name, first name to suffix, such as `Sotomayor` or `Sonia Sotomayor`. Matches anywhere in the name, 2 characters or more.",
+          "properties.name.examples": [
+            "Sotomayor"
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.description": "Rows to skip, 0 to 10000.",
+          "properties.offset.examples": [
+            20
+          ]
+        },
+        "title": "US Judges"
+      },
+      "resolve_case_citations": {
+        "annotationTitle": "Resolve Case Citations",
+        "description": "Resolve reporter citations such as `410 U.S. 113` or `347 F.3d 1000, 1004` to cases, up to 100 per call, one result per entry in the order sent (`index`). `status`: `resolved` (one case), `ambiguous` (every candidate listed, none picked), `not_found`, or `unparsed` (not a volume reporter page citation, not charged). Use first when given a case citation, then get_us_case. Statute citations such as `42 U.S.C. 1983` go to resolve_statute_citation.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.citations.description": "Reporter citations such as `410 U.S. 113`. One result per entry, in order. Send this or `text`.",
+          "properties.citations.examples": [
+            [
+              "410 U.S. 113"
+            ]
+          ],
+          "properties.includeStatus.default": false,
+          "properties.includeStatus.description": "Not served yet: leave false. `true` is refused with a 422, not charged.",
+          "properties.text.description": "A document (up to 200,000 characters) to find case citations in, full citations and the short forms (`Id.`, `Smith, supra`, `550 U.S. at 556`) that repeat one. Each citation found is resolved and returned with its place in the text. Send this or `citations`.",
+          "properties.text.examples": [
+            "See Roe v. Wade, 410 U.S. 113, 120 (1973). Id. at 125."
+          ]
+        },
+        "title": "Resolve Case Citations"
+      },
       "resolve_statute_citation": {
         "annotationTitle": "Resolve Citation",
-        "description": "Resolve a Bluebook citation string ('42 U.S.C. 1983', '16 C.F.R. 444.1', 'Cal. Code Regs. tit. 22, 76227') to the exact section, confirmed, with an official source link and the act_id. Use this whenever the user gives you a citation rather than a question -- it is far more reliable than searching for the citation text. `matchLevel` means `section` is NOT the exact unit cited. A shared acronym (`G.S. 52-577`) is resolved: false until you pass `state`.",
+        "description": "Resolve a Bluebook citation string ('42 U.S.C. 1983', '16 C.F.R. 444.1', 'Cal. Code Regs. tit. 22, 76227') to the exact section, confirmed, with an official source link and the act_id. Use this whenever the user gives you a citation rather than a question -- it is far more reliable than searching for the citation text. Case cites: resolve_case_citations. `matchLevel` means `section` is NOT the exact unit cited. A shared acronym (`G.S. 52-577`) is resolved: false until you pass `state`.",
         "schema": {
           "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
           "properties.Idempotency-Key.examples": [
@@ -2402,10 +3016,12 @@
           ],
           "properties.corpusType.anyOf[0].enum": [
             "CONSTITUTION",
+            "FEDERAL_BILL",
             "REGULATION",
             "STATE",
             "STATE_CONSTITUTION",
-            "STATE_RULES"
+            "STATE_RULES",
+            "US_TREATY"
           ],
           "properties.corpusType.description": "Optional corpus to resolve WITHIN: `STATE`, `REGULATION`, `STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`. Narrows a citation whose form several corpora share; like `state`, a citation belonging to another corpus resolves to nothing instead.",
           "properties.corpusType.examples": [
@@ -2495,10 +3111,12 @@
           ],
           "properties.corpusType.anyOf[0].enum": [
             "CONSTITUTION",
+            "FEDERAL_BILL",
             "REGULATION",
             "STATE",
             "STATE_CONSTITUTION",
-            "STATE_RULES"
+            "STATE_RULES",
+            "US_TREATY"
           ],
           "properties.corpusType.description": "Restricts every citation to one corpus: `STATE`, `REGULATION`, `STATE_RULES`, `CONSTITUTION`, `STATE_CONSTITUTION`. `STATE` covers federal and state statutes, and the two constitution values are synonyms here, with `state` distinguishing the jurisdiction.",
           "properties.corpusType.examples": [
@@ -2728,6 +3346,120 @@
         },
         "title": "Search State Session Laws"
       },
+      "search_us_cases": {
+        "annotationTitle": "Search US Case Law",
+        "description": "Full-text keyword search over the opinions of US federal and state courts, best match first: one result per case, with the opinion that matched and a snippet. Use to find decisions by topic, phrase, party or judge. Narrow with courtIds (ids from list_us_courts), state, dateFrom/dateTo, publicationStatus, judgeId. For a known citation use resolve_case_citations; for statutes use search_us_statutes. Page with limit and offset while hasMore; an empty page is charged.",
+        "schema": {
+          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
+          "properties.Idempotency-Key.examples": [
+            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+          ],
+          "properties.caseName.description": "Only cases whose title contains this text, any letter case. At least 3 characters.",
+          "properties.caseName.examples": [
+            "Miranda"
+          ],
+          "properties.courtIds.description": "Only these courts. Combined with `state` as an intersection.",
+          "properties.courtIds.examples": [
+            [
+              "US_FED_SCOTUS"
+            ]
+          ],
+          "properties.courtLevel.anyOf[0].enum": [
+            "supreme",
+            "appellate",
+            "trial",
+            "bankruptcy",
+            "bankruptcy_appellate",
+            "special",
+            "attorney_general",
+            "agency",
+            "other"
+          ],
+          "properties.courtLevel.description": "Only courts of this level. Combined with `courtIds`, `state` and `courtSystem` as an intersection.",
+          "properties.courtLevel.examples": [
+            "appellate"
+          ],
+          "properties.courtSystem.anyOf[0].enum": [
+            "federal",
+            "state",
+            "territorial",
+            "tribal",
+            "military"
+          ],
+          "properties.courtSystem.description": "Only courts of this system. Combined with `courtIds`, `state` and `courtLevel` as an intersection.",
+          "properties.courtSystem.examples": [
+            "federal"
+          ],
+          "properties.dateFrom.description": "Earliest decision date, YYYY-MM-DD. Optional.",
+          "properties.dateFrom.examples": [
+            "1990-01-01"
+          ],
+          "properties.dateTo.description": "Latest decision date, YYYY-MM-DD. Optional.",
+          "properties.dateTo.examples": [
+            "2020-12-31"
+          ],
+          "properties.docketNumber.description": "Only cases whose docket number contains this text, any letter case. At least 3 characters.",
+          "properties.docketNumber.examples": [
+            "70-18"
+          ],
+          "properties.judgeId.description": "Cases this judge sat on or wrote an opinion in.",
+          "properties.judgeId.examples": [
+            "USJDG_0123456789ABCDEF0123"
+          ],
+          "properties.limit.default": 20,
+          "properties.limit.examples": [
+            10
+          ],
+          "properties.minCitedBy.description": "Only cases cited by at least this many other cases. Applied to the best matching opinions the search ranks.",
+          "properties.minCitedBy.examples": [
+            10
+          ],
+          "properties.offset.default": 0,
+          "properties.offset.examples": [
+            20
+          ],
+          "properties.passages.default": 1,
+          "properties.passages.description": "How many passages of the best matching opinion each hit carries, 1 to 3 (about 500 characters each, best first). The price does not change.",
+          "properties.passages.examples": [
+            3
+          ],
+          "properties.publicationStatus.anyOf[0].items.enum": [
+            "published",
+            "unpublished",
+            "unknown",
+            "errata",
+            "separate",
+            "in_chambers",
+            "relating_to"
+          ],
+          "properties.publicationStatus.description": "Only decisions with one of these publication statuses; omit for all. A result's `publicationStatus` says which one it has.",
+          "properties.publicationStatus.examples": [
+            [
+              "published"
+            ]
+          ],
+          "properties.query.description": "Words, or a quoted phrase, matched against opinion text. Keyword matching, not meaning: use the opinion's own vocabulary (`qualified immunity`, not `police cannot be sued`).",
+          "properties.query.examples": [
+            "qualified immunity excessive force"
+          ],
+          "properties.sort.default": "relevance",
+          "properties.sort.description": "`relevance` (default, best match first), `decision_date` (newest first), `decision_date_asc` (oldest first) or `cited_by` (most cited first). A sort other than `relevance` orders the best matching opinions the search ranks, not every match in the corpus: narrow the query or the filters when the order matters.",
+          "properties.sort.enum": [
+            "relevance",
+            "decision_date",
+            "decision_date_asc",
+            "cited_by"
+          ],
+          "properties.sort.examples": [
+            "decision_date"
+          ],
+          "properties.state.description": "Two-letter state code: only that state's courts.",
+          "properties.state.examples": [
+            "CA"
+          ]
+        },
+        "title": "Search US Case Law"
+      },
       "search_us_statutes": {
         "annotationTitle": "Search US Statutes",
         "description": "Search US federal and state statutes, regulations, constitutions and court rules. Default ranks by meaning; matchType `boolean` returns only sections satisfying a terms-and-connectors expression, pageable to the end. A result's act_id feeds the other statute tools; never hand-build one. For a citation, use resolve_statute_citation. `citationOutsideFilters`: the cited section exists outside your filters. 422: change the request, never resend it unchanged. 503: retry with backoff.",
@@ -2919,6 +3651,7 @@
             "articleNumber",
             "audience",
             "body",
+            "bodyLayout",
             "bodyNote",
             "bodyServedNote",
             "bodyUnavailable",
@@ -3088,6 +3821,7 @@
             "articleNumber",
             "audience",
             "body",
+            "bodyLayout",
             "bodyNote",
             "bodyServedNote",
             "bodyUnavailable",
@@ -3255,6 +3989,15 @@
           "properties.includePinpoint.description": "Name the subsection each hit matched, in `pinpoints` keyed by `actId` (e.g. `625 ILCS 5/11-601(c)(1)`, with its text and offsets). Free: the price and the results do not change, and it never fails the search. A hit it cannot name says why in `reason`; `located: false` means your words did not point at a subsection. Adds a few hundred ms per page.",
           "properties.includePinpoint.examples": [
             true
+          ],
+          "properties.layout.default": "reflowed",
+          "properties.layout.description": "Line-break layout of each inline `body`. It only matters with `includeBody`. `reflowed` (the default) joins hard-wrapped lines into paragraphs, keeping a break before headings, `(a)` / `1.` labels, table rows and signature blocks. `source` keeps the publisher's line breaks exactly as extracted. Same cost. Each row's `bodyLayout` says which one it was served in.",
+          "properties.layout.enum": [
+            "reflowed",
+            "source"
+          ],
+          "properties.layout.examples": [
+            "source"
           ],
           "properties.limit.default": 10,
           "properties.limit.description": "Number of results to return per page.",
