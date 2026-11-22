@@ -1219,15 +1219,6 @@
           "properties.case_id.examples": [
             "USCASE_3F9A2B1C4D5E6F708192"
           ],
-          "properties.category.anyOf[0].enum": [
-            "negative",
-            "caution",
-            "neutral"
-          ],
-          "properties.category.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
-          "properties.category.examples": [
-            "negative"
-          ],
           "properties.direction.default": "cited_by",
           "properties.direction.description": "`cited_by` (default): the decisions that cite this one. `cites`: the decisions this one cites.",
           "properties.direction.enum": [
@@ -1246,27 +1237,6 @@
           "properties.offset.description": "Rows to skip, 0 to 10000.",
           "properties.offset.examples": [
             20
-          ],
-          "properties.treatment.anyOf[0].enum": [
-            "overruled",
-            "abrogated",
-            "reversed",
-            "vacated",
-            "superseded",
-            "disapproved",
-            "distinguished",
-            "criticized",
-            "questioned",
-            "limited",
-            "declined_to_follow",
-            "followed",
-            "cited",
-            "explained",
-            "relied_on"
-          ],
-          "properties.treatment.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
-          "properties.treatment.examples": [
-            "overruled"
           ]
         },
         "title": "Case Citation Graph"
@@ -1310,15 +1280,6 @@
           "properties.Idempotency-Key.examples": [
             "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
           ],
-          "properties.category.anyOf[0].enum": [
-            "negative",
-            "caution",
-            "neutral"
-          ],
-          "properties.category.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
-          "properties.category.examples": [
-            "negative"
-          ],
           "properties.direction.default": "cited_by",
           "properties.direction.description": "`cited_by` (default): the decisions that cite this one. `cites`: the decisions this one cites.",
           "properties.direction.enum": [
@@ -1341,27 +1302,6 @@
           "properties.opinion_id.description": "The opinionId: `USOP_` and 20 uppercase hex characters. Malformed is a 422.",
           "properties.opinion_id.examples": [
             "USOP_3F9A2B1C4D5E6F708192"
-          ],
-          "properties.treatment.anyOf[0].enum": [
-            "overruled",
-            "abrogated",
-            "reversed",
-            "vacated",
-            "superseded",
-            "disapproved",
-            "distinguished",
-            "criticized",
-            "questioned",
-            "limited",
-            "declined_to_follow",
-            "followed",
-            "cited",
-            "explained",
-            "relied_on"
-          ],
-          "properties.treatment.description": "Not served yet: leave it out. A value is refused with a 422, not charged.",
-          "properties.treatment.examples": [
-            "overruled"
           ]
         },
         "title": "Opinion Citation Graph"
@@ -1961,7 +1901,7 @@
       },
       "get_us_docket": {
         "annotationTitle": "US Docket Record",
-        "description": "One docket by docketId: court, docket number, caption, filing and termination dates, assigned judge, nature of suit, the decisions issued in it (caseIds, for get_us_case) and its oral argument ids. No filings are held yet, so get_us_docket_entries is empty today. Personal identifiers are masked. An unknown id is a 404, not charged.",
+        "description": "One docket by docketId: court, docket number, caption, filing and termination dates, assigned judge, nature of suit, the decisions issued in it (caseIds, for get_us_case) and its oral argument ids. The docket sheet's entries and filed documents are not held, so never read this record as a complete account of what was filed. Personal identifiers are masked. An unknown id is a 404, not charged.",
         "schema": {
           "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
           "properties.Idempotency-Key.examples": [
@@ -1973,44 +1913,6 @@
           ]
         },
         "title": "US Docket Record"
-      },
-      "get_us_docket_entries": {
-        "annotationTitle": "US Docket Entries",
-        "description": "The entries of one docket in filing order, with personal identifiers masked; filed documents are not returned. Empty for every docket today: no entries are held yet, so do not call it to look for filings, and never read an empty page as nothing filed. Page with limit and offset while hasMore; an empty page is charged. An unknown id is a 404, not charged.",
-        "schema": {
-          "properties.Idempotency-Key.description": "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry with the same key and request replays the original 2xx for 24 hours without charging again; the same key with a different request is rejected.",
-          "properties.Idempotency-Key.examples": [
-            "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
-          ],
-          "properties.docket_id.description": "The docketId: `USDKT_` and 20 uppercase hex characters. Malformed is a 422.",
-          "properties.docket_id.examples": [
-            "USDKT_3F9A2B1C4D5E6F708192"
-          ],
-          "properties.entryNumberAfter.description": "Only entries with a higher entry number than this (exclusive). For monitoring a docket without a date gap: pass the highest `entryNumber` you hold. An entry with no number is never returned by this filter.",
-          "properties.entryNumberAfter.examples": [
-            41
-          ],
-          "properties.filedAfter.description": "Only entries filed on a later date than this (YYYY-MM-DD, exclusive). For monitoring a docket: pass the newest `dateFiled` you hold. Entries filed on that same day are not returned, so combine with `entryNumberAfter` to be sure of those.",
-          "properties.filedAfter.examples": [
-            "2026-11-01"
-          ],
-          "properties.includeDocuments.default": false,
-          "properties.includeDocuments.description": "Leave false: no documents are held yet, and true costs more.",
-          "properties.includeDocuments.examples": [
-            true
-          ],
-          "properties.limit.default": 20,
-          "properties.limit.description": "Rows per page, 1 to 100. Each page is charged.",
-          "properties.limit.examples": [
-            10
-          ],
-          "properties.offset.default": 0,
-          "properties.offset.description": "Rows to skip, 0 to 10000.",
-          "properties.offset.examples": [
-            20
-          ]
-        },
-        "title": "US Docket Entries"
       },
       "get_us_judge": {
         "annotationTitle": "US Judge Profile",
@@ -2993,8 +2895,6 @@
               "410 U.S. 113"
             ]
           ],
-          "properties.includeStatus.default": false,
-          "properties.includeStatus.description": "Not served yet: leave false. `true` is refused with a 422, not charged.",
           "properties.text.description": "A document (up to 200,000 characters) to find case citations in, full citations and the short forms (`Id.`, `Smith, supra`, `550 U.S. at 556`) that repeat one. Each citation found is resolved and returned with its place in the text. Send this or `citations`.",
           "properties.text.examples": [
             "See Roe v. Wade, 410 U.S. 113, 120 (1973). Id. at 125."

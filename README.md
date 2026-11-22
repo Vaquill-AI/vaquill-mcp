@@ -238,7 +238,7 @@ set always matches the current API. For the **authoritative, up-to-date list and
 per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
 client's tool list.
 
-The US server publishes 53 tools and the India server 22, counting `search` and
+The US server publishes 52 tools and the India server 22, counting `search` and
 `fetch`. Every one is read-only. Law change alerts (boards and watches) are deliberately **not** MCP
 tools: the API still serves them, so create and manage alerts in the Vaquill
 console or over the REST API directly.
@@ -286,8 +286,7 @@ regulations, including `42 U.S.C. 1983`, stay on the statute tools above.
 | `list_us_courts` | The courts we hold decisions for, filtered by `state`, `level` or `system`, with what we hold per court on `include=coverage`. Gives the `courtId` that `search_us_cases` takes. |
 | `get_us_judge` | One judge's profile: positions held, education and affiliations. |
 | `list_us_dockets` | Court dockets by `courtId`, `docketNumber`, caption words and filing window. Personal identifiers are masked. |
-| `get_us_docket` | One docket: court, caption, dates, assigned judge, `caseIds` of its decisions. |
-| `get_us_docket_entries` | The entries of one docket in filing order. Empty for every docket today, as no entries are held yet, and an empty page is charged. |
+| `get_us_docket` | One docket: court, caption, dates, assigned judge, `caseIds` of its decisions. The docket sheet's entries and filed documents are not held. |
 
 The REST API also serves routes that are not MCP tools, to keep the catalogue a model
 chooses from small: one court by id (`list_us_courts` returns the same records), the change

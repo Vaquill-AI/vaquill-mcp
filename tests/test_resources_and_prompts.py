@@ -197,8 +197,8 @@ async def test_prompts_do_not_inflate_the_tool_budget(
     # on 2026-10-14 with four more session-law tools and
     # extract_statute_citations, and to 35 on 2026-11-03 with the six rulemaking tools.
     # and to 37 on 2026-11-07 with the two Rules Committee records tools.
-    # 53 since 2026-11-22: 37, plus the sixteen US case-law tools listed in
+    # 52 since 2026-11-22: 37, plus the fifteen US case-law tools listed in
     # `test_us_case_law_tools.CASE_TOOLS`. Several case-law routes are deliberately
     # not tools (see `_ROUTE_MAPS`).
-    expected = 53 if jurisdiction == "US" else 22
+    expected = 52 if jurisdiction == "US" else 22
     assert len(await server.list_tools()) == expected

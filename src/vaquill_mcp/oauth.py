@@ -85,6 +85,12 @@ from fastmcp.server.auth import AccessToken, TokenVerifier
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
+from vaquill_mcp.connector_channel import (
+    classify_client,
+    schedule_report,
+    subject_from_access_token,
+)
+
 logger = logging.getLogger(__name__)
 
 #: Prefix identifying a Vaquill API key. A token starting with this is a
@@ -558,6 +564,33 @@ def _refresh_safe_proxy_class():
         async def register_client(self, client_info):
             await super().register_client(client_info)
             await self._renew_client(client_info.client_id)
+
+        async def _subject_for_code(self, code: str) -> str | None:
+            """The Supabase user id behind an authorization code. Read-only; never raises."""
+            try:
+                code_model = await self._code_store.get(key=code)
+                tokens = getattr(code_model, "idp_tokens", None) or {}
+                return subject_from_access_token(tokens.get("access_token"))
+            except Exception:
+                return None
+
+        async def exchange_authorization_code(self, client, authorization_code):
+            # Read the subject BEFORE super() runs: it deletes the one-time code.
+            subject = await self._subject_for_code(authorization_code.code)
+            result = await super().exchange_authorization_code(client, authorization_code)
+            # After the token is issued, so a failed exchange is never reported, and
+            # fire-and-forget, so attribution can never slow or fail a sign-in.
+            if subject:
+                schedule_report(
+                    subject,
+                    classify_client(
+                        getattr(client, "client_id", None),
+                        getattr(client, "client_name", None),
+                        getattr(client, "redirect_uris", None),
+                    ),
+                    getattr(client, "client_id", None),
+                )
+            return result
 
         def _create_upstream_oauth_client(self):
             return _RefusalAwareClient(super()._create_upstream_oauth_client())

@@ -99,7 +99,6 @@ _FUNC_OVERRIDES: dict[str, str] = {
     "get_judge": "get_us_judge",
     "list_dockets": "list_us_dockets",
     "get_docket": "get_us_docket",
-    "get_docket_entries": "get_us_docket_entries",
     "list_cases": "list_us_cases",
     "list_judges": "list_us_judges",
     "batch_opinions": "get_us_opinions_batch",
@@ -205,7 +204,13 @@ _ROUTE_MAPS: list[RouteMap] = [
     # The rest of the case-law surface that is NOT a tool, a product decision of 2026-11-21 like
     # the alerts. The REST API keeps every route; the catalogue a model chooses from does not.
     #   cases/changes            a sync feed for programs that mirror the data, not research
-    #   docket-entries/{id}/documents, files/{id}, oral-arguments/*
+    #   dockets/{id}/entries, docket-entries/{id}/documents
+    #                            no docket sheet entries or filings are held (0 rows in
+    #                            production), so the tool returned an empty page for every
+    #                            docket and still cost a credit. Excluded here, which is
+    #                            correct whether or not the live document still carries the
+    #                            route: an exclusion for an absent route matches nothing.
+    #   files/{id}, oral-arguments/*
     #                            file and audio links are short-lived signed URLs a model cannot
     #                            open, and the oral argument record is metadata that is of no use
     #                            without its recording
@@ -215,6 +220,7 @@ _ROUTE_MAPS: list[RouteMap] = [
     RouteMap(
         pattern=(
             r"^/api/v1/us/(?:cases/changes"
+            r"|dockets/[^/]+/entries"
             r"|docket-entries/[^/]+/documents"
             r"|files/[^/]+"
             r"|oral-arguments(?:/.+)?"
@@ -628,6 +634,32 @@ def _annotations_for(route: HTTPRoute, name: str | None = None) -> ToolAnnotatio
 # ---------------------------------------------------------------------------
 
 
+# Input parameters that exist only for a feature switched off in production (the citator and the
+# status flags). The API publishes them ahead of what it serves and refuses a value with a 422,
+# so a model has no reason to see them. Hidden from the published schema only: the route still
+# accepts them. Safe against any document: a name the schema does not carry is skipped, so this
+# is correct before and after the backend stops publishing them. Restore an entry's parameters by
+# deleting it when the feature is switched on.
+_HIDDEN_PARAMS: dict[str, frozenset[str]] = {
+    "resolve_case_citations": frozenset({"includeStatus"}),
+    "get_case_citations": frozenset({"category", "treatment"}),
+    "get_opinion_citations": frozenset({"category", "treatment"}),
+}
+
+
+def _hide_params(tool_name: str, schema: dict) -> dict:
+    """The input schema without the parameters `_HIDDEN_PARAMS` lists for this tool."""
+    hidden = _HIDDEN_PARAMS.get(tool_name)
+    properties = schema.get("properties")
+    if not hidden or not isinstance(properties, dict):
+        return schema
+    out = {**schema, "properties": {k: v for k, v in properties.items() if k not in hidden}}
+    required = schema.get("required")
+    if isinstance(required, list):
+        out["required"] = [name for name in required if name not in hidden]
+    return out
+
+
 def _make_customize_component(tool_costs: dict[str, str]):
     """Build the FastMCP ``mcp_component_fn`` bound to a live cost map."""
 
@@ -669,8 +701,9 @@ def _make_customize_component(tool_costs: dict[str, str]):
             # contract requires. It rewrites annotations only; the arguments the
             # tool accepts are untouched, and `test_schema_slim.py` proves that
             # structurally against both published documents.
-            component.parameters = slim_input_schema(
-                component.name, component.parameters
+            component.parameters = _hide_params(
+                component.name,
+                slim_input_schema(component.name, component.parameters),
             )
             component.annotations = _annotations_for(route, component.name)
 

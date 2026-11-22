@@ -3,7 +3,7 @@
 They are derived from the backend's OpenAPI like every other tool, so what needs pinning here is
 what the derivation cannot decide on its own:
 
-* the catalogue carries exactly sixteen case-law tools, and the one-court-by-id route is NOT a
+* the catalogue carries exactly fifteen case-law tools, and the one-court-by-id route is NOT a
   tool (the list tool returns every court record and filters; one more tool widens what a model
   chooses from);
 * every tool is read-only, including the four POST-as-query routes;
@@ -47,7 +47,6 @@ CASE_TOOLS = {
     "list_us_judges",
     "list_us_dockets",
     "get_us_docket",
-    "get_us_docket_entries",
 }
 
 # Case-law routes that are NOT tools (see `_ROUTE_MAPS`), by the name FastMCP would have given
@@ -62,6 +61,8 @@ NOT_TOOLS = {
     "get_case_treatment",
     "get_case_statutes",
     "get_statute_cases",
+    "get_us_docket_entries",
+    "get_docket_entries",
 }
 
 # The pricing rows the backend publishes for the case-law routes, as endpoint strings. The numbers
@@ -83,7 +84,6 @@ _PRICING = [
         ("/us/judges", "US Judge (Profile)", 2),
         ("/us/dockets/list", "US Dockets (Filter)", 2),
         ("/us/dockets", "US Docket (Record)", 2),
-        ("/us/dockets/entries", "US Docket (Entries)", 1),
     )
 ]
 
@@ -119,7 +119,7 @@ def tools():
     return _built()
 
 
-def test_the_catalogue_carries_exactly_the_sixteen_case_tools(tools) -> None:
+def test_the_catalogue_carries_exactly_the_fifteen_case_tools(tools) -> None:
     present = {n for n in tools if n in CASE_TOOLS}
     assert present == CASE_TOOLS, sorted(CASE_TOOLS - present)
 
@@ -213,7 +213,7 @@ def test_the_hops_between_tools_are_stated() -> None:
     assert "get_us_case" in d["resolve_case_citations"]
     assert "resolve_statute_citation" in d["resolve_case_citations"]
     assert "get_us_opinion" in d["get_us_case"]
-    assert "get_us_docket_entries" in d["get_us_docket"]
+    assert "get_us_docket_entries" not in d["get_us_docket"]
     assert "get_us_docket" in d["list_us_dockets"]
     assert "get_us_cases_batch" in d["get_us_case"]
     assert "list_us_courts" in d["search_us_cases"]
@@ -232,7 +232,6 @@ def test_paged_tools_say_how_to_page_and_what_an_empty_page_costs() -> None:
         "list_us_courts",
         "list_us_judges",
         "list_us_dockets",
-        "get_us_docket_entries",
     ):
         text = TOOL_DESCRIPTIONS[name]
         assert "hasMore" in text and "offset" in text, name
@@ -250,7 +249,6 @@ def test_unknown_ids_are_documented_as_uncharged() -> None:
         "get_us_opinions_batch",
         "get_case_citations",
         "get_us_docket",
-        "get_us_docket_entries",
     ):
         text = TOOL_DESCRIPTIONS[name]
         assert "not charged" in text or "neither is charged" in text, name
@@ -264,23 +262,35 @@ def test_the_graph_tools_list_citations_and_claim_no_verdict() -> None:
         assert "good law" not in text, name
 
 
-def test_unserved_inputs_say_so(tools) -> None:
-    """A model must not pay for, or be refused, an input that is not served."""
+def test_inputs_for_switched_off_features_are_not_published(tools) -> None:
+    """A model must not see, pay for or be refused an input that is not served."""
     for name, param in (
         ("resolve_case_citations", "includeStatus"),
+        ("get_case_citations", "category"),
         ("get_case_citations", "treatment"),
         ("get_opinion_citations", "category"),
+        ("get_opinion_citations", "treatment"),
     ):
-        props = tools[name].parameters["properties"]
-        assert "Not served yet" in props[param]["description"], name
-    props = tools["get_us_docket_entries"].parameters["properties"]
-    assert "Leave false" in props["includeDocuments"]["description"]
+        assert param not in tools[name].parameters["properties"], (name, param)
+    # The inputs that ARE served stay.
+    assert "direction" in tools["get_case_citations"].parameters["properties"]
+    assert "citations" in tools["resolve_case_citations"].parameters["properties"]
+
+
+def test_no_case_law_text_advertises_a_switched_off_feature(tools) -> None:
+    for name in CASE_TOOLS:
+        text = (tools[name].description + json.dumps(tools[name].parameters)).lower()
+        for word in ("treatment", "citator", "includestatus", "docket_entries", "docket entries"):
+            assert word not in text, (name, word)
+
+
+def test_the_free_courts_tool_states_no_charge(tools) -> None:
+    assert "charged" not in tools["list_us_courts"].description.lower()
 
 
 def test_the_dockets_say_identifiers_are_masked_and_files_are_not_returned() -> None:
     assert "masked" in TOOL_DESCRIPTIONS["list_us_dockets"]
-    assert "masked" in TOOL_DESCRIPTIONS["get_us_docket_entries"]
-    assert "not returned" in TOOL_DESCRIPTIONS["get_us_docket_entries"]
+    assert "not held" in TOOL_DESCRIPTIONS["get_us_docket"]
 
 
 @pytest.mark.parametrize("name", sorted(CASE_TOOLS))

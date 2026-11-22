@@ -12,9 +12,9 @@ startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
-SCOPE: both jurisdictions. US (53 published tools: statutes, regulations,
+SCOPE: both jurisdictions. US (52 published tools: statutes, regulations,
 constitutions, court rules, agency guidance, state session laws, rulemaking, citation
-extraction and 16 case-law tools) and
+extraction and 15 case-law tools) and
 India (22 published tools: Central and State Acts plus regulator
 instruments). Both counts include the
 `search` / `fetch` aliases, which are titled here but described in aliases.py.
@@ -486,8 +486,9 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     # An entry is inert until the live document carries its route. `get_us_court` has no
     # entry: that route is excluded from the catalogue (see `_ROUTE_MAPS`).
     # The graph tools list citations and counts only and never promise "good law".
-    # The citator and statute-link tools are not served, so no text may send a
-    # model to them.
+    # The citator and statute-link tools have their own backend flag, off at
+    # launch, so no other tool's text may send a model to them. The citator's
+    # own text says it is a model-computed signal.
     # ------------------------------------------------------------------
     "search_us_cases": (
         "Full-text keyword search over the opinions of US federal and state "
@@ -587,6 +588,34 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "decisions pass the id as judgeId to search_us_cases. An unknown id is a "
         "404, not charged."
     ),
+    # Unpublished while the route is off. Restore when it is served.
+    # "get_case_treatment": (
+    #     "The citator for one case: a red, yellow or green `status` with its "
+    #     "reason and the sentence behind it, its direct appellate history, and "
+    #     "later decisions citing it with their treatment (overruled, followed, "
+    #     "distinguished...), most negative first. Treatments are computed by a "
+    #     "model: read each evidenceText, this is not legal advice. Green means no "
+    #     "negative signal found, not confirmed good law. Page with limit and "
+    #     "offset while hasMore; an empty page is charged."
+    # ),
+    # Unpublished while the route is off. Restore when it is served.
+    # "get_case_statutes": (
+    #     "The statutes, regulations and rules a case cites: normalized citation, "
+    #     "mentionCount, pinpoints, and an actId when it resolved to exactly one "
+    #     "section, which get_us_statute_section_text accepts. resolvedOnly keeps "
+    #     "only those. Use to go from a decision to the law it applies. Page with "
+    #     "limit and offset while hasMore; an empty page is charged. An unknown id "
+    #     "is a 404, not charged."
+    # ),
+    # Unpublished while the route is off. Restore when it is served.
+    # "get_statute_cases": (
+    #     "The cases that cite one statute section, newest decision first, with "
+    #     "pinpoints and mentionCount. Takes the act_id a statute tool returned "
+    #     "(resolve_statute_citation, search_us_statutes), never one you built. "
+    #     "Narrow by courtId and dateFrom/dateTo. Use to see how courts have "
+    #     "applied a provision. Page with limit and offset while hasMore; an "
+    #     "empty page is charged."
+    # ),
     "list_us_dockets": (
         "Court dockets, newest filing first, narrowed by courtId, an exact "
         "docketNumber, words of the case caption (name, 3 characters or more) "
@@ -598,17 +627,10 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "get_us_docket": (
         "One docket by docketId: court, docket number, caption, filing and "
         "termination dates, assigned judge, nature of suit, the decisions issued "
-        "in it (caseIds, for get_us_case) and its oral argument ids. No filings "
-        "are held yet, so get_us_docket_entries is empty today. Personal "
-        "identifiers are masked. An unknown id is a 404, not charged."
-    ),
-    "get_us_docket_entries": (
-        "The entries of one docket in filing order, with personal identifiers "
-        "masked; filed documents are not returned. Empty for every docket today: "
-        "no entries are held yet, so do not call it to look for filings, and "
-        "never read an empty page as nothing filed. Page with limit and offset "
-        "while hasMore; an empty page is charged. An unknown id is a 404, not "
-        "charged."
+        "in it (caseIds, for get_us_case) and its oral argument ids. The docket "
+        "sheet's entries and filed documents are not held, so never read this "
+        "record as a complete account of what was filed. Personal identifiers "
+        "are masked. An unknown id is a 404, not charged."
     ),
 }
 
@@ -671,7 +693,9 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "Only decisions with one of these publication statuses; omit for all. A "
         "result's `publicationStatus` says which one it has."
     ),
-    # Inputs the document publishes ahead of what is served (checked 2026-11-22).
+    # Inputs the document publishes ahead of what is served (checked 2026-11-22). They are
+    # HIDDEN from the published schema (`_HIDDEN_PARAMS` in server.py); these entries keep the
+    # right text ready for the day the citator is switched on and the entry there is deleted.
     ("resolve_case_citations", "includeStatus"): (
         "Not served yet: leave false. `true` is refused with a 422, not charged."
     ),
@@ -686,9 +710,6 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     ("get_opinion_citations", "treatment"): (
         "Not served yet: leave it out. A value is refused with a 422, not charged."
-    ),
-    ("get_us_docket_entries", "includeDocuments"): (
-        "Leave false: no documents are held yet, and true costs more."
     ),
     # --- Added 2026-09-19 -------------------------------------------------
     # Twelve parameters the API had been publishing with descriptions of 262
@@ -1405,9 +1426,14 @@ TOOL_TITLES: dict[str, str] = {
     "list_us_judges": "US Judges",
     "list_us_courts": "US Courts",
     "get_us_judge": "US Judge Profile",
+    # Unpublished while the route is off. Restore when it is served.
+    # "get_case_treatment": "Case Citator Status",
+    # Unpublished while the route is off. Restore when it is served.
+    # "get_case_statutes": "Statutes Cited by a Case",
+    # Unpublished while the route is off. Restore when it is served.
+    # "get_statute_cases": "Cases Citing a Statute",
     "list_us_dockets": "US Dockets",
     "get_us_docket": "US Docket Record",
-    "get_us_docket_entries": "US Docket Entries",
     "get_section_rulemaking": "Federal Register Documents for a CFR Section",
     "get_part_rulemaking": "Federal Register Documents for a CFR Part",
     "get_rulemaking_docket": "Regulations.gov Docket",

@@ -631,18 +631,6 @@
         "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
         "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
       }
-    },
-    "get_us_docket_entries": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Returns the entries of one stored court docket and does not change data.",
-        "open_world_justification": "Queries Vaquill's own bounded corpus of United States primary law and does not interact with an open-ended set of external entities.",
-        "destructive_justification": "Only reads stored records and cannot delete, overwrite or revoke anything."
-      }
     }
   },
   "test_cases": [

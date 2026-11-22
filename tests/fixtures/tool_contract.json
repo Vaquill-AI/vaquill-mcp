@@ -1871,24 +1871,6 @@
             "pattern": "^USCASE_[0-9A-F]{20}$",
             "type": "string"
           },
-          "category": {
-            "anyOf": [
-              {
-                "enum": [
-                  "negative",
-                  "caution",
-                  "neutral"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              "negative"
-            ]
-          },
           "direction": {
             "default": "cited_by",
             "enum": [
@@ -1917,36 +1899,6 @@
             "maximum": 10000.0,
             "minimum": 0.0,
             "type": "integer"
-          },
-          "treatment": {
-            "anyOf": [
-              {
-                "enum": [
-                  "overruled",
-                  "abrogated",
-                  "reversed",
-                  "vacated",
-                  "superseded",
-                  "disapproved",
-                  "distinguished",
-                  "criticized",
-                  "questioned",
-                  "limited",
-                  "declined_to_follow",
-                  "followed",
-                  "cited",
-                  "explained",
-                  "relied_on"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              "overruled"
-            ]
           }
         },
         "required": [
@@ -2038,24 +1990,6 @@
               "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
             ]
           },
-          "category": {
-            "anyOf": [
-              {
-                "enum": [
-                  "negative",
-                  "caution",
-                  "neutral"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              "negative"
-            ]
-          },
           "direction": {
             "default": "cited_by",
             "enum": [
@@ -2091,36 +2025,6 @@
             ],
             "pattern": "^USOP_[0-9A-F]{20}$",
             "type": "string"
-          },
-          "treatment": {
-            "anyOf": [
-              {
-                "enum": [
-                  "overruled",
-                  "abrogated",
-                  "reversed",
-                  "vacated",
-                  "superseded",
-                  "disapproved",
-                  "distinguished",
-                  "criticized",
-                  "questioned",
-                  "limited",
-                  "declined_to_follow",
-                  "followed",
-                  "cited",
-                  "explained",
-                  "relied_on"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              "overruled"
-            ]
           }
         },
         "required": [
@@ -3338,95 +3242,6 @@
       },
       "method": "GET",
       "path": "/api/v1/us/dockets/{docket_id}"
-    },
-    "get_us_docket_entries": {
-      "inputSchema": {
-        "properties": {
-          "Idempotency-Key": {
-            "anyOf": [
-              {
-                "maxLength": 255,
-                "minLength": 16,
-                "pattern": "^[\\x21-\\x7e]+$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
-            ]
-          },
-          "docket_id": {
-            "examples": [
-              "USDKT_3F9A2B1C4D5E6F708192"
-            ],
-            "pattern": "^USDKT_[0-9A-F]{20}$",
-            "type": "string"
-          },
-          "entryNumberAfter": {
-            "anyOf": [
-              {
-                "maximum": 2147483647.0,
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              41
-            ]
-          },
-          "filedAfter": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              "2026-11-01"
-            ]
-          },
-          "includeDocuments": {
-            "default": false,
-            "examples": [
-              true
-            ],
-            "type": "boolean"
-          },
-          "limit": {
-            "default": 20,
-            "examples": [
-              10
-            ],
-            "maximum": 100.0,
-            "minimum": 1.0,
-            "type": "integer"
-          },
-          "offset": {
-            "default": 0,
-            "examples": [
-              20
-            ],
-            "maximum": 10000.0,
-            "minimum": 0.0,
-            "type": "integer"
-          }
-        },
-        "required": [
-          "docket_id"
-        ],
-        "type": "object"
-      },
-      "method": "GET",
-      "path": "/api/v1/us/dockets/{docket_id}/entries"
     },
     "get_us_judge": {
       "inputSchema": {
@@ -5661,10 +5476,6 @@
                 "410 U.S. 113"
               ]
             ]
-          },
-          "includeStatus": {
-            "default": false,
-            "type": "boolean"
           },
           "text": {
             "anyOf": [
