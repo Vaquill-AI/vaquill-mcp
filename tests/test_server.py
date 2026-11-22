@@ -262,6 +262,11 @@ class TestRouteExclusion:
         ("GET", "/api/v1/us/judges/{judge_id}/disclosures"),
     }
 
+    # Docket entries are not held, so the backend unmounted the route (2026-11-22). The
+    # exclusion must hold whether or not the fixture still carries it, so this set is
+    # asserted directly and is never required to be in the document.
+    _UNHELD_ROUTES = {("GET", "/api/v1/us/dockets/{docket_id}/entries")}
+
     # Keyless agent signup is how an agent gets a key, so never a tool.
     _AGENT_ROUTES = {
         ("POST", "/api/v1/agent/signup"),
@@ -324,8 +329,12 @@ class TestRouteExclusion:
         )
         excluded = {r for r in routes if is_excluded_route(*r)}
         assert self._AGENT_ROUTES <= routes, sorted(self._AGENT_ROUTES - routes)
+        assert all(is_excluded_route(*r) for r in self._UNHELD_ROUTES)
         assert excluded == (
-            self._ALERT_ROUTES | self._CASE_LAW_EXCLUDED_ROUTES | self._AGENT_ROUTES
+            self._ALERT_ROUTES
+            | self._CASE_LAW_EXCLUDED_ROUTES
+            | self._AGENT_ROUTES
+            | (self._UNHELD_ROUTES & routes)
         )
 
     def test_the_published_case_law_neighbours_are_not_excluded(self) -> None:
@@ -335,7 +344,6 @@ class TestRouteExclusion:
             "/api/v1/us/cases/list",
             "/api/v1/us/dockets/list",
             "/api/v1/us/dockets/{docket_id}",
-            "/api/v1/us/dockets/{docket_id}/entries",
             "/api/v1/us/cases/{case_id}",
             "/api/v1/us/cases/{case_id}/citations",
             "/api/v1/us/judges",
