@@ -10,22 +10,34 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
-# Copy dependency metadata FIRST for layer caching.
-# Code changes won't re-download all deps.
-COPY pyproject.toml README.md ./
+# INSTALL FROM uv.lock, never by resolving pyproject.toml. Until 2026-11-22 this
+# stage ran `pip install ".[remote]"`, so any edit that missed the layer cache
+# upgraded production to whatever had shipped that day, untested: a README edit
+# was enough to move fastmcp 4.0 to 4.2. To upgrade now, run
+# `uv lock --upgrade-package <name>`, test, commit the lock, and deploy by hand:
+# the Dokploy watch paths do not include uv.lock.
+#
+# uv itself is pinned for the same reason. It exists only in this stage.
+RUN pip install --no-cache-dir uv==0.8.2
 
-# Create isolated venv for clean copy to runtime stage.
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON=/usr/local/bin/python \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_COMPILE_BYTECODE=1 \
+    UV_NO_CACHE=1
 
-# Install dependencies (cached until pyproject.toml changes).
-RUN pip install --no-cache-dir ".[remote]" 2>/dev/null || true
+# Dependency metadata FIRST for layer caching, source LAST.
+COPY pyproject.toml README.md uv.lock ./
 
-# Copy source code LAST (changes most frequently).
+# Exactly the locked dependencies. `--frozen` because the project's version is
+# read from src/, which is not copied yet.
+RUN uv sync --frozen --no-dev --extra remote --no-install-project
+
 COPY src/ src/
 
-# Reinstall with source available (fast -- deps already cached).
-RUN pip install --no-cache-dir ".[remote]"
+# The package itself. `--locked` fails the build when pyproject.toml and uv.lock
+# disagree, and `--no-editable` is required because src/ stays in this stage.
+RUN uv sync --locked --no-dev --extra remote --no-editable
 
 
 # =============================================================================
