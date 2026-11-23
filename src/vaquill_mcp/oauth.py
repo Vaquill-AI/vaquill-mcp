@@ -86,10 +86,39 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from vaquill_mcp.connector_channel import (
+    TOKEN_REQUEST,
     classify_client,
+    redirect_hosts,
+    request_evidence,
     schedule_report,
     subject_from_access_token,
 )
+
+#: Collection holding the browser evidence of a sign-in until its code is
+#: exchanged. In the same (encrypted, Redis-backed) store as the codes, because
+#: `/auth/callback` and `/token` can land on different replicas.
+_EVIDENCE_COLLECTION = "mcp-connect-evidence"
+#: Longer than the 5-minute code lifetime, so evidence never expires first.
+_EVIDENCE_TTL_SECONDS = 900
+
+
+def _evidence_key(code: str) -> str:
+    """Store key for a code's evidence. Hashed, so no live code sits in a key name."""
+    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+
+
+def _code_from_redirect(response: object) -> str | None:
+    """The authorization code in a 302 to the client's redirect URI, or None."""
+    from urllib.parse import parse_qs, urlparse
+
+    try:
+        if getattr(response, "status_code", None) != 302:
+            return None
+        location = response.headers.get("location") or ""  # type: ignore[attr-defined]
+        codes = parse_qs(urlparse(location).query).get("code") or []
+        return codes[0] if codes and codes[0] else None
+    except Exception:
+        return None
 
 logger = logging.getLogger(__name__)
 
@@ -574,13 +603,54 @@ def _refresh_safe_proxy_class():
             except Exception:
                 return None
 
+        async def _handle_idp_callback(self, request):
+            """Keep the person's browser evidence against the code it is about to get.
+
+            This is the step right after the person signs in on app.vaquill.ai,
+            so the request comes from THEIR browser, where `/token` comes from
+            the AI platform's servers. FastMCP mints the code inside this
+            handler and only shows it in the 302 to the client, so it is read
+            from there. Never fails the callback.
+            """
+            evidence = request_evidence(request.scope)
+            response = await super()._handle_idp_callback(request)
+            code = _code_from_redirect(response)
+            if code and evidence:
+                try:
+                    await self._client_storage.put(
+                        key=_evidence_key(code),
+                        value=evidence,
+                        collection=_EVIDENCE_COLLECTION,
+                        ttl=_EVIDENCE_TTL_SECONDS,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "oauth_connect_evidence_not_stored error_type=%s",
+                        type(exc).__name__,
+                    )
+            return response
+
+        async def _browser_evidence_for(self, code: str) -> dict | None:
+            """Take (read and delete) a code's browser evidence. Never raises."""
+            try:
+                key = _evidence_key(code)
+                evidence = await self._client_storage.get(key=key, collection=_EVIDENCE_COLLECTION)
+                if evidence is not None:
+                    await self._client_storage.delete(key=key, collection=_EVIDENCE_COLLECTION)
+                return dict(evidence) if evidence else None
+            except Exception:
+                return None
+
         async def exchange_authorization_code(self, client, authorization_code):
             # Read the subject BEFORE super() runs: it deletes the one-time code.
             subject = await self._subject_for_code(authorization_code.code)
+            platform = TOKEN_REQUEST.get()
             result = await super().exchange_authorization_code(client, authorization_code)
             # After the token is issued, so a failed exchange is never reported, and
             # fire-and-forget, so attribution can never slow or fail a sign-in.
             if subject:
+                browser = await self._browser_evidence_for(authorization_code.code)
+                client_name = str(getattr(client, "client_name", None) or "")[:200]
                 schedule_report(
                     subject,
                     classify_client(
@@ -589,6 +659,12 @@ def _refresh_safe_proxy_class():
                         getattr(client, "redirect_uris", None),
                     ),
                     getattr(client, "client_id", None),
+                    {
+                        "clientName": client_name or None,
+                        "redirectHosts": redirect_hosts(getattr(client, "redirect_uris", None)),
+                        "browser": browser,
+                        "platform": platform,
+                    },
                 )
             return result
 
@@ -1412,9 +1488,14 @@ class AuthDiagnosticsMiddleware:
                 status.append(message["status"])
             await send(message)
 
+        # Who is exchanging a code, for `exchange_authorization_code`, which is
+        # given no request. Set before the app runs, so child tasks inherit it.
+        evidence_token = TOKEN_REQUEST.set(request_evidence(scope)) if is_token else None
         try:
             return await self.app(scope, tee_receive, tee_send)
         finally:
+            if evidence_token is not None:
+                TOKEN_REQUEST.reset(evidence_token)
             try:
                 code = status[0] if status else None
                 if is_token:
