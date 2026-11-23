@@ -116,7 +116,7 @@ def _coerce_act_id(raw: str) -> tuple[str | None, str | None]:
 
 
 def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> None:
-    """`search` / `fetch` over US primary law."""
+    """`search` / `fetch` over US statutes and regulations."""
 
     def _canonical_url(act_id: str) -> str:
         return f"{base_url.rstrip('/')}/api/v1/us/statutes/section/{act_id}"
@@ -125,11 +125,13 @@ def _register_us(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
         name="search",
         title=TOOL_TITLES["search"],
         description=(
-            "Generic corpus search over US primary law, returning `{id, title, url}` "
-            "records for citation. Present so this server works in clients that "
-            "require the standard search/fetch pair. If you can call "
-            "`search_us_statutes`, prefer it: it filters by jurisdiction, corpus, "
-            "date and status, which this cannot. Pair with `fetch` to read a result."
+            "Generic corpus search over US statutes, regulations and other enacted "
+            "law, returning `{id, title, url}` records for citation. Present so this "
+            "server works in clients that require the standard search/fetch pair. "
+            "If you can call `search_us_statutes`, prefer it: it filters by "
+            "jurisdiction, corpus, date and status, which this cannot. It does not "
+            "search court decisions; use `search_us_cases` for those. Pair with "
+            "`fetch` to read a result."
         ),
         annotations={
             "readOnlyHint": True,
