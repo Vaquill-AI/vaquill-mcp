@@ -36,10 +36,23 @@ logger = logging.getLogger("vaquill_mcp.connector_channel")
 
 #: Mirrors the backend allow-list and the CHECK constraint on
 #: `connector_client_connections.client_family`.
-FAMILIES = ("claude", "chatgpt", "claude_code", "codex", "cursor", "vscode", "other")
+FAMILIES = (
+    "claude",
+    "chatgpt",
+    "gemini",
+    "claude_code",
+    "codex",
+    "cursor",
+    "vscode",
+    "other",
+)
 
 _CLAUDE_HOSTS = ("claude.ai", "claude.com", "anthropic.com")
 _CHATGPT_HOSTS = ("chatgpt.com", "openai.com")
+#: Gemini Enterprise's two OAuth redirect hosts, as its own registration declared
+#: them on 2026-11-23. Exact hosts, not `google.com`: many unrelated Google
+#: products could register a client, and only these two are the connector.
+_GEMINI_HOSTS = ("vertexaisearch.cloud.google.com", "enterprise.gemini.google.com")
 _LOOPBACK = ("localhost", "127.0.0.1", "::1", "[::1]")
 
 #: Name fragments for clients that redirect to a loopback port, where the host
@@ -77,6 +90,8 @@ def classify_client(
 
         if any(_host_matches(h, _CHATGPT_HOSTS) for h in hosts):
             return "chatgpt"
+        if any(_host_matches(h, _GEMINI_HOSTS) for h in hosts):
+            return "gemini"
 
         name = str(client_name or "").strip().lower()
         for fragment, family in _NAME_RULES:

@@ -58,6 +58,24 @@ class TestClassify:
             ),
             ("dcr-7", "Visual Studio Code", ["http://127.0.0.1:33418"], "vscode"),
             ("dcr-8", "my script", ["http://localhost:9999/cb"], "other"),
+            # Gemini Enterprise's real registration, 2026-11-23.
+            (
+                "dcr-9",
+                "Gemini Enterprise",
+                [
+                    "https://vertexaisearch.cloud.google.com/oauth-redirect",
+                    "https://enterprise.gemini.google.com/oauth-redirect",
+                ],
+                "gemini",
+            ),
+            (
+                "dcr-10",
+                "anything",
+                ["https://vertexaisearch.cloud.google.com/oauth-redirect"],
+                "gemini",
+            ),
+            # Another Google host is not the connector.
+            ("dcr-11", "tool", ["https://script.google.com/cb"], "other"),
         ],
     )
     def test_families(self, client_id, name, redirects, family):
@@ -78,6 +96,7 @@ class TestClassify:
         assert set(cc.FAMILIES) == {
             "claude",
             "chatgpt",
+            "gemini",
             "claude_code",
             "codex",
             "cursor",
