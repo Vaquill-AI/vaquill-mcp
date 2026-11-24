@@ -1334,7 +1334,11 @@
               "USC_ANNUAL",
               "FEDERAL_BILL",
               "FEDERAL_RULES_ANNUAL",
-              "FEDERAL_RULES_PROPOSED"
+              "FEDERAL_RULES_PROPOSED",
+              "JURY_INSTRUCTION",
+              "ETHICS_OPINION",
+              "STATE_EXECUTIVE_ORDER",
+              "MUNICIPAL_CODE"
             ],
             "type": "string"
           }
@@ -6318,7 +6322,11 @@
               "USC_ANNUAL",
               "FEDERAL_BILL",
               "FEDERAL_RULES_ANNUAL",
-              "FEDERAL_RULES_PROPOSED"
+              "FEDERAL_RULES_PROPOSED",
+              "JURY_INSTRUCTION",
+              "ETHICS_OPINION",
+              "STATE_EXECUTIVE_ORDER",
+              "MUNICIPAL_CODE"
             ],
             "type": "string"
           }

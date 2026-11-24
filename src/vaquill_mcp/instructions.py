@@ -12,7 +12,7 @@ injection review (docs/security) measures what it does and does not change.
 """
 
 _CORPUS = {
-    "US": "United States case law, statutes and regulations from public court and government sources",
+    "US": "United States statutes, regulations and case law from public government and court sources",
     "IN": "Indian legislation collected from India Code and regulator publications",
     # The regulatory server (regulatory.py). An unrecognised key falls back to the
     # US text below, silently, so a corpus that is not listed here tells every
