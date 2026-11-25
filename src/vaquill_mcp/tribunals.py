@@ -508,8 +508,9 @@ def tribunals_costs(entries: list[dict]) -> dict[str, str]:
 def fetch_tribunals_costs(base_url: str) -> dict[str, str]:
     """Fetch the public pricing matrix for India and derive the six price lines.
 
-    Region `IN`, and it must be passed: the route is not scoped by any mount and defaults to US,
-    which would label these tools with United States prices.
+    Jurisdiction `IN`, and it must be passed: it selects the India route
+    (`/api/v1/in/api-credits/pricing`), so these tools can never be labelled with United States
+    prices.
 
     A tool left without a price is logged at WARNING by name. `list_india_tribunal_forums` is
     FREE, so it legitimately has no price line and is not warned about: a zero-credit route with

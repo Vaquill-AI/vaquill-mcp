@@ -56,7 +56,7 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
         return_value=httpx.Response(200, json=_spec("IN"))
     )
     # The hosted server has no key at startup, so it uses the PUBLIC matrix.
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
 
@@ -121,7 +121,7 @@ async def test_the_hosted_catalogue_matches_the_stdio_one(
     from vaquill_mcp.server import create_server
 
     monkeypatch.setenv("VAQUILL_API_KEY", "vq_key_test")
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing/all").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing/all$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
     for jurisdiction in ("US", "IN"):
@@ -167,32 +167,30 @@ async def test_every_mounted_app_sorts_and_annotates(_live_api: None) -> None:
 
 
 def test_each_jurisdiction_asks_for_its_own_prices(_live_api: None, respx_mock) -> None:
-    """The pricing fetch must carry the server's jurisdiction.
+    """Each jurisdiction's pricing fetch must hit that jurisdiction's own route.
 
-    It hits the MAIN app route, `/api/v1/api-credits/pricing`, and not the copy
-    mounted inside a jurisdiction's OpenAPI document, so it inherits no scoping
-    from the mount. The API defaults an unscoped request to US, which is right
-    for the US server and silently wrong for the India one: India tools would be
-    labelled with United States per-call prices.
-
-    Until 2026-09-08 the API served every region's rows to every caller, so this
-    request carried no region and the US `get_pricing` tool returned the 16
-    `/in/acts/*` prices for tools that server does not expose. A customer saw
-    that in Claude before we did.
+    US reads `/api/v1/api-credits/pricing`, India reads
+    `/api/v1/in/api-credits/pricing`, and neither sends a `region`: the route is
+    the jurisdiction. Until 2026-09-08 the API served every region's rows to every
+    caller, and the India server then read the US route with `?region=IN`, so a
+    customer saw India prices on a US tool (and the reverse) in Claude before we
+    did. The backend now serves only one country's rows per route.
     """
     from vaquill_mcp.remote_main import build_app
 
     build_app()
 
-    regions = [
-        dict(call.request.url.params).get("region")
+    asked = [
+        (call.request.url.path, call.request.url.query)
         for call in respx_mock.calls
-        if call.request.url.path == "/api/v1/api-credits/pricing"
+        if "api-credits/pricing" in call.request.url.path
     ]
-    assert regions, "no pricing fetch was made at startup"
-    assert set(regions) == {"US", "IN"}, (
-        f"pricing fetched with regions {regions}; each jurisdiction must ask for its own"
-    )
+    assert asked, "no pricing fetch was made at startup"
+    assert {path for path, _ in asked} == {
+        "/api/v1/api-credits/pricing",
+        "/api/v1/in/api-credits/pricing",
+    }, f"pricing fetched from {asked}; each jurisdiction must ask only its own route"
+    assert all(query == b"" for _, query in asked), "a cross-country region was sent"
 
 
 def test_openai_challenge_404s_until_a_token_is_configured(

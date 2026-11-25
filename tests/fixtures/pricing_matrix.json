@@ -1,0 +1,21 @@
+{
+  "IN": {
+    "costs": [
+      {"credits": 2, "endpoint": "/in/acts/search", "operation": "India Acts Search"},
+      {"credits": 1, "endpoint": "/in/acts/sections/body", "operation": "India Section Body (first 10 sections)"},
+      {"credits": 3, "endpoint": "/in/acts/sections/body", "operation": "India Section Body (full act)"},
+      {"credits": 0, "endpoint": "/in/acts/coverage", "operation": "India Coverage"},
+      {"credits": 0, "endpoint": "/in/credits/balance", "operation": "India Credit Balance"}
+    ]
+  },
+  "US": {
+    "costs": [
+      {"credits": 2, "endpoint": "/us/statutes/search", "operation": "US Statutes Search"},
+      {"credits": 1, "endpoint": "/us/statutes/section/body", "operation": "US Statute Section Text"},
+      {"credits": 2, "endpoint": "/us/cases/search", "operation": "US Case Law Search (1-20 results)"},
+      {"credits": 4, "endpoint": "/us/cases/search", "operation": "US Case Law Search (21-50 results)"},
+      {"credits": 0.5, "endpoint": "/us/statutes/resolve", "operation": "US Statute Citation Resolve"},
+      {"credits": 0, "endpoint": "/us/statutes/coverage", "operation": "US Statutes Coverage"}
+    ]
+  }
+}

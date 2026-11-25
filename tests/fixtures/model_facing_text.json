@@ -26,7 +26,7 @@
         "name": "India filter vocabulary"
       },
       "vaquill://pricing": {
-        "description": "Per-endpoint credit costs and the credit-to-currency rate (1 credit = $0.01 USD). Free, no authentication.",
+        "description": "Per-endpoint credit costs for the India surface's endpoints, and the credit-to-currency rate (1 credit = $0.01 USD). These are the India surface's prices only. Free, no authentication.",
         "name": "API credit pricing"
       }
     },
@@ -41,7 +41,7 @@
         "annotationTitle": "Act Amendment History",
         "description": "The amendment history recorded against one enactment: substitutions, insertions and omissions, each with the amending Act and its effective date (e.g. 'Subs. by Act 22 of 2023, s. 44 (w.e.f. 13-11-2025)'). Use to check whether a provision still reads as enacted before relying on its text. An empty list means no amendment was recorded, NOT that the Act was never amended.",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ],
@@ -82,7 +82,7 @@
         "annotationTitle": "Act Section Metadata",
         "description": "Metadata for one provision, including its citation, position in the act, structural features and references. Use when identifying or inspecting a provision without fetching its wording. Text is not included. Use get_act_section_body to read it. wordCount covers all passages, and actsReferenced normalizes whitespace before deduplication so publisher line breaks do not create duplicate acts. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ],
@@ -97,7 +97,7 @@
         "annotationTitle": "Act Section Text",
         "description": "The publisher's full text for one provision, taken directly from the act document without synthesized search headers. Use when reading, quoting or citing the provision's wording rather than its metadata. Amendments are not applied to this text. Check get_section_history for recorded changes before treating the wording as current law. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ],
@@ -112,7 +112,7 @@
         "annotationTitle": "Act Status and Repeal Record",
         "description": "An act's standing in three separate fields, publisherStatus for India Code's label, servedStatus for API availability and repealClaim for the publisher's sourced repeal record. Use when assessing whether an act remains law or why it is unavailable. These are not one verdict. A repealClaim does not verify that the repealing instrument was brought into force. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ]
@@ -123,7 +123,7 @@
         "annotationTitle": "Act Table of Contents",
         "description": "An act's table of contents, with chapters and parts where the publisher supplies them and provisions listed beneath. Use when locating a section or planning a traversal of the act. hasHierarchy is false for most acts, where nodes is a flat section list rather than an error. Section numbers sort numerically with alphabetic suffixes attached. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ]
@@ -134,7 +134,7 @@
         "annotationTitle": "Act Text",
         "description": "Source links for one enactment: the plain-text, PDF and HTML renderings, plus how many sections it holds. Use when the user wants to read or cite the Act itself rather than a matched section.",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ]
@@ -174,13 +174,13 @@
       },
       "get_pricing_in": {
         "annotationTitle": "India Credit Pricing",
-        "description": "Credit-to-price conversion and per-endpoint costs for the India legislation API, billed in US dollars. Use when estimating a workflow or comparing endpoint charges. Set region to US for United States primary-law pricing instead. Both surfaces use the same API key and account-wide credit balance. No authentication is required. ",
+        "description": "Credit-to-price conversion and per-endpoint costs for the India legislation API, billed in US dollars. Use when estimating a workflow or comparing endpoint charges. This tool prices only the India surface's endpoints. Both surfaces use the same API key and account-wide credit balance. No authentication is required. ",
         "schema": {
           "properties.region.anyOf[0].enum": [
             "US",
             "IN"
           ],
-          "properties.region.description": "Defaults to the jurisdiction of the documentation you are reading. If omitted, returns pricing only for that jurisdiction's endpoints, not prices across jurisdictions."
+          "properties.region.description": "Optional. This tool prices only the India surface's endpoints, so the only value it accepts is `IN`. Leave it out."
         },
         "title": "India Credit Pricing"
       },
@@ -188,7 +188,7 @@
         "annotationTitle": "Section Amendment History",
         "description": "Recorded amendments to one provision, including the changing Act and section, effective dates and replaced wording where published. Use when tracing changes or checking whether published text reflects later amendments. An empty history can mean no changes or no parsed records, as coverage explains. Read appliedStatus on every event. Amendments are not applied to served text. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_20326"
           ],
@@ -217,7 +217,7 @@
         "annotationTitle": "Acts Citing This One",
         "description": "Paged inbound citations from provisions elsewhere in the corpus that name an act. Use when finding provisions that mention the act, rather than following its outbound references. Matching uses the act's title, not its identifier, so title variants and line breaks can be missed. Read matchBasis and treat results as a floor. total counts distinct citing provisions across all pages. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_17068"
           ],
@@ -241,7 +241,7 @@
         "annotationTitle": "Defined Terms in an Act",
         "description": "Extracted defined terms and their defining provisions, plus a separate definitionSections list. Use when a question turns on an act's own meaning of a term. Extraction covers only a minority of acts, so an empty result does not mean the act defines nothing. definitionSections identifies provisions to read even without extracted terms. terms is paged, but definitionSections is not. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_central_2114"
           ],
@@ -265,7 +265,7 @@
         "annotationTitle": "Rules Made Under an Act",
         "description": "Paged rules, regulations, notifications and orders the publisher records as made under an act. Use when looking beyond the parent statute to its subordinate instruments. Matching uses the parent's title, not parent_act_id, which is an India Code identifier that does not address this corpus. Check matchBasis. total counts distinct instruments across all pages, while returned counts rows on this page. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_17068"
           ],
@@ -289,7 +289,7 @@
         "annotationTitle": "Citations From a Section",
         "description": "Outbound citations from a provision to other enactments and sections of its own act. Use when following references outwards, not finding citations to the act. actId identifies served targets, while resolved false marks coverage gaps rather than parse failures. Results are not paged. totalActs and totalSections give full counts, so check truncated before treating returned references as complete. ",
         "schema": {
-          "properties.act_id.description": "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section 1983, written 42 U.S.C. 1983). Take it from a search result rather than assembling it: the title and section are derivable from a citation but the CHAPTER is not, so hand-built ids usually 404.",
+          "properties.act_id.description": "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, 2023). Take it from search, /acts/list or /acts/resolve. An act name or citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with `suggestedRequest`, the call that finds the id.",
           "properties.act_id.examples": [
             "IND_state_17068"
           ],
@@ -1343,7 +1343,7 @@
             "US",
             "IN"
           ],
-          "properties.region.description": "Defaults to the jurisdiction of the documentation you are reading. If omitted, returns pricing only for that jurisdiction's endpoints, not prices across jurisdictions."
+          "properties.region.description": "Optional. This tool prices only the US surface's endpoints, so the only value it accepts is `US`. Leave it out."
         },
         "title": "Credit Pricing"
       },

@@ -21,8 +21,10 @@ from typing import Any
 import pytest
 
 from vaquill_mcp.descriptions import (
+    IN_ACT_ID_TOOLS,
     PARAM_DESCRIPTIONS,
     PARAM_DESCRIPTIONS_BY_TOOL,
+    US_ACT_ID_TOOLS,
 )
 from vaquill_mcp.schema_slim import (
     _DESCRIPTION_BUDGET,
@@ -201,10 +203,32 @@ def test_a_tool_scoped_entry_beats_a_bare_name_entry() -> None:
     assert curated_description("search_us_statutes", "corpusType") != curated_description(
         "resolve_statute_citation", "corpusType"
     )
-    # `act_id` is the shared case: identical on all seven tools that take it.
-    assert curated_description("get_section_changes", "act_id") == PARAM_DESCRIPTIONS[
-        "act_id"
-    ]
+    # `act_id` is a different identifier per jurisdiction, so it is scoped too.
+    assert curated_description("get_section_changes", "act_id") != curated_description(
+        "get_act_section", "act_id"
+    )
+
+
+def test_every_act_id_tool_is_described_for_its_own_jurisdiction() -> None:
+    """`act_id` is a US section id on one server and an India act id on the other.
+
+    Until 2026-11-25 one bare entry described both, so eleven India tools told the
+    model to send `USC_T42_C21_S1983`. Each tool must sit in its own jurisdiction's
+    tuple, and no description may carry the other country's example.
+    """
+    takes_act_id = {
+        j: {tool for tool, schema in tools.items() if "act_id" in (schema.get("properties") or {})}
+        for j, tools in _CATALOGUES.items()
+    }
+    assert takes_act_id["US"] == set(US_ACT_ID_TOOLS)
+    assert takes_act_id["IN"] == set(IN_ACT_ID_TOOLS)
+    assert "act_id" not in PARAM_DESCRIPTIONS, "a bare act_id entry would cross the border"
+    for tool in US_ACT_ID_TOOLS:
+        text = curated_description(tool, "act_id") or ""
+        assert "USC_" in text and "IND_" not in text, tool
+    for tool in IN_ACT_ID_TOOLS:
+        text = curated_description(tool, "act_id") or ""
+        assert "IND_" in text and "USC_" not in text, tool
 
 
 def test_title_stripping_never_eats_a_parameter_named_title() -> None:

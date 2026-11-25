@@ -73,11 +73,12 @@ _REFERENCE: dict[str, tuple[tuple[str, str, str, str], ...]] = {
         ),
         (
             "vaquill://pricing",
-            "/api/v1/api-credits/pricing",
+            "/api/v1/in/api-credits/pricing",
             "API credit pricing",
             (
-                "Per-endpoint credit costs and the credit-to-currency rate "
-                "(1 credit = $0.01 USD). Free, no authentication."
+                "Per-endpoint credit costs for the India surface's endpoints, and "
+                "the credit-to-currency rate (1 credit = $0.01 USD). These are the "
+                "India surface's prices only. Free, no authentication."
             ),
         ),
     ),

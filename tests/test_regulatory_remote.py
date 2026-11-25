@@ -85,7 +85,7 @@ def _no_oauth(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def _pricing(respx_mock):
     """The startup price fetch, with the five rows. Returns the route."""
-    return respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing").mock(
+    return respx_mock.get(f"{_BASE}/api/v1/in/api-credits/pricing").mock(
         return_value=httpx.Response(200, json={"costs": _PRICES})
     )
 
@@ -290,16 +290,18 @@ async def test_without_costs_the_description_is_the_hand_written_text() -> None:
 
 
 def test_the_price_fetch_asks_for_india(_pricing) -> None:
-    """The route is not scoped by a mount and defaults to US, which would label
-    these tools with United States prices."""
+    """The India route is the jurisdiction: no region is sent, and the US route
+    (which would label these tools with United States prices) is never used."""
     fetch_regulatory_costs(_BASE)
-    assert dict(_pricing.calls.last.request.url.params) == {"region": "IN"}
+    sent = _pricing.calls.last.request
+    assert sent.url.path == "/api/v1/in/api-credits/pricing"
+    assert dict(sent.url.params) == {}
 
 
 def test_an_unpriced_tool_is_named_in_a_warning(
     respx_mock, caplog: pytest.LogCaptureFixture
 ) -> None:
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing").mock(
+    respx_mock.get(f"{_BASE}/api/v1/in/api-credits/pricing").mock(
         return_value=httpx.Response(200, json={"costs": _PRICES[:3]})
     )
     with caplog.at_level(logging.WARNING, logger="vaquill_mcp.regulatory"):

@@ -55,7 +55,7 @@ def _live_us(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
         return_value=httpx.Response(200, json=_spec("US"))
     )
     # The hosted server has no key at startup, so it uses the PUBLIC matrix.
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
 

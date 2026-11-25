@@ -380,7 +380,9 @@ def _format_cost(entries: list[dict]) -> str:
 def _build_tool_costs(spec: dict, cost_entries: list[dict]) -> dict[str, str]:
     """Map each MCP tool name to its injected 'Cost: ...' sentence.
 
-    ``cost_entries`` is the ``costs`` array from /api/v1/api-credits/pricing/all.
+    ``cost_entries`` is the ``costs`` array from the jurisdiction's own
+    ``/api-credits/pricing/all`` (US: /api/v1/api-credits/pricing/all, India:
+    /api/v1/in/api-credits/pricing/all).
     Both the tool name and the pricing endpoint are derived from the same
     OpenAPI operation, so they cannot fall out of step with each other.
 
@@ -413,26 +415,44 @@ def _build_tool_costs(spec: dict, cost_entries: list[dict]) -> dict[str, str]:
     return tool_costs
 
 
-def _fetch_public_costs(base_url: str, region: str) -> list[dict]:
+def _pricing_url(base_url: str, jurisdiction: str, *, full: bool) -> str:
+    """The pricing route that belongs to ONE jurisdiction, and only that one.
+
+    US prices are read from `/api/v1/api-credits/pricing`, India prices from
+    `/api/v1/in/api-credits/pricing`. Each route serves only its own country's
+    rows, so a server never sees the other country's prices. No `region` query
+    parameter is ever sent: the route is the jurisdiction. An unknown
+    jurisdiction raises rather than defaulting to US, because a silent default
+    is the exact mistake that labelled India tools with United States prices.
+    """
+    if jurisdiction == "US":
+        prefix = "/api/v1"
+    elif jurisdiction == "IN":
+        prefix = "/api/v1/in"
+    else:
+        raise ValueError(f"jurisdiction must be 'US' or 'IN', got {jurisdiction!r}")
+    return f"{base_url}{prefix}/api-credits/pricing{'/all' if full else ''}"
+
+
+def _fetch_public_costs(base_url: str, jurisdiction: str) -> list[dict]:
     """Fetch one jurisdiction's credit-cost matrix WITHOUT an API key.
 
     The remote server has no key at startup -- keys arrive per request -- so it
     cannot use the authenticated `/pricing/all` below. It does not need to:
     `PUBLIC_HIDDEN_CATEGORIES` is empty and is asserted empty by
     `test_all_matrix_equals_public_while_nothing_is_hidden` on the API side, so
-    the public matrix and the full matrix are the same set for a region. If that
-    invariant ever breaks, this returns fewer rows and some tools lose a cost
-    line; it cannot return a WRONG price, which is the failure that matters.
+    the public matrix and the full matrix are the same set for a jurisdiction.
+    If that invariant ever breaks, this returns fewer rows and some tools lose a
+    cost line; it cannot return a WRONG price, which is the failure that matters.
 
-    🔴 `region` is REQUIRED, and it is the caller's jurisdiction, not a
-    preference. This hits the MAIN app route rather than the one mounted inside
-    a jurisdiction's OpenAPI document, so it gets no scoping from the mount and
-    the API defaults it to US. An India server that omitted it would silently
-    label its India tools with United States prices.
+    🔴 `jurisdiction` is REQUIRED and selects the ROUTE: US reads
+    `/api/v1/api-credits/pricing`, India reads `/api/v1/in/api-credits/pricing`.
+    No cross-country `region` is ever sent, so a US server cannot see India
+    prices and an India server cannot see US prices.
     """
-    url = f"{base_url}/api/v1/api-credits/pricing"
+    url = _pricing_url(base_url, jurisdiction, full=False)
     try:
-        response = httpx2.get(url, params={"region": region}, timeout=15.0)
+        response = httpx2.get(url, timeout=15.0)
         response.raise_for_status()
         return response.json().get("costs", [])
     except (httpx2.HTTPError, ValueError) as exc:
@@ -445,15 +465,20 @@ def _fetch_public_costs(base_url: str, region: str) -> list[dict]:
         return []
 
 
-def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
-    """Fetch the full per-endpoint credit-cost matrix from the live API.
+def _fetch_full_costs(base_url: str, api_key: str, jurisdiction: str) -> list[dict]:
+    """Fetch one jurisdiction's full per-endpoint credit-cost matrix.
 
-    Uses the authenticated /pricing/all endpoint (research:read scope) so the
-    hidden ask/research/citations/acts prices are included. Best-effort: any
-    failure returns an empty list, and tools then carry no cost line rather
-    than a stale one.
+    Uses that jurisdiction's own authenticated `/pricing/all` (research:read
+    scope), never the other country's. Best-effort: any failure returns an
+    empty list, and tools then carry no cost line rather than a stale one.
+
+    India falls back to its own PUBLIC route when `/in/api-credits/pricing/all`
+    fails for any reason (a 404 before the backend serves it, or any HTTP
+    error). That is safe for the reason `_fetch_public_costs` gives: nothing is
+    hidden, so the public and full matrices are the same set. The fallback never
+    touches a US URL.
     """
-    url = f"{base_url}/api/v1/api-credits/pricing/all"
+    url = _pricing_url(base_url, jurisdiction, full=True)
     try:
         response = httpx2.get(
             url,
@@ -463,6 +488,14 @@ def _fetch_full_costs(base_url: str, api_key: str) -> list[dict]:
         response.raise_for_status()
         return response.json().get("costs", [])
     except (httpx2.HTTPError, ValueError) as exc:
+        if jurisdiction == "IN":
+            logger.info(
+                "India full pricing at %s is unavailable (%s); reading the India "
+                "public pricing route instead",
+                url,
+                exc,
+            )
+            return _fetch_public_costs(base_url, jurisdiction)
         logger.warning(
             "Could not fetch credit pricing from %s; tool descriptions will "
             "omit cost lines this session: %s",
@@ -801,7 +834,9 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
 
     # Fetch the live credit-cost matrix so each tool description carries an
     # accurate, never-drifting cost line (best-effort; empty on failure).
-    tool_costs = _build_tool_costs(openapi_spec, _fetch_full_costs(base_url, api_key))
+    tool_costs = _build_tool_costs(
+        openapi_spec, _fetch_full_costs(base_url, api_key, jurisdiction)
+    )
 
     # Create authenticated HTTP client.
     # The auth header is set on the client so ALL requests carry it.

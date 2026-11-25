@@ -42,7 +42,7 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
         respx_mock.get(f"{_BASE}{path}").mock(
             return_value=httpx.Response(200, json=_spec(jurisdiction))
         )
-    respx_mock.get(url__regex=rf"{_BASE}/api/v1/api-credits/pricing.*").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing.*").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
 

@@ -296,7 +296,7 @@ def test_the_consent_screen_carries_our_branding(
                 200, json=json.loads((fixtures / "openapi_us.json").read_text())
             )
         )
-        router.get(f"{base}/api/v1/api-credits/pricing").mock(
+        router.get(url__regex=rf"{base}/api/v1(/in)?/api-credits/pricing$").mock(
             return_value=_httpx.Response(200, json={"costs": []})
         )
         server = create_remote_server("US")

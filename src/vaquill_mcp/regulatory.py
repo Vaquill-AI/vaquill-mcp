@@ -839,8 +839,9 @@ def regulatory_costs(entries: list[dict]) -> dict[str, str]:
 def fetch_regulatory_costs(base_url: str) -> dict[str, str]:
     """Fetch the public pricing matrix for India and derive the five price lines.
 
-    Region `IN`, and it must be passed: the route is not scoped by any mount and
-    defaults to US, which would label these tools with United States prices.
+    Jurisdiction `IN`, and it must be passed: it selects the India route
+    (`/api/v1/in/api-credits/pricing`), so these tools can never be labelled with
+    United States prices.
 
     A tool left without a price is logged at WARNING by name. A missing price
     row is otherwise silent, and a tool that does not say what it costs is the

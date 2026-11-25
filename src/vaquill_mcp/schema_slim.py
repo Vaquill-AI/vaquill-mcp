@@ -144,9 +144,9 @@ def curated_description(tool_name: str, param_name: str) -> str | None:
     because the same name means different things on different tools
     (`corpusType` is a 15-value filter on `search_us_statutes` and a resolution
     constraint on `resolve_statute_citation`) while others are genuinely
-    identical everywhere
-    (`act_id` carries the same 340-char description on seven tools, so one entry
-    collapses all seven).
+    identical everywhere (`Idempotency-Key`). `act_id` is the cautionary case: it
+    was one bare entry until 2026-11-25 and gave eleven India tools the US example,
+    so it is now tool-scoped per jurisdiction.
     """
     scoped = PARAM_DESCRIPTIONS_BY_TOOL.get((tool_name, param_name))
     if scoped is not None:

@@ -8,7 +8,7 @@ markdown with tables, paging contracts and worked examples -- far too long for
 a tool description.
 
 Credit costs are intentionally NOT written here. They are injected at server
-startup from the live API (`GET /api/v1/api-credits/pricing/all`) by
+startup from the live API (each jurisdiction's own `/api-credits/pricing/all`) by
 ``server.py`` so the numbers can never drift from ``CREDIT_PRICING`` in the
 backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 
@@ -108,8 +108,8 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     "get_pricing_in": (
         "Credit-to-price conversion and per-endpoint costs for the India "
         "legislation API, billed in US dollars. Use when estimating a "
-        "workflow or comparing endpoint charges. Set region to US for United "
-        "States primary-law pricing instead. Both surfaces use the same API "
+        "workflow or comparing endpoint charges. This tool prices only the "
+        "India surface's endpoints. Both surfaces use the same API "
         "key and account-wide credit balance. No authentication is required. "
     ),
     "get_section_history": (
@@ -679,7 +679,53 @@ _IN_SECTION_NUMBER = (
     "with the act's nearest numbers in `didYouMean`."
 )
 
+# `act_id` is a DIFFERENT identifier in each jurisdiction: a US section id
+# (`USC_T42_C21_S1983`) and an India act id (`IND_central_20062`). Until
+# 2026-11-25 it was one bare entry in PARAM_DESCRIPTIONS, so eleven India tools
+# told the model to send a United States Code section id. Every tool that takes
+# it is now named under its own jurisdiction, and
+# `test_every_act_id_tool_is_described_for_its_own_jurisdiction` fails on a tool
+# that is in neither tuple.
+_US_ACT_ID = (
+    "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section "
+    "1983, written 42 U.S.C. 1983). Take it from a search result rather than "
+    "assembling it: the title and section are derivable from a citation but the "
+    "CHAPTER is not, so hand-built ids usually 404."
+)
+_IN_ACT_ID = (
+    "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, "
+    "2023). Take it from search, /acts/list or /acts/resolve. An act name or "
+    "citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with "
+    "`suggestedRequest`, the call that finds the id."
+)
+US_ACT_ID_TOOLS: tuple[str, ...] = (
+    "get_section_changes",
+    "get_section_cited_by",
+    "get_section_cross_state",
+    "get_section_definitions",
+    "get_section_enactments",
+    "get_section_neighbors",
+    "get_section_rulemaking",
+    "get_us_statute_section",
+    "get_us_statute_section_text",
+)
+IN_ACT_ID_TOOLS: tuple[str, ...] = (
+    "get_act_amendments",
+    "get_act_section",
+    "get_act_section_body",
+    "get_act_status",
+    "get_act_structure",
+    "get_act_text",
+    "get_section_history",
+    "india_act_cited_by",
+    "india_act_definitions",
+    "india_act_subordinate",
+    "india_section_references",
+)
+
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
+    **{(tool, "act_id"): _US_ACT_ID for tool in US_ACT_ID_TOOLS},
+    **{(tool, "act_id"): _IN_ACT_ID for tool in IN_ACT_ID_TOOLS},
     # US case law, added 2026-11-21. Only the parameters whose inherited text says too
     # little for a model to use them well; the rest keep the API's own short prose.
     ("search_us_cases", "query"): (
@@ -774,14 +820,12 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "until their mapping is available."
     ),
     ("get_pricing", "region"): (
-        "Defaults to the jurisdiction of the documentation you are reading. "
-        "If omitted, returns pricing only for that jurisdiction's "
-        "endpoints, not prices across jurisdictions."
+        "Optional. This tool prices only the US surface's endpoints, so the "
+        "only value it accepts is `US`. Leave it out."
     ),
     ("get_pricing_in", "region"): (
-        "Defaults to the jurisdiction of the documentation you are reading. "
-        "If omitted, returns pricing only for that jurisdiction's "
-        "endpoints, not prices across jurisdictions."
+        "Optional. This tool prices only the India surface's endpoints, so "
+        "the only value it accepts is `IN`. Leave it out."
     ),
     ("get_sections_batch", "includeBody"): (
         "Adds the ordinary body price for each row that returns text. "
@@ -1356,21 +1400,16 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
 }
 
-# Keyed by parameter name alone, applying wherever that name appears. Reserved
-# for parameters that are genuinely THE SAME everywhere: `act_id` carries one
-# identical 340-character description on seven tools, so a single entry collapses
-# all seven and cannot drift between them. A tool-scoped entry above wins.
+# Keyed by parameter name alone, applying wherever that name appears, in EVERY
+# jurisdiction. Reserved for parameters that are genuinely THE SAME everywhere,
+# such as `Idempotency-Key`. A name that means one thing in the US and another in
+# India (`act_id`, 2026-11-25) belongs in the tool-scoped table above, never
+# here. A tool-scoped entry above wins.
 PARAM_DESCRIPTIONS: dict[str, str] = {
     "Idempotency-Key": (
         "Optional, 16 to 255 visible ASCII characters (a UUIDv4 is ideal). A retry "
         "with the same key and request replays the original 2xx for 24 hours "
         "without charging again; the same key with a different request is rejected."
-    ),
-    "act_id": (
-        "Section identifier, e.g. `USC_T42_C21_S1983` (Title 42, Chapter 21, Section "
-        "1983, written 42 U.S.C. 1983). Take it from a search result rather than "
-        "assembling it: the title and section are derivable from a citation but the "
-        "CHAPTER is not, so hand-built ids usually 404."
     ),
 }
 

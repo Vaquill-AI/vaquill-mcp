@@ -114,7 +114,7 @@ def _no_oauth(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def _pricing(respx_mock):
     """The startup price fetch, with the six rows. Returns the route."""
-    return respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing").mock(
+    return respx_mock.get(f"{_BASE}/api/v1/in/api-credits/pricing").mock(
         return_value=httpx.Response(200, json={"costs": _PRICES})
     )
 

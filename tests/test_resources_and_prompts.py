@@ -42,7 +42,7 @@ def _server(jurisdiction: str, monkeypatch: pytest.MonkeyPatch, respx_mock) -> F
     respx_mock.get(f"{_BASE}{_SPEC_PATH[jurisdiction]}").mock(
         return_value=httpx.Response(200, json=_spec(jurisdiction))
     )
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing/all").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing/all$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
     return create_server(jurisdiction)
@@ -75,7 +75,7 @@ async def test_a_reference_resource_reads_live_json(
 ) -> None:
     """A resource that cannot be read is decoration."""
     server = _server(jurisdiction, monkeypatch, respx_mock)
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": [{"endpoint": "/x", "credits": 1}]})
     )
     result = await server.read_resource("vaquill://pricing")

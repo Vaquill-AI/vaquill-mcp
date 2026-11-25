@@ -779,7 +779,7 @@ class TestCreateServer:
         respx_mock.get("https://api.vaquill.ai/external/openapi.json").mock(
             return_value=httpx.Response(200, json=sample_openapi_spec)
         )
-        respx_mock.get("https://api.vaquill.ai/api/v1/api-credits/pricing/all").mock(
+        respx_mock.get(url__regex=r"https://api\.vaquill\.ai/api/v1(/in)?/api-credits/pricing/all$").mock(
             return_value=httpx.Response(200, json={"costs": []})
         )
 

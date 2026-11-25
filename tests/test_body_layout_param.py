@@ -32,7 +32,7 @@ def _mount(monkeypatch: pytest.MonkeyPatch, respx_mock) -> FastMCP:
     respx_mock.get(f"{_BASE}/external/openapi.json").mock(
         return_value=httpx.Response(200, json=spec)
     )
-    respx_mock.get(f"{_BASE}/api/v1/api-credits/pricing/all").mock(
+    respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing/all$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
     return create_server("US")
