@@ -2177,6 +2177,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "authlib" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-httpx2" },
@@ -2190,6 +2191,7 @@ remote = [
 
 [package.metadata]
 requires-dist = [
+    { name = "authlib", marker = "extra == 'dev'", specifier = ">=1.3" },
     { name = "fastmcp", specifier = ">=4.0.1,<5" },
     { name = "httpx2", specifier = ">=2.12.0" },
     { name = "py-key-value-aio", extras = ["redis"], marker = "extra == 'remote'", specifier = ">=0.2.0" },

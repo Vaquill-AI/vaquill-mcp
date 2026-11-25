@@ -26,8 +26,13 @@ They are additive: prompts are listed through `prompts/list` and invoked
 deliberately, so none of this rides in the per-turn tool budget.
 """
 
-from __future__ import annotations
-
+# No `from __future__ import annotations` here, on purpose. fastmcp builds each
+# prompt argument's description from its annotation, and below 4.2.6 it tested
+# `annotation is not str`. A string annotation ("str") passes that test, so every
+# text argument carried "Provide a value matching the following JSON schema:
+# {"type":"string"}. Encode non-string values as JSON." on 4.1.8 and 4.2.4 but not
+# on 4.2.6. Python 3.10 cannot install 4.2.6, so the text a model read depended on
+# the customer's Python. Real annotations make every fastmcp version agree.
 import datetime
 import re
 

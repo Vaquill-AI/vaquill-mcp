@@ -5,13 +5,13 @@
     "prompts": {
       "indian_provision_check": {
         "arguments": {
-          "question": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON."
+          "question": null
         },
         "description": "Find and verify what Indian law says on a point, with the amendment caveat stated correctly."
       },
       "old_code_citation": {
         "arguments": {
-          "citation": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON."
+          "citation": null
         },
         "description": "Answer an IPC/CrPC citation under the 2023 code that actually replaced it."
       }
@@ -779,28 +779,28 @@
     "prompts": {
       "cite_check": {
         "arguments": {
-          "text": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON."
+          "text": null
         },
         "description": "Resolve and verify every US citation in a passage, in one batch rather than one call each."
       },
       "fifty_state_survey": {
         "arguments": {
-          "states": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON.",
-          "topic": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON."
+          "states": null,
+          "topic": null
         },
         "description": "Compare how multiple US states treat one issue, without mistaking a coverage gap for an absence of law."
       },
       "good_law_check": {
         "arguments": {
-          "citation": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON."
+          "citation": null
         },
         "description": "Determine whether a US statute, regulation or rule is still in force, and say honestly how well that is established."
       },
       "whats_changed": {
         "arguments": {
-          "corpus": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON.",
-          "since": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON.",
-          "state": "Provide a value matching the following JSON schema: {\"type\":\"string\"}. Encode non-string values as JSON."
+          "corpus": null,
+          "since": null,
+          "state": null
         },
         "description": "Find what changed in a body of US law since a date, with the observation-vs-effect caveat stated correctly."
       }

@@ -62,11 +62,11 @@ jobs:
         # the published wheel, so this resolves the dependency RANGES in
         # pyproject.toml exactly as `uvx vaquill-mcp` does for a customer. A
         # dependency that ships a breaking major lands here first.
+        # The test tools come from the wheel's own `dev` extra, never a list
+        # typed here: a hand list drifted once already (authlib, 2026-11-25).
         run: |
           uv venv /tmp/fresh --python 3.12
-          uv pip install --python /tmp/fresh/bin/python dist/*.whl
-          uv pip install --python /tmp/fresh/bin/python \
-            pytest pytest-asyncio respx pytest-httpx2
+          uv pip install --python /tmp/fresh/bin/python "$(ls dist/*.whl)[dev]"
 
       - name: Report the resolved versions
         # Printed unconditionally: when this job goes red, the FIRST question is
