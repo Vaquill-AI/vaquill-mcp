@@ -13,9 +13,11 @@ expired".
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
-from vaquill_mcp.oauth import _STORAGE_ENV, _durable_storage
+from vaquill_mcp.oauth import _REQUIRE_DURABLE_ENV, _STORAGE_ENV, _durable_storage
 
 _FERNET_KEY = "yBpH1n3rXQ8m0kR2sT4uV6wX8yZ0aB2cD4eF6gH8iJk="
 
@@ -113,3 +115,85 @@ def test_the_signing_key_is_ours_and_not_derived_from_the_client_secret(
 
     assert signing_key == "independent-of-supabase"
     assert signing_key != "the-supabase-secret"
+
+
+# ---------------------------------------------------------------------------
+# NONE-configured on a hosted image
+# ---------------------------------------------------------------------------
+#
+# "Half-configured raises" does not cover the way a deploy really loses its
+# sessions: an env edit that drops ALL THREE variables. That boots cleanly, logs
+# one warning, and signs every connected user out on that deploy and every later
+# one. The hosted image declares itself, and then refuses to start that way.
+
+
+def test_a_hosted_image_refuses_the_ephemeral_store(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv(_REQUIRE_DURABLE_ENV, "1")
+
+    with pytest.raises(RuntimeError, match="Refusing to start"):
+        _durable_storage()
+
+
+@pytest.mark.parametrize("value", ["", "0", "false", "no", "off"])
+def test_anything_but_an_explicit_yes_keeps_the_development_default(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    """A local checkout, the stdio server and the suite never set the flag."""
+    _clear(monkeypatch)
+    monkeypatch.setenv(_REQUIRE_DURABLE_ENV, value)
+
+    assert _durable_storage() == (None, None)
+
+
+def test_the_guard_does_not_stop_a_properly_configured_hosted_image(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The other direction: a guard that also refuses the good case is an outage."""
+    _requires_redis_extra()
+    _clear(monkeypatch)
+    monkeypatch.setenv(_REQUIRE_DURABLE_ENV, "1")
+    monkeypatch.setenv("VAQUILL_OAUTH_REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("VAQUILL_OAUTH_JWT_SIGNING_KEY", "a-long-stable-secret")
+    monkeypatch.setenv("VAQUILL_OAUTH_STORAGE_ENCRYPTION_KEY", _FERNET_KEY)
+
+    storage, signing_key = _durable_storage()
+
+    assert storage is not None
+    assert signing_key == "a-long-stable-secret"
+
+
+def test_the_real_entry_point_reaches_the_guard(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Through `build_auth_provider`, which is what every hosted origin calls.
+
+    A guard in `_durable_storage` is worthless if the builder stops calling it,
+    so this goes in by the front door with a complete OAuth group and no storage.
+    """
+    from vaquill_mcp.oauth import build_auth_provider
+
+    _clear(monkeypatch)
+    monkeypatch.setenv(_REQUIRE_DURABLE_ENV, "1")
+    for name, value in {
+        "VAQUILL_OAUTH_UPSTREAM_JWKS_URI": "https://idp.example.test/.well-known/jwks.json",
+        "VAQUILL_OAUTH_UPSTREAM_ISSUER": "https://idp.example.test/auth/v1",
+        "VAQUILL_OAUTH_AUTHORIZE_URL": "https://idp.example.test/authorize",
+        "VAQUILL_OAUTH_TOKEN_URL": "https://idp.example.test/token",
+        "VAQUILL_OAUTH_CLIENT_ID": "client",
+        "VAQUILL_OAUTH_CLIENT_SECRET": "secret",
+        "VAQUILL_PUBLIC_URL": "https://mcp.example.test",
+    }.items():
+        monkeypatch.setenv(name, value)
+
+    with pytest.raises(RuntimeError, match="Refusing to start"):
+        build_auth_provider()
+
+
+def test_the_dockerfile_declares_the_image_hosted() -> None:
+    """Deleting the line would silently turn the guard off everywhere it matters."""
+    dockerfile = pathlib.Path(__file__).resolve().parent.parent / "Dockerfile"
+    lines = [
+        line.strip()
+        for line in dockerfile.read_text().splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    assert f"ENV {_REQUIRE_DURABLE_ENV}=1" in lines

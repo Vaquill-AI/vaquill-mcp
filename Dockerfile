@@ -78,6 +78,10 @@ ENV PATH="/opt/venv/bin:$PATH"
 # with two replicas /authorize and /oauth/callback stop sharing state and OAuth
 # fails outright rather than merely expiring.
 ENV FASTMCP_HOME=/data
+# This image only ever serves hosted origins, where OAuth state in the container
+# (FASTMCP_HOME above) is wiped by every redeploy and signs every user out.
+# With this set, oauth._durable_storage refuses to start OAuth on that store.
+ENV VAQUILL_REQUIRE_DURABLE_OAUTH=1
 RUN mkdir -p /data && chown 65532:65532 /data
 
 # Dokploy writes the app's saved environment variables to `.env` in the build

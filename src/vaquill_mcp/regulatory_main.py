@@ -1,7 +1,7 @@
 """Entry point for the hosted Indian-regulatory MCP server.
 
-Serves the five regulatory tools over Streamable HTTP at the ROOT of its own
-origin:
+Serves the regulatory tools (the table in `regulatory.TOOL_NAMES`) over
+Streamable HTTP at the ROOT of its own origin:
 
     https://<regulatory host>/mcp             bearer `vq_key_...` or OAuth
     https://<regulatory host>/s/{api_key}     key in the path, for authless clients

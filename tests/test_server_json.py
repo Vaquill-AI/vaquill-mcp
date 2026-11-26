@@ -61,7 +61,36 @@ def test_us_remote_does_not_require_a_key() -> None:
 #:   curl -o /dev/null -w '%{http_code}' \
 #:     https://<host>/.well-known/oauth-protected-resource/mcp
 #: 200 means it belongs here, 404 means it does not. Last measured 2026-11-26.
-_OAUTH_LIVE_HOSTS = frozenset({"mcp.vaquill.ai"})
+#:
+#: A 200 there is necessary and NOT sufficient: the upstream OAuth client must
+#: also list the host's `/auth/callback`, or sign-in dies at the END of the flow,
+#: after the user has authenticated. On 2026-11-26 `in-mcp` answered 200 with the
+#: callback unregistered and the upstream returned 400 on the redirect. Measure
+#: it by registering a throwaway client, approving consent, and following the
+#: redirect: a 302 to the product's sign-in page is accepted, a 400 is not.
+#: (`in-mcp` and `reg-mcp` callbacks were added to the client on 2026-11-26.)
+_OAUTH_LIVE_HOSTS = frozenset({"mcp.vaquill.ai", "in-mcp.vaquill.ai", "reg-mcp.vaquill.ai"})
+
+
+def _required_flag_violations(remotes: dict, live: frozenset) -> list[str]:
+    """Hosts whose `isRequired` disagrees with whether OAuth is live there.
+
+    A function, not a loop in the test, so the rule can be canaried against
+    synthetic remotes. It has to be: once every listed host is OAuth-live there
+    is no key-only host left in the real file to exercise the `false` direction,
+    and an assertion that one exists would fail on the outcome we want.
+    """
+    bad = []
+    for url, remote in remotes.items():
+        host = urlsplit(url).hostname or ""
+        required = _auth_header(remote)["isRequired"]
+        live_here = host in live
+        if required is live_here:  # required where live, or optional where not
+            bad.append(
+                f"{host}: isRequired={required} but OAuth "
+                f"{'IS' if live_here else 'is NOT'} live there"
+            )
+    return bad
 
 
 def test_a_key_is_optional_exactly_where_oauth_is_live() -> None:
@@ -74,18 +103,27 @@ def test_a_key_is_optional_exactly_where_oauth_is_live() -> None:
     work. Keyed on `_OAUTH_LIVE_HOSTS`, so enabling OAuth on a host is one edit
     here and the file and the measurement cannot drift apart.
     """
-    for url, remote in _remotes().items():
-        host = urlsplit(url).hostname or ""
-        header = _auth_header(remote)
-        live = host in _OAUTH_LIVE_HOSTS
-        assert header["isRequired"] is (not live), (
-            f"{host}: isRequired={header['isRequired']} but OAuth "
-            f"{'IS' if live else 'is NOT'} live there"
-        )
-    # Anti-vacuous: at least one host of each kind, or the loop proves nothing.
-    hosts = {urlsplit(u).hostname for u in _remotes()}
-    assert hosts & _OAUTH_LIVE_HOSTS, "no OAuth host listed"
-    assert hosts - _OAUTH_LIVE_HOSTS, "no key-only host listed"
+    remotes = _remotes()
+    assert _required_flag_violations(remotes, _OAUTH_LIVE_HOSTS) == []
+    # Anti-vacuous: every measured-live host is really listed, and there is
+    # something to check. A typo in the set would otherwise shrink the loop.
+    hosts = {urlsplit(u).hostname for u in remotes}
+    assert _OAUTH_LIVE_HOSTS <= hosts, _OAUTH_LIVE_HOSTS - hosts
+    assert len(hosts) >= 3
+
+
+def test_the_required_flag_rule_fails_in_both_directions() -> None:
+    """Canary for the rule above, on synthetic remotes, in both directions."""
+    optional = {"headers": [{"name": "Authorization", "isRequired": False}]}
+    required = {"headers": [{"name": "Authorization", "isRequired": True}]}
+    live = frozenset({"live.example"})
+    # Optional where OAuth is NOT live: a Connect button that cannot work.
+    assert _required_flag_violations({"https://dead.example/mcp": optional}, live)
+    # Required where OAuth IS live: demands a key nobody needs.
+    assert _required_flag_violations({"https://live.example/mcp": required}, live)
+    # And the two correct pairings are clean.
+    assert _required_flag_violations({"https://live.example/mcp": optional}, live) == []
+    assert _required_flag_violations({"https://dead.example/mcp": required}, live) == []
 
 
 def test_every_india_remote_sits_at_an_origin_root() -> None:

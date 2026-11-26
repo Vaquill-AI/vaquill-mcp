@@ -269,6 +269,20 @@ _STORAGE_ENV = (
     "VAQUILL_OAUTH_STORAGE_ENCRYPTION_KEY",
 )
 
+# 🔴 "Half-configured raises" (below) does not cover NONE-configured, and that is
+# the way a hosted deploy actually loses its sessions: an env edit that drops all
+# three variables boots cleanly, logs one warning nobody reads, and signs every
+# connected user out on that deploy and on every one after it. The hosted image
+# therefore declares itself in the Dockerfile (reviewed code, not a Dokploy
+# field), and a container that declares it REFUSES to serve OAuth on the
+# ephemeral store. A local checkout, the stdio server and the test suite never
+# set it, so they keep the development default.
+_REQUIRE_DURABLE_ENV = "VAQUILL_REQUIRE_DURABLE_OAUTH"
+
+
+def _durable_storage_required() -> bool:
+    return os.environ.get(_REQUIRE_DURABLE_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
 
 def _durable_storage() -> tuple[object | None, str | None]:
     """Return `(client_storage, jwt_signing_key)` for a production deployment.
@@ -283,6 +297,13 @@ def _durable_storage() -> tuple[object | None, str | None]:
     values = {name: os.environ.get(name, "").strip() for name in _STORAGE_ENV}
     supplied = {name for name, value in values.items() if value}
     if not supplied:
+        if _durable_storage_required():
+            raise RuntimeError(
+                "OAuth is enabled on a hosted image but none of "
+                f"{', '.join(_STORAGE_ENV)} is set, so every redeploy would sign "
+                "every connected user out. Refusing to start. Set all three, or "
+                f"unset {_REQUIRE_DURABLE_ENV} to run on the ephemeral store on purpose."
+            )
         logger.warning(
             "OAuth state is stored on local disk inside the container, so a "
             "redeploy will sign every connected user out. Set %s together for "
