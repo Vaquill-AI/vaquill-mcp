@@ -1,6 +1,7 @@
 {
   "consoleScripts": {
     "vaquill-mcp": "vaquill_mcp.__main__:main",
+    "vaquill-mcp-origin": "vaquill_mcp.origin:main",
     "vaquill-mcp-regulatory": "vaquill_mcp.regulatory_main:main",
     "vaquill-mcp-remote": "vaquill_mcp.remote_main:main",
     "vaquill-mcp-tribunals": "vaquill_mcp.tribunals_main:main"

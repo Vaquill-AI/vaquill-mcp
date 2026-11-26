@@ -28,11 +28,17 @@ import importlib.metadata
 import json
 import sys
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # stdlib only from 3.11; `tomli` ships with pytest on 3.10.
+    import tomli as tomllib
+
 import pytest
 
 from tests.surface_helpers import FIXTURES, check_golden
 
 _GOLDEN = FIXTURES / "packaging_surface.json"
+_PYPROJECT = FIXTURES.parent.parent / "pyproject.toml"
 _ENV = "UPDATE_PACKAGING_SURFACE"
 
 
@@ -62,12 +68,18 @@ def test_the_packaging_surface_matches_the_snapshot(
     )
 
 
-def test_the_four_console_scripts_are_the_documented_ones() -> None:
+def test_the_golden_console_scripts_are_the_declared_ones() -> None:
+    """The golden must agree with `[project.scripts]`, not with a third list.
+
+    This used to compare the golden to four names typed out here. When
+    `vaquill-mcp-origin` was declared (a688185) neither the golden nor that list
+    moved, and the snapshot test failed every CI leg while a stale local install
+    kept it green on a laptop. Reading the declaration makes the one authored
+    list the comparison, so a new entry point is a golden regeneration and
+    nothing else.
+    """
     golden = json.loads(_GOLDEN.read_text())
-    assert sorted(golden["consoleScripts"]) == [
-        "vaquill-mcp",
-        "vaquill-mcp-regulatory",
-        "vaquill-mcp-remote",
-        "vaquill-mcp-tribunals",
-    ]
+    declared = tomllib.loads(_PYPROJECT.read_text(encoding="utf-8"))["project"]["scripts"]
+    assert len(declared) >= 5, "pyproject.toml lost its scripts table"  # not vacuous
+    assert golden["consoleScripts"] == declared
     assert golden["help"]["exitCode"] == 0 and "--jurisdiction {IN,US}" in golden["help"]["stdout"]

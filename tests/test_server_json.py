@@ -69,6 +69,11 @@ def test_us_remote_does_not_require_a_key() -> None:
 #: it by registering a throwaway client, approving consent, and following the
 #: redirect: a 302 to the product's sign-in page is accepted, a 400 is not.
 #: (`in-mcp` and `reg-mcp` callbacks were added to the client on 2026-11-26.)
+#:
+#: Adding a host here is the LAST step of the checklist in `origin.py`'s
+#: docstring, after its durable store is proven by a write landing in its own
+#: Redis db. The same change sets `supportsOAuth: true` on the host's row in the
+#: console (vaquill-qdrant-python, `mcp-connect/data-api-servers.ts`).
 _OAUTH_LIVE_HOSTS = frozenset({"mcp.vaquill.ai", "in-mcp.vaquill.ai", "reg-mcp.vaquill.ai"})
 
 

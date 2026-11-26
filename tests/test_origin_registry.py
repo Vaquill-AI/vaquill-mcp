@@ -16,8 +16,15 @@ fifth copy of a `build_app`. Two things have to stay true for that to be safe:
 from __future__ import annotations
 
 import importlib
-import tomllib
+import sys
 from pathlib import Path
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # stdlib only from 3.11; `tomli` is the same parser and ships with
+    # pytest on 3.10. A bare `import tomllib` here aborted collection on the
+    # py3.10 CI leg from a688185 to the commit that added this split.
+    import tomli as tomllib
 
 import pytest
 

@@ -80,10 +80,97 @@ ONE DEPLOYMENT PER ORIGIN
 
 OAuth is configured by `VAQUILL_PUBLIC_URL`, and that is THIS origin, so each
 deployment's `VAQUILL_OAUTH_*` group names its own host and the upstream
-authorization server must list that host's callback. Give each its own
-`VAQUILL_OAUTH_JWT_SIGNING_KEY` and its own Redis database, so two deployments
-never share OAuth state. Absent the group an origin serves bearer keys only,
-exactly as `remote_main` does.
+authorization server must list that host's callback. Absent the group an origin
+serves bearer keys only, exactly as `remote_main` does.
+
+The signing and encryption keys are SHARED with mcp.vaquill.ai, by owner
+decision (2026-11-26), and that is safe: FastMCP binds every token it issues to
+its origin with `iss` and `aud` and rejects any other (`JWTIssuer.verify_token`),
+so an mcp token is refused by in-mcp even though one key signed both. What keeps
+two origins' sign-in STATE apart is the Redis database number, one per host
+(below). An earlier version of this paragraph said "give each its own signing
+key"; nothing was ever deployed that way, and following it now would sign that
+host's users out.
+
+ADDING A CONNECTOR WHOSE USERS NEVER HAVE TO SIGN IN AGAIN
+==========================================================
+
+Every step below was missed at least once on 2026-11-26, and each one fails
+quietly: the server looks healthy and the user is the one who finds out.
+
+1. Name the host `<slug>-mcp.vaquill.ai` (the edge section above). Any other
+   spelling 403s at Cloudflare with a healthy container behind it.
+2. A Dokploy application built from THIS repo's Dockerfile, with the build args
+   from its "WHICH SERVER THIS IMAGE RUNS" table. Never set
+   `VAQUILL_REQUIRE_DURABLE_OAUTH` in the environment: the image sets it so that
+   a deploy missing the durable store refuses to start instead of signing
+   everyone out (`oauth._durable_storage`).
+3. Environment: copy the whole `VAQUILL_OAUTH_*` group and
+   `VAQUILL_INTERNAL_SECRET` from the mcp application, then change exactly two
+   things: `VAQUILL_PUBLIC_URL` to the new host, and the database number at the
+   end of `VAQUILL_OAUTH_REDIS_URL`.
+4. That URL points at `mcp-oauth-redis-3pprj3`, the Dokploy Redis that exists
+   ONLY for sign-in state: `noeviction`, AOF `everysec`, 256 MB. Databases in
+   use: 3 mcp, 4 in-mcp, 5 reg-mcp. Take the next free one (6 as of
+   2026-11-26) and confirm it is empty with `INFO keyspace` first, since two
+   hosts on one db read each other's registrations. NEVER point it at the
+   shared application Redis `vaquillapp-redis-ba7pjs`: that one runs the
+   Celery queues under `allkeys-lru`, so memory pressure from unrelated work
+   evicts refresh tokens and signs people out at random. All three hosts were
+   moved off it on 2026-11-26; the pre-move copies are still in its db 3/4/5.
+5. Upstream: APPEND `https://<host>/auth/callback` to the redirect URIs of the
+   Supabase OAuth client (`auth.oauth_clients.redirect_uris`). Never replace the
+   list: every other host's sign-in dies at its final redirect.
+6. Apply the environment with a DEPLOY, never a reload. The Dockerfile bakes
+   Dokploy's `.env` into the image at `/.env` and the CMD sources it OVER the
+   runtime environment, so after a reload `docker inspect` shows the new value
+   while the running process still has the old one. Measured 2026-11-26: two
+   hosts "switched" Redis by reload and kept writing to the old one, and a
+   sign-in probe passed on both because both stores held the client.
+7. Measure, then record. Each of these can pass while sign-in is broken, so
+   check all of them:
+   - `curl -o /dev/null -w '%{http_code}'
+     https://<host>/.well-known/oauth-protected-resource/mcp` answers 200;
+   - the boot log says "OAuth state persisted to Redis";
+   - the RUNNING process's Redis host and db, read from `/proc/1/environ`
+     inside the container (print the host and db only, never the URL: it
+     carries the password);
+   - a throwaway client registered at `/register` gets a 302 to consent from
+     `/authorize`, an unknown `client_id` gets 400, and the transaction it
+     created appears in the intended db and in no other.
+   Only then add the host to `_OAUTH_LIVE_HOSTS` in tests/test_server_json.py,
+   set its `server.json` remote to `isRequired: false`, and set
+   `supportsOAuth: true` on its row in the console's server table
+   (vaquill-qdrant-python `frontend/src/components/mcp-connect/
+   data-api-servers.ts`), which is what tells a user to sign in rather than
+   paste a key.
+
+WHAT SIGNS EVERY CONNECTED USER OUT, AND WHAT DOES NOT
+======================================================
+
+Signs everyone out on that host:
+- changing `VAQUILL_OAUTH_JWT_SIGNING_KEY` (every issued token stops
+  verifying) or `VAQUILL_OAUTH_STORAGE_ENCRYPTION_KEY` (every stored value stops
+  decrypting). They are shared, so rotating them in the group signs out every
+  host at once;
+- changing `VAQUILL_PUBLIC_URL`: issuer and audience change with it;
+- pointing `VAQUILL_OAUTH_REDIS_URL` at another Redis or db without moving the
+  keys, and losing the data: a removed volume, a FLUSHDB, eviction.
+
+To MOVE the store, copy every key (MIGRATE ... COPY REPLACE), record a digest
+of each, deploy, and then merge three-way against those digests until the old
+process is gone: keys created or rotated on the old side are copied over, keys
+the old side consumed are deleted, and anything the new side changed is kept. A
+second plain copy is NOT safe: a refresh rewrites `mcp-upstream-tokens:*` in
+place, so a stale copy replays an upstream refresh token that Supabase has
+already rotated, and its reuse detection revokes the whole session.
+
+Does not sign anyone out: a deploy, a container swap, a restart. Measured
+2026-11-26 on mcp, with live refresh traffic across the swap and zero refusals.
+To check after any change, count the refusal events in the logs
+(`oauth_refresh_refused`, `oauth_refresh_token_rejected`,
+`oauth_upstream_refresh_refused`, `oauth_client_unknown`) against the hour
+before it.
 """
 
 from __future__ import annotations
@@ -148,7 +235,9 @@ class Origin:
 #
 # Adding a jurisdiction: add the spec path to `config._SPEC_PATHS`, the corpus
 # sentence to `instructions.py`, and a row here. The generic entry point and the
-# Dockerfile need no edit.
+# Dockerfile need no edit. That makes the origin SERVE; making its users sign in
+# once and stay signed in is the deployment checklist in this module's
+# docstring ("ADDING A CONNECTOR WHOSE USERS NEVER HAVE TO SIGN IN AGAIN").
 ORIGINS: dict[str, Origin] = {
     # Whole-jurisdiction origins. The catalogue comes from the jurisdiction's
     # OpenAPI document, so adding a country is this row plus a spec path in

@@ -263,6 +263,13 @@ class RawApiKeyVerifier(TokenVerifier):
 # secret would therefore orphan the entire store and sign everyone out again,
 # silently. An explicit key decouples the two, which is exactly why upstream
 # documents the pair as one production setting rather than two.
+#
+# WHERE these point in production, and what changing any of them does to people
+# who are already connected: `origin.py`'s docstring, "ADDING A CONNECTOR WHOSE
+# USERS NEVER HAVE TO SIGN IN AGAIN" and "WHAT SIGNS EVERY CONNECTED USER OUT".
+# In short: the Redis URL names the dedicated `mcp-oauth-redis-3pprj3` with one
+# database per host, never the shared application Redis; the two keys are shared
+# across hosts and rotating either signs everyone out.
 _STORAGE_ENV = (
     "VAQUILL_OAUTH_REDIS_URL",
     "VAQUILL_OAUTH_JWT_SIGNING_KEY",

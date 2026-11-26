@@ -93,6 +93,15 @@ RUN mkdir -p /data && chown 65532:65532 /data
 #
 # The trailing `*` keeps the build working on a machine with no .env (local
 # builds, CI), where the glob simply matches nothing.
+#
+# 🔴 CONSEQUENCE: an environment change is applied by a DEPLOY (which rebuilds
+# this layer), never by a Dokploy reload. A reload updates the container's
+# runtime environment, but the CMD below sources this baked file over it, so the
+# process keeps the OLD values while `docker inspect` shows the new ones.
+# Measured 2026-11-26 on a Redis URL change: two hosts kept writing sign-in state
+# to the old Redis after a reload. Read `/proc/1/environ` in the container, not
+# the inspect output, to see what is really running. The rebuild is about 20 s,
+# since only this layer changes. Checklist: origin.py docstring.
 COPY --chown=65532:65532 .env* ./
 
 USER 65532:65532
@@ -133,4 +142,11 @@ ENV VAQUILL_SERVER=${SERVER}
 # so uvicorn still receives SIGTERM directly -- the property the previous exec
 # form existed to protect. Sourcing is guarded, so a container run with real
 # environment variables and no .env behaves identically.
+#
+# Note the precedence: a value in /.env WINS over the same name in the runtime
+# environment. That is why a reload does not apply an env change (see the COPY
+# above). Reversing it is not a free fix: the shell strips quotes from `.env`
+# values, and whether Dokploy does the same for the runtime copy has NOT been
+# measured, so a quoted value that works today could change meaning on every
+# host at once. Canary a quoted value on one origin before changing this line.
 CMD ["sh", "-c", "set -a; [ -f /.env ] && . /.env; set +a; exec \"$VAQUILL_SERVER\""]
