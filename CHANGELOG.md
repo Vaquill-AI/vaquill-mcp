@@ -5,6 +5,12 @@ All notable changes to `vaquill-mcp` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-11-26
+### Added
+- **The MCP Registry listing now names the PyPI package**, not only the three hosted URLs. A client that discovers servers through the Registry can install it locally with `uvx vaquill-mcp`, set `VAQUILL_API_KEY`, and choose the corpus with `VAQUILL_JURISDICTION` (`US`, the default, or `IN` for Indian primary law). Indian regulatory publications remain hosted only, at `https://reg-mcp.vaquill.ai/mcp`.
+
+No change to any tool or to the hosted servers.
+
 ## [0.7.0] - 2026-11-26
 ### Changed
 - **India primary law has its own host: `https://in-mcp.vaquill.ai/mcp`.** It supports sign-in with a Vaquill account as well as a bearer API key, which the old path could not. 40 tools: Central and State Acts, Supreme Court and High Court judgments, and tribunal records.
