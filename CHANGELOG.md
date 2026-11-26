@@ -5,6 +5,39 @@ All notable changes to `vaquill-mcp` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-26
+### Changed
+- **India primary law has its own host: `https://in-mcp.vaquill.ai/mcp`.** It supports sign-in with a Vaquill account as well as a bearer API key, which the old path could not. 40 tools: Central and State Acts, Supreme Court and High Court judgments, and tribunal records.
+- **The old India address is gone.** `https://mcp.vaquill.ai/in/mcp` and `https://mcp.vaquill.ai/in/s/{key}` stopped working on 2026-11-26. Remove a connector saved with either and add `https://in-mcp.vaquill.ai/mcp`.
+- **Indian regulatory publications are only on `https://reg-mcp.vaquill.ai/mcp`.** The India primary law server no longer carries regulatory tools.
+- **The MCP Registry listing names the three hosts**: `mcp.vaquill.ai` (US), `in-mcp.vaquill.ai` (India primary law) and `reg-mcp.vaquill.ai` (India regulatory).
+
+### Added
+- **Account tools on the regulatory server.** `get_india_credit_balance` and `get_pricing_in`, so you can check your balance and a workflow's price without switching connections. The regulatory server now has 7 tools.
+- **`vaquill-mcp-origin`**, one entry point that serves any hosted origin from a registry, for self-hosting.
+
+### Fixed
+- **A hosted image refuses to start on an in-memory OAuth store.** The Docker image sets `VAQUILL_REQUIRE_DURABLE_OAUTH=1`, so a deployment with sign-in on but no Redis store fails at boot instead of signing every connected user out on its next restart.
+
+## [0.6.0] - 2026-11-25
+### Added
+- **US case law tools.** The US server now publishes 16 case law tools (cases, opinions, citations, courts, judges, dockets, oral arguments).
+- **New corpus types on `search_us_statutes`:** `JURY_INSTRUCTION`, `ETHICS_OPINION`, `STATE_EXECUTIVE_ORDER` and `MUNICIPAL_CODE`. They may return no results until loaded.
+- **`fetch` returns Markdown** with tables and images where the publisher printed them, instead of a plain-text body with figure placeholders. Same price.
+
+### Changed
+- **Each jurisdiction sees only its own prices.** The US server reads US prices from `/api/v1/api-credits/pricing`, and the India server reads India prices from `/api/v1/in/api-credits/pricing`. No `region` parameter is sent any more. The India `vaquill://pricing` resource now shows India prices; before, it showed United States prices.
+- **`act_id` is described per jurisdiction.** India tools now show an India act id example (`IND_central_20062`) instead of a United States Code section id.
+- The US server describes itself as case law, statutes and regulations, and the generic `search` tool says it covers statutes and regulations, pointing court decisions to `search_us_cases`.
+- The Docker image installs from `uv.lock`, so an unrelated edit can no longer upgrade production dependencies.
+
+### Removed
+- `get_us_docket_entries`, together with the API route it called. The US server now has 52 tools.
+
+### Fixed
+- OAuth sign-ins from Gemini Enterprise and Harvey are classified as their own client families.
+- Prompt arguments read the same on every Python version. On Python 3.10 (and with older fastmcp releases) each text argument of a prompt carried a boilerplate "Provide a value matching the following JSON schema" note that newer installs did not show.
+
 ## [0.5.0] - 2026-11-10
 
 ### Added
