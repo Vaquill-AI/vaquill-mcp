@@ -1,5 +1,7 @@
 # vaquill-mcp
 
+<!-- mcp-name: io.github.Vaquill-AI/vaquill-mcp -->
+
 MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Covers US federal and 50-state primary law: USC, CFR, state statutes and regulations, state and US constitutions, court rules, the Federal Register, executive orders, and agency guidance. Search primary law, resolve statutory citations, browse the hierarchy, and ground answers in official sources, all from your AI tools.
 
 Vaquill also publishes hosted MCP servers for Indian primary law and for Indian regulatory publications. See [Three hosted servers](#three-hosted-servers).

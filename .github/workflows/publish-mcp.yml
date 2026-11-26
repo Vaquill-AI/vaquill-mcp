@@ -15,6 +15,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      # The Registry VERIFIES server.json's `packages` entry against PyPI: it
+      # reads that exact version's description and looks for the `mcp-name:`
+      # line. PyPI publishes from the GitHub release (publish.yml) while this
+      # job runs on the tag push, and `gh release create` fires both at once,
+      # so without this wait the Registry checks a version PyPI does not have
+      # yet and the publish fails. Up to 20 minutes; PyPI usually takes two.
+      - name: Wait for this version on PyPI
+        run: |
+          set -euo pipefail
+          name=$(jq -r .name server.json)
+          for pkg in $(jq -r '.packages[]? | select(.registryType=="pypi") | "\(.identifier)==\(.version)"' server.json); do
+            id=${pkg%%==*}; ver=${pkg##*==}
+            for i in $(seq 1 60); do
+              if curl -fsS "https://pypi.org/pypi/$id/$ver/json" 2>/dev/null \
+                  | jq -e --arg n "mcp-name: $name" '.info.description | contains($n)' >/dev/null; then
+                echo "$id $ver is on PyPI with the mcp-name line"
+                continue 2
+              fi
+              echo "waiting for $id $ver on PyPI ($i/60)"
+              sleep 20
+            done
+            echo "::error::$id $ver never appeared on PyPI with 'mcp-name: $name'"
+            exit 1
+          done
+
       - name: Install mcp-publisher
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher

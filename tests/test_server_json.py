@@ -235,3 +235,73 @@ def test_only_an_origin_root_remote_may_leave_its_key_optional() -> None:
     for remote in json.loads(_SERVER_JSON.read_text())["remotes"]:
         if urlsplit(remote["url"]).path != "/mcp":
             assert _auth_header(remote)["isRequired"] is True, remote["url"]
+
+
+# THE PYPI PACKAGE ENTRY. `packages` is what tells a Registry-driven client
+# that this server also installs locally (`uvx vaquill-mcp`), not only the
+# three hosted URLs. The Registry VERIFIES it at publish time: it reads that
+# exact version's description on PyPI and looks for `mcp-name: <name>`, so the
+# README line, the package version and PyPI having that version are one
+# contract. publish-mcp.yml waits for PyPI for the same reason.
+_ROOT = _SERVER_JSON.parent
+
+
+def _package_violations(server: dict, version: str, readme: str, project: str) -> list[str]:
+    """Every way the PyPI entry can disagree with what will be on PyPI."""
+    from vaquill_mcp.config import _SPEC_PATHS
+
+    problems: list[str] = []
+    pypi = [p for p in server.get("packages", []) if p.get("registryType") == "pypi"]
+    if len(pypi) != 1:
+        return [f"expected exactly one pypi package entry, found {len(pypi)}"]
+    pkg = pypi[0]
+    if pkg.get("identifier") != project:
+        problems.append(f"identifier {pkg.get('identifier')!r} is not the project {project!r}")
+    if pkg.get("version") != version or server.get("version") != version:
+        problems.append(f"package {pkg.get('version')!r} / server {server.get('version')!r} != {version!r}")
+    if pkg.get("transport", {}).get("type") != "stdio":
+        problems.append("the PyPI package is the stdio server")
+    env = {e["name"]: e for e in pkg.get("environmentVariables", [])}
+    key = env.get("VAQUILL_API_KEY", {})
+    if not (key.get("isRequired") and key.get("isSecret")):
+        problems.append("VAQUILL_API_KEY must be required and secret: config.py refuses to start without it")
+    # Derived from the code, so a third jurisdiction cannot be left out here.
+    if sorted(env.get("VAQUILL_JURISDICTION", {}).get("choices", [])) != sorted(_SPEC_PATHS):
+        problems.append("VAQUILL_JURISDICTION choices differ from config._SPEC_PATHS")
+    if f"mcp-name: {server.get('name')}" not in readme:
+        problems.append("README lacks the mcp-name line the Registry checks on PyPI")
+    return problems
+
+
+def _project_name() -> str:
+    import re
+
+    match = re.search(r'(?m)^name\s*=\s*"([^"]+)"', (_ROOT / "pyproject.toml").read_text())
+    assert match, "pyproject.toml has no project name"
+    return match.group(1)
+
+
+def test_the_pypi_package_entry_matches_what_will_be_published() -> None:
+    server = json.loads(_SERVER_JSON.read_text())
+    readme = (_ROOT / "README.md").read_text()
+    assert _package_violations(server, __version__, readme, _project_name()) == []
+
+
+def test_the_package_rule_catches_each_kind_of_drift() -> None:
+    """Canary: a check that cannot fail would pass the release that breaks."""
+    server = json.loads(_SERVER_JSON.read_text())
+    readme = (_ROOT / "README.md").read_text()
+    project = _project_name()
+
+    stale = json.loads(json.dumps(server))
+    stale["packages"][0]["version"] = "0.0.1"
+    no_choice = json.loads(json.dumps(server))
+    no_choice["packages"][0]["environmentVariables"][1]["choices"] = ["US"]
+    for broken, why in (
+        (stale, "a package version left behind by a bump"),
+        (no_choice, "a jurisdiction missing from the choices"),
+        ({**server, "packages": []}, "the entry removed"),
+    ):
+        assert _package_violations(broken, __version__, readme, project), why
+    assert _package_violations(server, __version__, readme.replace("mcp-name:", "mcp name:"), project)
+    assert _package_violations(server, __version__, readme, "vaquill_mcp_typo")

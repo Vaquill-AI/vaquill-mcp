@@ -8,6 +8,38 @@
     "url": "https://github.com/Vaquill-AI/vaquill-mcp",
     "source": "github"
   },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "vaquill-mcp",
+      "version": "0.7.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "VAQUILL_API_KEY",
+          "description": "Your Vaquill API key (vq_key_...). Get one at https://www.vaquill.ai/legal-api.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "VAQUILL_JURISDICTION",
+          "description": "Which corpus this local server serves: US (the default) or IN for Indian primary law. Indian regulatory publications are hosted only, at https://reg-mcp.vaquill.ai/mcp.",
+          "isRequired": false,
+          "format": "string",
+          "default": "US",
+          "choices": [
+            "US",
+            "IN"
+          ]
+        }
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",
