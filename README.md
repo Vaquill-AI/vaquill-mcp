@@ -2,6 +2,8 @@
 
 MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Covers US federal and 50-state primary law: USC, CFR, state statutes and regulations, state and US constitutions, court rules, the Federal Register, executive orders, and agency guidance. Search primary law, resolve statutory citations, browse the hierarchy, and ground answers in official sources, all from your AI tools.
 
+Vaquill also publishes hosted MCP servers for Indian primary law and for Indian regulatory publications. See [Three hosted servers](#three-hosted-servers).
+
 [![Discord](https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/GQtnwxf8nQ)
 
 ## Quick Start
@@ -9,6 +11,26 @@ MCP server for [Vaquill](https://www.vaquill.ai) legal research API. Covers US f
 ### Prerequisites
 
 Sign up at [app.vaquill.ai/auth/signup](https://app.vaquill.ai/auth/signup) to get your API key (new accounts get 1,000 free API credits, no card required). Steps for AI agents: [vaquill.ai/agents](https://www.vaquill.ai/agents).
+
+### Three hosted servers
+
+Vaquill hosts three separate MCP servers. Each one is its own connector, so add
+only the ones you need and add each one on its own. You sign in once per
+server. The same API key and the same credit balance work on all three.
+
+| Server | Covers | URL |
+|--------|--------|-----|
+| US | US federal and state primary law | `https://mcp.vaquill.ai/mcp` |
+| India primary law | Central and State Acts, judgments, tribunal records | `https://in-mcp.vaquill.ai/mcp` |
+| India regulatory | Circulars, notifications and orders from SEBI, RBI and other regulators | `https://reg-mcp.vaquill.ai/mcp` |
+
+Each accepts sign-in with a Vaquill account, or a bearer key sent as
+`Authorization: Bearer vq_key_...`. Each also has a `/s/vq_key_...` form with the
+key in the path, which is deprecated. The steps below use the US URL: swap in
+the host you want.
+
+To run India primary law locally instead, see `--jurisdiction IN` under Claude
+Desktop. Regulatory publications are hosted only.
 
 ### Claude.ai (Web)
 
@@ -64,8 +86,9 @@ Open the config file from **Settings > Developer > Edit Config**:
 }
 ```
 
-For **Indian legislation**, add `--jurisdiction IN`. One process serves one
-corpus, so run two entries if you want both:
+For **Indian primary law**, add `--jurisdiction IN`. One process serves one
+corpus, so run two entries if you want both. There is no local mode for Indian
+regulatory publications: use the hosted server for those.
 
 ```json
 {
@@ -238,8 +261,8 @@ set always matches the current API. For the **authoritative, up-to-date list and
 per-call credit costs**, run the free `get_pricing` tool or inspect your MCP
 client's tool list.
 
-The US server publishes 52 tools and the India server 22, counting `search` and
-`fetch`. Every one is read-only. Law change alerts (boards and watches) are deliberately **not** MCP
+The US server publishes 52 tools, the hosted India server 40 and the regulatory
+server 7, counting `search` and `fetch`. Every one is read-only. Law change alerts (boards and watches) are deliberately **not** MCP
 tools: the API still serves them, so create and manage alerts in the Vaquill
 console or over the REST API directly.
 
@@ -365,18 +388,24 @@ per-turn tool budget.
 | `old_code_citation(citation)` | India: map IPC/CrPC to the BNS/BNSS provision in force since 1 July 2024 before answering. |
 | `indian_provision_check(question)` | India: read the filter vocabulary first, and state the amendment caveat correctly. |
 
-### Indian legislation
+### Indian primary law
 
-A **separate endpoint on the same host**. Central and State Acts plus the
-instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, TRAI, DGFT):
-22,265 enactments and 1,098,577 individually addressable sections.
+A **separate server on its own host**, not a path on `mcp.vaquill.ai`. It serves
+three corpora: Central and State Acts (with the instruments of the principal
+regulators: SEBI, RBI, MCA, IRDAI, TRAI, DGFT), Supreme Court and High Court
+judgments, and tribunal records. The Acts corpus holds 22,265 enactments and
+1,098,577 individually addressable sections.
 
 ```
-https://mcp.vaquill.ai/in/mcp        with Authorization: Bearer vq_key_your_key_here
-https://mcp.vaquill.ai/in/s/vq_key_your_key_here      key in the path, as above
+https://in-mcp.vaquill.ai/mcp             sign in with your Vaquill account, or Authorization: Bearer vq_key_your_key_here
+https://in-mcp.vaquill.ai/s/vq_key_your_key_here      key in the path, deprecated
 ```
 
-Same API key, same credit balance as the US endpoint.
+Same API key, same credit balance as the other servers. Sign in once for this
+server: signing in to the US server does not cover it.
+
+Circulars, orders, notices and press releases are **not** here. They are on the
+regulatory server below. Translation is REST only, not MCP.
 
 | Tool | Description |
 |------|-------------|
@@ -384,30 +413,54 @@ Same API key, same credit balance as the US endpoint.
 | `list_acts` | Browse and filter enactments by jurisdiction, regulator, year, status. |
 | `list_act_filters` | The filter vocabulary the corpus actually holds, with counts. |
 | `get_act_text` | Source links (text, PDF, HTML) for one enactment. |
+| `get_act_section_body` | The publisher's full text for one provision. |
 | `get_act_amendments` | Amendment history: what changed, by which Act, effective when. |
-| `search` / `fetch` | The same generic pair described above, over Indian legislation. |
+| `resolve_india_citation` | The provision named by a citation, such as `s.302 IPC`. |
 | `get_corresponding_provisions` | Map a repealed criminal code to its 2023 replacement (IPC to BNS, CrPC to BNSS). |
+| `search_india_cases` | Search Supreme Court and High Court judgments by meaning and by words. |
+| `list_india_courts` | The canonical court registry, with per-court holdings. |
+| `get_india_case_body` | A judgment's full text. |
+| `resolve_india_case` | A case id, SCR citation or case number to the judgment it names. |
+| `list_india_tribunal_forums` | The fifteen tribunal forums, with record counts. Call it first. |
+| `search_india_tribunal_matters` | Matters whose title, petitioner or respondent contains your term. |
+| `get_india_tribunal_matter` | Everything held about one tribunal matter. |
+| `get_pricing_in` / `get_india_credit_balance` | Per-endpoint credit costs and your remaining credits. Free. |
+| `search` / `fetch` | The same generic pair described above, over Indian primary law. |
 
-**One endpoint serves one jurisdiction, deliberately.** The US and India
+The tribunal tools search **metadata**, not judgment text: no extracted text
+exists in that corpus, so a matter whose title or parties do not contain your
+term will not be found.
+
+**Each corpus is its own server, deliberately.** The US, India and regulatory
 OpenAPI documents are disjoint, and each app derives its entire tool set from
-one of them, so nothing under `/mcp` or `/s/` can expose an Indian tool and
-nothing under `/in/` can expose a US one. The mount path selects an app; it
-does not filter one, so there is no per-request check to get wrong. That also keeps an integrator's context window
-to the jurisdiction they actually work in.
+one of them, so a US connection never exposes an Indian tool and the reverse.
+That also keeps an integrator's context window to the corpus they actually work
+in. Each server has its own host, so each one supports sign-in as well as an API
+key (see "Why a subdomain" below).
+
+> **Older connectors.** India used to be a path on the US host,
+> `https://mcp.vaquill.ai/in/mcp` (and `/in/s/{key}`). That address stopped
+> working on 26 November 2026. Remove a connector saved against it and add
+> `https://in-mcp.vaquill.ai/mcp` instead, which also supports sign-in.
 
 ### Indian regulatory publications
 
-Circulars, orders, notices and press releases from named Indian regulators,
-captured from the publishers themselves. A **separate server on its own
-origin**, not a path on `mcp.vaquill.ai`:
+Circulars, notifications, orders, notices and press releases from named Indian
+regulators (SEBI, RBI and others), captured from the publishers themselves. This
+is administrative material rather than binding authority, which is why it is a
+separate server from Indian primary law. A **separate server on its own
+origin**, not a path on `mcp.vaquill.ai` or `in-mcp.vaquill.ai`:
 
 ```
 https://reg-mcp.vaquill.ai/mcp            Authorization: Bearer vq_key_..., or sign in over OAuth
-https://reg-mcp.vaquill.ai/s/vq_key_...   key in the path, for clients that cannot send a header
+https://reg-mcp.vaquill.ai/s/vq_key_...   key in the path, deprecated, for clients that cannot send a header
 ```
 
-Same API key and credit balance as the other endpoints. The key needs the
-single `reg:read` permission, which covers every tool and every publisher.
+Hosted only: the package has no local (stdio) mode for regulatory publications,
+and `--jurisdiction IN` serves primary law, not this corpus. Add it as its own
+connector and sign in once for it. Same API key and credit balance as the other
+servers. The key needs the single `reg:read` permission, which covers every tool
+and every publisher.
 
 | Tool | Description |
 |------|-------------|
@@ -416,6 +469,12 @@ single `reg:read` permission, which covers every tool and every publisher.
 | `get_regulatory_document_file` | The archived original, returned as a file. |
 | `list_regulatory_changes` | What is new, changed or retracted since a time or cursor, in capture order. |
 | `get_regulatory_coverage` | What the corpus covers and how fresh each source is. |
+| `get_india_credit_balance` | Your remaining credits. Free. |
+| `get_pricing_in` | Credit-to-price conversion and per-endpoint costs. Free. |
+
+The first five read the corpus. The last two are the same account tools the
+India server offers, so you can check your balance and a workflow's price
+without switching connections.
 
 Capture began on 2026-08-23. An empty result for an earlier date does not mean
 nothing was published. Costs are appended to each description at startup from
@@ -425,15 +484,14 @@ the live pricing table.
 (RFC 9728) is served from the origin's `/.well-known/*`, and a FastMCP app knows
 only its own path, so an app mounted under a prefix advertises the wrong
 `resource` URL and serves its document at the wrong location. Claude requires
-`resource` to match the URL the user typed, path included. That is why the
-India legislation endpoint above is bearer-only, and why this corpus is not
-mounted there.
+`resource` to match the URL the user typed, path included. That is why India
+primary law and this corpus each have their own host.
 
 #### Running and deploying it
 
 It is the same package and the same `Dockerfile` as `mcp.vaquill.ai`, with a
 different entry point. It is deliberately not in `remote_main._MOUNTS`, which
-drives the live US and India connectors.
+drives the live US connector.
 
 ```bash
 pip install "vaquill-mcp[remote]"
@@ -453,16 +511,17 @@ the new host name at the application and set its own environment (the table
 under "Hosted server only" applies unchanged, with these differences):
 
 - `VAQUILL_PUBLIC_URL` is **this** origin, `https://reg-mcp.vaquill.ai`.
-- With OAuth on, register `https://reg-mcp.vaquill.ai/auth/callback` as a
-  second redirect URI on the upstream client. Give it its own
-  `VAQUILL_OAUTH_JWT_SIGNING_KEY` and its own Redis database or instance, so
-  the two deployments do not share OAuth state.
+- With OAuth on, register `https://reg-mcp.vaquill.ai/auth/callback` as an
+  additional redirect URI on the upstream client. Copy the `VAQUILL_OAUTH_*`
+  group from the US deployment and change only the public URL and the Redis
+  database number, so the deployments do not share OAuth state. The full
+  checklist is in the module docstring of `src/vaquill_mcp/origin.py`.
 - Without the `VAQUILL_OAUTH_*` group it serves bearer keys only.
 - `HOST` and `PORT` behave as above (`0.0.0.0` and `8000`).
 
-At startup it reads the India pricing matrix and logs a warning naming any of
-the five tools that has no price row; such a tool is published without a cost
-line rather than with a guessed one.
+At startup it reads the India pricing matrix and logs a warning naming any tool
+that has no price row; such a tool is published without a cost line rather than
+with a guessed one.
 
 ## Environment Variables
 
@@ -471,7 +530,7 @@ line rather than with a guessed one.
 | `VAQUILL_API_KEY` | Yes | - | API key (`vq_key_...`) from [vaquill.ai](https://www.vaquill.ai) |
 | `VAQUILL_BASE_URL` | No | `https://api.vaquill.ai` | API base URL |
 | `VAQUILL_TIMEOUT` | No | `120` | Request timeout in seconds |
-| `VAQUILL_JURISDICTION` | No | `US` | **stdio server only.** `US` or `IN`. Selects the OpenAPI document, and therefore the whole tool set. The hosted server ignores it and serves both jurisdictions on separate paths. |
+| `VAQUILL_JURISDICTION` | No | `US` | **stdio server only.** `US` or `IN`. Selects the OpenAPI document, and therefore the whole tool set. The hosted servers ignore it: US, India primary law and India regulatory each run as their own server on their own host. |
 
 ### Hosted server only
 

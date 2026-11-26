@@ -16,6 +16,8 @@ import httpx
 import pytest
 from starlette.routing import Mount, Route
 
+from tests.surface_helpers import mock_spec_fetches, mounted_jurisdictions
+
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 _BASE = "https://api.vaquill.ai"
 _LOCKUP = "https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png"
@@ -31,9 +33,8 @@ def _spec(jurisdiction: str) -> dict:
 def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     """Mock the startup fetches, as test_remote_dual_mount does."""
     monkeypatch.setenv("VAQUILL_BASE_URL", _BASE)
-    respx_mock.get(f"{_BASE}/external/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("US"))
-    )
+    # One document per MOUNTED jurisdiction, derived from `_MOUNTS`.
+    mock_spec_fetches(respx_mock, _BASE, _spec, mounted_jurisdictions())
     respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
@@ -43,20 +44,12 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
 def _live_india(_live_api: None, respx_mock) -> None:
     """The India spec too, for a test that builds an India server DIRECTLY.
 
-    Separate from `_live_api` rather than folded into it, because respx asserts
-    at TEARDOWN that every registered route was called. India left this app's
-    mount table on 2026-11-26 (`remote_main._MOUNTS`), so an app-level test
-    never fetches the India document and a mock for it in the shared fixture
-    fails those tests in teardown while their assertions pass: the shape that
-    turned this removal into 44 errors across suites that never mention India.
-
-    India itself is unchanged and still built per jurisdiction here, now served
-    from `in-mcp.vaquill.ai`. A mount table and a direct construction are
-    different things, and only the first one lost India.
+    Only when `_live_api` has not already registered it: respx asserts at
+    TEARDOWN that every registered route was called, so the document is mocked
+    exactly once whether or not India is in the mount table.
     """
-    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("IN"))
-    )
+    if "IN" not in mounted_jurisdictions():
+        mock_spec_fetches(respx_mock, _BASE, _spec, ["IN"])
 
 
 def _png_dimensions(data: bytes) -> tuple[int, int]:

@@ -104,9 +104,20 @@ logger = logging.getLogger(__name__)
 # connector while it lived here, and OAuth is a product requirement.
 #
 # India now has its OWN ORIGIN, `in-mcp.vaquill.ai`, built from `origin.py`'s
-# registry, where it mounts at "/" and the problem does not arise. That origin
-# serves a SUPERSET of what `/in` served here: acts, case law, tribunals AND
-# regulatory, 45 tools, verified by catalogue diff on 2026-11-26.
+# registry, where it mounts at "/" and the problem does not arise. It serves
+# what `/in` served here (acts, case law, tribunals); regulatory publications
+# moved again the same day, to `reg-mcp.vaquill.ai`.
+#
+# THE OLD `/in` URLs ARE NOT KEPT AS AN ALIAS, and that was decided on numbers,
+# not left undone. A compatibility row was written and then dropped on
+# 2026-11-26 after measuring who it would serve: in the 60 days before the move,
+# `api_request_logs` shows THREE accounts calling India through this server,
+# none through a claude.ai connector that worked (a path mount takes no OAuth,
+# so claude.ai's sessions on `/in/mcp` never reached a billable call), and two
+# of them on developer clients where changing a URL is one edit. Cloudflare's
+# traffic on `/in/*` is almost entirely directory crawlers reading the old
+# Registry listing. Revisit only if that measurement changes: rerun it, do not
+# reason from the 404 count, which is mostly those crawlers.
 #
 # Keeping this table a tuple of one is deliberate. The loop below, the lifespan
 # and the mount ordering all still work for N jurisdictions, and this host keeps

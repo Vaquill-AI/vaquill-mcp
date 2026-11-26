@@ -32,6 +32,8 @@ import httpx
 import pytest
 from starlette.routing import Mount, Route
 
+from tests.surface_helpers import mock_spec_fetches, mounted_jurisdictions
+
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 _BASE = "https://api.vaquill.ai"
 
@@ -49,9 +51,8 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     tests hit the real API.
     """
     monkeypatch.setenv("VAQUILL_BASE_URL", _BASE)
-    respx_mock.get(f"{_BASE}/external/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("US"))
-    )
+    # One document per MOUNTED jurisdiction, derived from `_MOUNTS`.
+    mock_spec_fetches(respx_mock, _BASE, _spec, mounted_jurisdictions())
     # The hosted server has no key at startup, so it uses the PUBLIC matrix.
     respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": []})
@@ -62,16 +63,12 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
 def _live_india(_live_api: None, respx_mock) -> None:
     """The India spec too, for tests that build an India server DIRECTLY.
 
-    Separate from `_live_api` because respx asserts at TEARDOWN that every
-    registered route was called. India left this app's mount table on
-    2026-11-26 (`remote_main._MOUNTS`), so an app-level test never fetches the
-    India document, and a mock for it in the shared fixture fails those tests
-    in teardown while their assertions pass. India still exists; it is served
-    from `in-mcp.vaquill.ai` and is still constructed directly here.
+    Only when `_live_api` has not already registered it: respx asserts at
+    TEARDOWN that every registered route was called, so the document is mocked
+    exactly once whether or not India is in the mount table.
     """
-    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("IN"))
-    )
+    if "IN" not in mounted_jurisdictions():
+        mock_spec_fetches(respx_mock, _BASE, _spec, ["IN"])
 
 
 

@@ -119,3 +119,30 @@ async def wire_surface(server: object) -> dict:
             },
             "schemaStrings": {t.name: strings(t.input_schema) for t in tools},
         }
+
+
+def mounted_jurisdictions() -> tuple[str, ...]:
+    """The jurisdictions `remote_main.build_app` mounts, in mount order.
+
+    App-level fixtures must mock EXACTLY these startup spec fetches: respx fails
+    at TEARDOWN on a registered route nobody called, and an unregistered one
+    escapes the mock. Hand-written lists of jurisdictions in those fixtures are
+    how one row of `_MOUNTS` became 44 errors when India left this host, and 29
+    again when a compatibility row was tried, in suites that never mention
+    India. Derive the list from here instead.
+    """
+    from vaquill_mcp.remote_main import _MOUNTS
+
+    return tuple(jurisdiction for jurisdiction, _ in _MOUNTS)
+
+
+def mock_spec_fetches(respx_mock, base: str, spec, jurisdictions) -> None:
+    """Register one OpenAPI document mock per jurisdiction, at its real path."""
+    import httpx
+
+    from vaquill_mcp.config import _SPEC_PATHS
+
+    for jurisdiction in jurisdictions:
+        respx_mock.get(f"{base}{_SPEC_PATHS[jurisdiction]}").mock(
+            return_value=httpx.Response(200, json=spec(jurisdiction))
+        )

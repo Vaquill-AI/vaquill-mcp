@@ -23,6 +23,7 @@ from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
 from mcp.types import Implementation
 
+from tests.surface_helpers import mock_spec_fetches, mounted_jurisdictions
 from vaquill_mcp.client_identity import _clean, calling_client, with_client
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
@@ -38,14 +39,8 @@ def _spec(jurisdiction: str) -> dict:
 @pytest.fixture
 def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     monkeypatch.setenv("VAQUILL_BASE_URL", _BASE)
-    # US only: India left this app's mount table on 2026-11-26
-    # (`remote_main._MOUNTS`), so nothing here fetches the India document and a
-    # mock for it would fail TEARDOWN, where respx asserts every registered
-    # route was called. The loop is kept so a second jurisdiction is one tuple.
-    for jurisdiction, path in (("US", "/external/openapi.json"),):
-        respx_mock.get(f"{_BASE}{path}").mock(
-            return_value=httpx.Response(200, json=_spec(jurisdiction))
-        )
+    # One document per MOUNTED jurisdiction, derived from `_MOUNTS`.
+    mock_spec_fetches(respx_mock, _BASE, _spec, mounted_jurisdictions())
     respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing.*").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )

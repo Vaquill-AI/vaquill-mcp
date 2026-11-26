@@ -31,6 +31,8 @@ import pytest
 from fastmcp import Client
 from fastmcp.client.transports import StreamableHttpTransport
 
+from tests.surface_helpers import mock_spec_fetches, mounted_jurisdictions
+
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 _BASE = "https://api.vaquill.ai"
 
@@ -61,14 +63,15 @@ def _live_us(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
 
 
 @pytest.fixture
-def _live_api(_live_us: None) -> None:
+def _live_api(_live_us: None, respx_mock) -> None:
     """Mock the startup fetches every mounted app makes.
 
-    Since India left this host on 2026-11-26 (`remote_main._MOUNTS`) the US
-    mocks in `_live_us` are all of them. The fixture stays rather than being
-    inlined at every call site: it is the seam a second jurisdiction would be
-    added back through, and `_live_us` alone would not say so.
+    `_live_us` covers US and both pricing routes; the other mounted
+    jurisdictions' documents are DERIVED from `_MOUNTS` (today there are none),
+    so a change to the mount table never needs an edit here.
     """
+    others = [j for j in mounted_jurisdictions() if j != "US"]
+    mock_spec_fetches(respx_mock, _BASE, _spec, others)
 
 
 @contextlib.asynccontextmanager
