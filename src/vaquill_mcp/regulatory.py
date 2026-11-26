@@ -1,4 +1,8 @@
-"""Five tools over the Indian regulatory corpus (`/api/v1/in/reg`).
+"""Seven tools over the Indian regulatory corpus (`/api/v1/in/reg`).
+
+Five read the corpus. Two are account tools (balance and pricing), added
+2026-11-26 because this server charges credits and published no way to see
+what was left; see `TOOL_NAMES`.
 
 WHY THIS MODULE DECLARES TOOLS BY HAND, WHEN `remote.py` SAYS NOT TO
 ===================================================================
@@ -7,10 +11,11 @@ Every other tool here is DERIVED from a published OpenAPI document, and that is
 the right default. It is not available for this corpus yet: the proxy router
 that serves `/in/reg` is not mounted, so no document describes it, and writing
 a fixture of a spec the backend has not published would be a guess committed as
-a fact. These five are therefore declared, in ONE place, as a closed set. The
+a fact. These tools are therefore declared, in ONE place, as a closed set. The
 tool count IS the endpoint count (docs/prd-regulatory-api/10-mcp-design.md,
-section 1): adding a sixth is a deliberate edit that `test_regulatory_tools.py`
-fails on, not something a convenience wrapper can slide in.
+section 1): adding one more is a deliberate edit that `test_regulatory_tools.py`
+fails on, not something a convenience wrapper can slide in. The two account
+tools were exactly that edit, and `TOOL_ROUTES` grew with them.
 
 When the backend publishes the document, this module should shrink to the
 descriptions and the error table, and the tools should come from the provider.
@@ -18,9 +23,16 @@ descriptions and the error table, and the tools should come from the provider.
 ONE SCOPE
 =========
 
-A key that holds `reg:read` can call all five tools: every publisher, every
-operation, every document. There is no per-publisher scope and no per-tool
-scope, and nothing here tests for one. A 403 means the key lacks `reg:read`.
+A key that holds `reg:read` can call all five CORPUS tools: every publisher,
+every operation, every document. There is no per-publisher scope and no
+per-tool scope, and nothing here tests for one. A 403 means the key lacks
+`reg:read`.
+
+The two account tools are OUTSIDE that scope, deliberately: the balance route
+accepts any valid key regardless of scope and pricing accepts none at all. So a
+caller whose key is missing `reg:read` can still read the price list and their
+balance, and can therefore tell a permission problem from an empty account.
+Widening `SCOPE` to cover them would be a lie about the upstream.
 
 WHAT THE TOOLS MUST NOT DO
 ==========================
@@ -62,7 +74,7 @@ from fastmcp.utilities.types import File
 from mcp.types import EmbeddedResource
 from pydantic import Field
 
-from vaquill_mcp.descriptions import TOOL_TITLES
+from vaquill_mcp.descriptions import TOOL_DESCRIPTIONS, TOOL_TITLES
 from vaquill_mcp.instructions import instructions_for
 from vaquill_mcp.log_redaction import quiet_http_client_loggers
 from vaquill_mcp.ordering import DeterministicToolOrder
@@ -82,6 +94,21 @@ TOOL_NAMES: tuple[str, ...] = (
     "get_regulatory_document_file",
     "list_regulatory_changes",
     "get_regulatory_coverage",
+    # The two account tools, added 2026-11-26. This server charges credits on
+    # four of its five data tools, and until now it published no way to see the
+    # balance: a connection here could watch its cost lines and still fail on
+    # insufficient credits with nothing to diagnose it. That was MASKED while
+    # India published these regulatory tools a second time alongside
+    # `get_india_credit_balance`; removing those duplicates exposed it.
+    #
+    # The NAMES are deliberately the ones the India server already uses, not
+    # new spellings. Both hit the same two routes and the balance is one
+    # account-wide ledger (the API says so: "the US GET
+    # /api/v1/credits/balance reports the same number"), so a third name for
+    # one number is the drift that `search_` versus `list_regulatory_documents`
+    # just cost us. A model moving between the two servers sees one name.
+    "get_india_credit_balance",
+    "get_pricing_in",
 )
 
 #: Where each tool goes, with `{id}` left in for the two per-document routes.
@@ -94,9 +121,14 @@ TOOL_ROUTES: dict[str, str] = {
     "get_regulatory_document_file": f"{_PREFIX}/documents/{{id}}/file",
     "list_regulatory_changes": f"{_PREFIX}/changes",
     "get_regulatory_coverage": f"{_PREFIX}/sources",
+    # NOT under `_PREFIX`: these two are account-level, not regulatory, and
+    # they are the same India routes the legislation server reads.
+    "get_india_credit_balance": "/api/v1/in/credits/balance",
+    "get_pricing_in": "/api/v1/in/api-credits/pricing",
 }
 
-#: The only permission any of the five needs. Stated once so the 403 text and the
+#: The only permission the five CORPUS tools need (the two account tools need
+#: none; see ONE SCOPE above). Stated once so the 403 text and the
 #: docs cannot drift apart.
 SCOPE = "reg:read"
 
@@ -153,6 +185,23 @@ DESCRIPTIONS: dict[str, str] = {
         "saying nothing was published. A stale or failing source means our "
         "crawl is behind, not that the publisher stopped: say so. A null time "
         "means not yet checked, never fine."
+    ),
+    # The balance text is taken from the shared table rather than restated: it
+    # is already written as a cross-surface claim ("shared by the India and
+    # United States APIs", "not a separate India allowance"), which is exactly
+    # what it has to say here, and ONE string means the two servers cannot
+    # start describing the same number differently.
+    "get_india_credit_balance": TOOL_DESCRIPTIONS["get_india_credit_balance"].strip(),
+    # Pricing is NOT taken from the shared table, which calls the endpoint
+    # "the India legislation API". From this server that would be wrong in the
+    # one way that costs money: the response prices the whole India surface,
+    # these regulatory routes included, and a caller told otherwise would go
+    # looking for a second pricing endpoint that does not exist.
+    "get_pricing_in": (
+        "Credit-to-price conversion and per-endpoint costs for the India API, "
+        "billed in US dollars. Covers these regulatory endpoints and the "
+        "legislation ones in a single response. Use when estimating a workflow "
+        "or comparing endpoint charges. No authentication is required."
     ),
 }
 
@@ -616,7 +665,7 @@ class _FlattenOptionalParams(Middleware):
 def register_regulatory_tools(
     mcp: FastMCP, client: httpx2.AsyncClient, costs: dict[str, str] | None = None
 ) -> None:
-    """Publish exactly the five tools in `TOOL_NAMES` on `mcp`.
+    """Publish exactly the tools in `TOOL_NAMES` on `mcp`.
 
     `costs` is `{tool: "Cost: 1 credit."}` from `regulatory_costs`. Omitted, the
     descriptions carry no price line, which is what the stdio server and the
@@ -795,6 +844,43 @@ def register_regulatory_tools(
             build_query(publisherId=publisherId, includePaused=includePaused),
         )
 
+    # The two ACCOUNT tools. They are not about regulatory documents at all:
+    # they answer "what does this cost" and "can I afford it", which a
+    # connection to this server could not ask before 2026-11-26. See TOOL_NAMES
+    # for why they reuse the India server's names rather than taking new ones.
+    #
+    # Neither takes a parameter and neither needs `reg:read`: the balance route
+    # accepts any valid key with no scope, and pricing needs no key at all. So
+    # a caller whose key lacks `reg:read` can still discover that, rather than
+    # being unable to tell a permission problem from an empty balance.
+    @mcp.tool(
+        name="get_india_credit_balance",
+        title=TOOL_TITLES["get_india_credit_balance"],
+        description=_described("get_india_credit_balance", costs),
+        annotations=_annotations("get_india_credit_balance"),
+    )
+    async def get_india_credit_balance() -> dict[str, Any]:
+        return await _get_json(
+            client,
+            "get_india_credit_balance",
+            TOOL_ROUTES["get_india_credit_balance"],
+            [],
+        )
+
+    @mcp.tool(
+        name="get_pricing_in",
+        title=TOOL_TITLES["get_pricing_in"],
+        description=_described("get_pricing_in", costs),
+        annotations=_annotations("get_pricing_in"),
+    )
+    async def get_pricing_in() -> dict[str, Any]:
+        return await _get_json(
+            client,
+            "get_pricing_in",
+            TOOL_ROUTES["get_pricing_in"],
+            [],
+        )
+
     # Flatten every tool on the way out, in ONE place, so a sixth tool is
     # covered the day it is added. It runs as middleware rather than inline
     # here because the registered Tool is only reachable through an async
@@ -837,7 +923,7 @@ def regulatory_costs(entries: list[dict]) -> dict[str, str]:
 
 
 def fetch_regulatory_costs(base_url: str) -> dict[str, str]:
-    """Fetch the public pricing matrix for India and derive the five price lines.
+    """Fetch the public pricing matrix for India and derive the price lines.
 
     Jurisdiction `IN`, and it must be passed: it selects the India route
     (`/api/v1/in/api-credits/pricing`), so these tools can never be labelled with
@@ -850,7 +936,13 @@ def fetch_regulatory_costs(base_url: str) -> dict[str, str]:
     from vaquill_mcp.server import _fetch_public_costs
 
     costs = regulatory_costs(_fetch_public_costs(base_url, "IN"))
-    unpriced = [t for t in TOOL_NAMES if t not in costs]
+    # `get_pricing_in` is excluded from the unpriced warning rather than given a
+    # price: the matrix HAS no row for the pricing endpoint itself, by design,
+    # and the India server's copy of this tool carries no cost line either
+    # (its description already states "No authentication is required"). Warning
+    # about it every boot would be noise, and a check whose output is the same
+    # whether or not anything is wrong cannot find the thing it was written for.
+    unpriced = [t for t in TOOL_NAMES if t not in costs and t != "get_pricing_in"]
     if unpriced:
         logger.warning(
             "No price in the pricing matrix for: %s. Their descriptions carry no "
@@ -866,9 +958,9 @@ def create_regulatory_server(
     auth: object | None = None,
     costs: dict[str, str] | None = None,
 ) -> FastMCP:
-    """A server whose whole catalogue is the five regulatory tools.
+    """A server whose whole catalogue is `TOOL_NAMES`.
 
-    A SEPARATE server rather than five more tools on the US or India one, because
+    A SEPARATE server rather than more tools on the US or India one, because
     one connection should see one corpus (a client pays for every tool in every
     turn) and because the live catalogues' exact-count tests and snapshots are
     what protect the connector people already use.

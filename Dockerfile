@@ -103,13 +103,25 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # additional Dokploy application is the SAME build with a different build argument
 # rather than a second file that would drift from this one:
 #
-#   mcp.vaquill.ai (US + India)    SERVER=vaquill-mcp-remote       (the default)
+#   mcp.vaquill.ai (US only)       SERVER=vaquill-mcp-remote       (the default)
+#   in-mcp.vaquill.ai (India)      SERVER=vaquill-mcp-origin, VAQUILL_ORIGIN=india
 #   the regulatory origin          SERVER=vaquill-mcp-regulatory
 #   the tribunals origin           SERVER=vaquill-mcp-tribunals
+#   any origin in origin.ORIGINS   SERVER=vaquill-mcp-origin, plus VAQUILL_ORIGIN=<slug>
+#                                  (india, regulatory, tribunals, and each new
+#                                  jurisdiction as its registry row is added)
 #
 # The default is the previous hard-coded command, so an image built with no
 # argument runs exactly what it ran before. The value is baked at build time and
 # names an installed console script; it is not a deploy-time switch.
+#
+# NAME A NEW ORIGIN `<slug>-mcp.vaquill.ai`. The Cloudflare bot-check skip rule
+# matches `mcp.vaquill.ai` or `*-mcp.vaquill.ai` (widened 2026-11-26), so a host
+# spelled that way needs NO edge change, and one spelled any other way answers
+# 403 at the edge with a healthy container behind it: empty deployment logs and
+# a symptom that reads as a broken build. Three origins out of three hit this.
+# `origin.py`'s docstring has the detail; `test_server_json.py` fails the suite
+# on a remote whose host the rule would not match.
 ARG SERVER=vaquill-mcp-remote
 ENV VAQUILL_SERVER=${SERVER}
 

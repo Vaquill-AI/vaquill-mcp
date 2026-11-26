@@ -38,7 +38,11 @@ def _spec(jurisdiction: str) -> dict:
 @pytest.fixture
 def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     monkeypatch.setenv("VAQUILL_BASE_URL", _BASE)
-    for jurisdiction, path in (("US", "/external/openapi.json"), ("IN", "/in/openapi.json")):
+    # US only: India left this app's mount table on 2026-11-26
+    # (`remote_main._MOUNTS`), so nothing here fetches the India document and a
+    # mock for it would fail TEARDOWN, where respx asserts every registered
+    # route was called. The loop is kept so a second jurisdiction is one tuple.
+    for jurisdiction, path in (("US", "/external/openapi.json"),):
         respx_mock.get(f"{_BASE}{path}").mock(
             return_value=httpx.Response(200, json=_spec(jurisdiction))
         )

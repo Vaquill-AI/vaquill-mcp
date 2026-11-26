@@ -1,0 +1,13 @@
+{
+  "consoleScripts": {
+    "vaquill-mcp": "vaquill_mcp.__main__:main",
+    "vaquill-mcp-regulatory": "vaquill_mcp.regulatory_main:main",
+    "vaquill-mcp-remote": "vaquill_mcp.remote_main:main",
+    "vaquill-mcp-tribunals": "vaquill_mcp.tribunals_main:main"
+  },
+  "help": {
+    "exitCode": 0,
+    "stderr": "",
+    "stdout": "usage: vaquill-mcp [-h] [--jurisdiction {IN,US}]\n\nMCP server for the Vaquill legal research API.\n\noptions:\n  -h, --help            show this help message and exit\n  --jurisdiction {IN,US}\n                        Which corpus to serve: US (default) or IN. Falls back\n                        to VAQUILL_JURISDICTION, then to US.\n"
+  }
+}

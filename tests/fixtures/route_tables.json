@@ -1,0 +1,592 @@
+{
+  "vaquill_mcp.regulatory_main": {
+    "challenge": {
+      "tokenSet": {
+        "contentType": "text/plain; charset=utf-8",
+        "status": 404,
+        "text": "Not Found"
+      },
+      "tokenUnset": {
+        "contentType": "text/plain; charset=utf-8",
+        "status": 404,
+        "text": "Not Found"
+      }
+    },
+    "health": {
+      "body": {
+        "corpus": "regulatory",
+        "service": "vaquill-mcp",
+        "status": "ok"
+      },
+      "contentType": "application/json",
+      "status": 200
+    },
+    "mountedRoutesOAuthOff": {
+      "3:/s": [
+        {
+          "index": 0,
+          "kind": "Route",
+          "methods": null,
+          "path": "/{api_key}"
+        }
+      ],
+      "4:/": [
+        {
+          "index": 0,
+          "kind": "Route",
+          "methods": null,
+          "path": "/mcp"
+        }
+      ]
+    },
+    "routes": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/health"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/icon.png"
+      },
+      {
+        "index": 2,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/favicon.ico"
+      },
+      {
+        "index": 3,
+        "kind": "Mount",
+        "methods": null,
+        "path": "/s"
+      },
+      {
+        "index": 4,
+        "kind": "Mount",
+        "methods": null,
+        "path": ""
+      }
+    ]
+  },
+  "vaquill_mcp.regulatory_main#oauth_on": {
+    "3:/s": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": null,
+        "path": "/{api_key}"
+      }
+    ],
+    "4:/": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "path": "/.well-known/oauth-authorization-server"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/authorize"
+      },
+      {
+        "index": 2,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/token"
+      },
+      {
+        "index": 3,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/register"
+      },
+      {
+        "index": 4,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/revoke"
+      },
+      {
+        "index": 5,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "path": "/.well-known/oauth-protected-resource/mcp"
+      },
+      {
+        "index": 6,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/auth/callback"
+      },
+      {
+        "index": 7,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/consent"
+      },
+      {
+        "index": 8,
+        "kind": "Route",
+        "methods": [
+          "DELETE",
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/mcp"
+      }
+    ]
+  },
+  "vaquill_mcp.remote_main": {
+    "challenge": {
+      "tokenSet": {
+        "contentType": "text/plain; charset=utf-8",
+        "status": 200,
+        "text": "challenge-token-for-tests"
+      },
+      "tokenUnset": {
+        "contentType": "text/plain; charset=utf-8",
+        "status": 404,
+        "text": "Not Found"
+      }
+    },
+    "health": {
+      "body": {
+        "jurisdictions": [
+          "US"
+        ],
+        "service": "vaquill-mcp",
+        "status": "ok"
+      },
+      "contentType": "application/json",
+      "status": 200
+    },
+    "mountedRoutesOAuthOff": {
+      "4:/s": [
+        {
+          "index": 0,
+          "kind": "Route",
+          "methods": null,
+          "path": "/{api_key}"
+        },
+        {
+          "index": 1,
+          "kind": "Route",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "path": "/health"
+        }
+      ],
+      "5:/": [
+        {
+          "index": 0,
+          "kind": "Route",
+          "methods": null,
+          "path": "/mcp"
+        },
+        {
+          "index": 1,
+          "kind": "Route",
+          "methods": [
+            "GET",
+            "HEAD"
+          ],
+          "path": "/health"
+        }
+      ]
+    },
+    "routes": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/health"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/.well-known/openai-apps-challenge"
+      },
+      {
+        "index": 2,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/icon.png"
+      },
+      {
+        "index": 3,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/favicon.ico"
+      },
+      {
+        "index": 4,
+        "kind": "Mount",
+        "methods": null,
+        "path": "/s"
+      },
+      {
+        "index": 5,
+        "kind": "Mount",
+        "methods": null,
+        "path": ""
+      }
+    ]
+  },
+  "vaquill_mcp.remote_main#oauth_on": {
+    "4:/s": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": null,
+        "path": "/{api_key}"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/health"
+      }
+    ],
+    "5:/": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "path": "/.well-known/oauth-authorization-server"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/authorize"
+      },
+      {
+        "index": 2,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/token"
+      },
+      {
+        "index": 3,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/register"
+      },
+      {
+        "index": 4,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/revoke"
+      },
+      {
+        "index": 5,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "path": "/.well-known/oauth-protected-resource/mcp"
+      },
+      {
+        "index": 6,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/auth/callback"
+      },
+      {
+        "index": 7,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/consent"
+      },
+      {
+        "index": 8,
+        "kind": "Route",
+        "methods": [
+          "DELETE",
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/mcp"
+      },
+      {
+        "index": 9,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/health"
+      }
+    ]
+  },
+  "vaquill_mcp.tribunals_main": {
+    "challenge": {
+      "tokenSet": {
+        "contentType": "text/plain; charset=utf-8",
+        "status": 404,
+        "text": "Not Found"
+      },
+      "tokenUnset": {
+        "contentType": "text/plain; charset=utf-8",
+        "status": 404,
+        "text": "Not Found"
+      }
+    },
+    "health": {
+      "body": {
+        "corpus": "tribunals",
+        "service": "vaquill-mcp",
+        "status": "ok"
+      },
+      "contentType": "application/json",
+      "status": 200
+    },
+    "mountedRoutesOAuthOff": {
+      "3:/s": [
+        {
+          "index": 0,
+          "kind": "Route",
+          "methods": null,
+          "path": "/{api_key}"
+        }
+      ],
+      "4:/": [
+        {
+          "index": 0,
+          "kind": "Route",
+          "methods": null,
+          "path": "/mcp"
+        }
+      ]
+    },
+    "routes": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/health"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/icon.png"
+      },
+      {
+        "index": 2,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/favicon.ico"
+      },
+      {
+        "index": 3,
+        "kind": "Mount",
+        "methods": null,
+        "path": "/s"
+      },
+      {
+        "index": 4,
+        "kind": "Mount",
+        "methods": null,
+        "path": ""
+      }
+    ]
+  },
+  "vaquill_mcp.tribunals_main#oauth_on": {
+    "3:/s": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": null,
+        "path": "/{api_key}"
+      }
+    ],
+    "4:/": [
+      {
+        "index": 0,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "path": "/.well-known/oauth-authorization-server"
+      },
+      {
+        "index": 1,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/authorize"
+      },
+      {
+        "index": 2,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/token"
+      },
+      {
+        "index": 3,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/register"
+      },
+      {
+        "index": 4,
+        "kind": "Route",
+        "methods": [
+          "OPTIONS",
+          "POST"
+        ],
+        "path": "/revoke"
+      },
+      {
+        "index": 5,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "OPTIONS"
+        ],
+        "path": "/.well-known/oauth-protected-resource/mcp"
+      },
+      {
+        "index": 6,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "path": "/auth/callback"
+      },
+      {
+        "index": 7,
+        "kind": "Route",
+        "methods": [
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/consent"
+      },
+      {
+        "index": 8,
+        "kind": "Route",
+        "methods": [
+          "DELETE",
+          "GET",
+          "HEAD",
+          "POST"
+        ],
+        "path": "/mcp"
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 """The hosted entry point for the regulatory corpus (`regulatory_main`).
 
-`test_regulatory_tools.py` pins what the five tools do. This file pins how they
+`test_regulatory_tools.py` pins what the tools do. This file pins how they
 are SERVED, and each pin is a failure that reads as something else in the field:
 
 * the app must sit at the ROOT of its own origin. OAuth discovery (RFC 9728) is
@@ -61,6 +61,13 @@ _PRICES = [
     {"endpoint": "/in/reg/documents/file", "operation": "Reg File", "credits": 1},
     {"endpoint": "/in/reg/changes", "operation": "Reg Changes", "credits": 1},
     {"endpoint": "/in/reg/sources", "operation": "Reg Sources", "credits": 0},
+    # The account routes, which are NOT under `/in/reg`. The balance HAS a row
+    # upstream (verified against the live matrix 2026-11-26, where it prices as
+    # "Free."), so it is here. The pricing endpoint has NONE upstream and is
+    # deliberately absent here too: `fetch_regulatory_costs` exempts that one
+    # tool from its unpriced warning, and a row invented here would hide the
+    # fact that the exemption is load-bearing.
+    {"endpoint": "/in/credits/balance", "operation": "Credit Balance", "credits": 0},
 ]
 
 _OAUTH_ENV = {
@@ -84,7 +91,7 @@ def _no_oauth(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def _pricing(respx_mock):
-    """The startup price fetch, with the five rows. Returns the route."""
+    """The startup price fetch, with `_PRICES`. Returns the route."""
     return respx_mock.get(f"{_BASE}/api/v1/in/api-credits/pricing").mock(
         return_value=httpx.Response(200, json={"costs": _PRICES})
     )
@@ -147,10 +154,17 @@ def test_the_root_catch_all_is_routed_last(_pricing) -> None:
 
 
 def test_the_live_connectors_are_not_touched() -> None:
-    """The regulatory server is separate from the process behind mcp.vaquill.ai."""
+    """The regulatory server is separate from the process behind mcp.vaquill.ai.
+
+    `["IN", "US"]` until 2026-11-26, when India moved to its own origin
+    (`in-mcp.vaquill.ai`) so it could do OAuth; see `remote_main._MOUNTS`. The
+    assertion is EXACT rather than a containment check, because what it guards
+    is that nothing in this module quietly adds or removes a mount on the live
+    US host.
+    """
     from vaquill_mcp import remote_main
 
-    assert [j for j, _ in remote_main._MOUNTS] == ["IN", "US"]
+    assert [j for j, _ in remote_main._MOUNTS] == ["US"]
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +178,7 @@ async def test_health_names_the_corpus(_pricing) -> None:
     assert body["status"] == "ok" and body["corpus"] == "regulatory"
 
 
-async def test_both_url_shapes_serve_exactly_the_five_tools(_pricing) -> None:
+async def test_both_url_shapes_serve_exactly_the_declared_tools(_pricing) -> None:
     async with _serving() as app:
         async with _client(app, "/mcp", {"Authorization": "Bearer vq_key_h"}) as c:
             header_names = sorted(t.name for t in await c.list_tools())
@@ -251,9 +265,12 @@ async def test_with_oauth_on_the_bearer_url_gates_and_the_path_url_does_not(
 # ---------------------------------------------------------------------------
 
 
-def test_every_tool_has_a_priced_route_and_the_five_are_the_whole_table() -> None:
+def test_every_tool_has_a_route_and_the_table_is_exactly_the_catalogue() -> None:
     assert set(TOOL_ROUTES) == set(TOOL_NAMES)
-    assert len(set(TOOL_ROUTES.values())) == 5
+    # One route each, no two tools sharing one, counted from the table so the
+    # next tool cannot leave a stale literal behind. The floor is what stops an
+    # emptied table from satisfying both lines.
+    assert len(set(TOOL_ROUTES.values())) == len(TOOL_NAMES) >= 7
 
 
 def test_each_route_is_priced_by_its_derived_endpoint() -> None:
@@ -266,21 +283,44 @@ def test_each_route_is_priced_by_its_derived_endpoint() -> None:
         "get_regulatory_document_file": "Cost: 1 credit.",
         "list_regulatory_changes": "Cost: 1 credit.",
         "get_regulatory_coverage": "Free.",
+        "get_india_credit_balance": "Free.",
     }
+    # `get_pricing_in` is the one tool with no line, and that is the upstream's
+    # shape rather than ours: asserting its absence here means a row appearing
+    # upstream later shows up as a test failure to read, not a silent change.
+    assert "get_pricing_in" not in costs
 
 
 def test_a_stale_pricing_spelling_matches_nothing() -> None:
-    stale = [{**row, "endpoint": row["endpoint"].replace("/in/reg", "/reg")} for row in _PRICES]
+    """Every row mangled, so EVERY tool loses its line.
+
+    This mangled only `/in/reg` until 2026-11-26, which stopped being the whole
+    table when the two account routes landed: `/in/credits/balance` has no
+    `/in/reg` in it, survived the replace and kept its price, so a test named
+    "matches nothing" was asserting that one row still matched. The prefix every
+    row shares is what has to move.
+    """
+    stale = [{**row, "endpoint": row["endpoint"].replace("/in/", "/")} for row in _PRICES]
     assert regulatory_costs(stale) == {}
+    # Anti-vacuous: the unmangled table must price all but `get_pricing_in`, or
+    # the line above would pass on a parser that matches nothing at all.
+    assert len(regulatory_costs(_PRICES)) == len(TOOL_NAMES) - 1
 
 
 async def test_the_price_reaches_the_description_a_model_reads(_pricing) -> None:
     async with _serving() as app, _client(app, "/mcp", {"Authorization": "Bearer vq_key_h"}) as c:
         tools = {t.name: t.description for t in await c.list_tools()}
-    assert tools["get_regulatory_coverage"] == f"{DESCRIPTIONS['get_regulatory_coverage']} Free."
+    # Derived from the same cost map the server used, rather than from a
+    # hand-kept rule about which tools are free: that rule said "everything
+    # except coverage costs 1 credit" and went wrong the moment a second free
+    # tool arrived. `get_pricing_in` has no row upstream, so it carries no line.
+    expected = regulatory_costs(_PRICES)
+    assert set(expected) == set(TOOL_NAMES) - {"get_pricing_in"}
+    assert set(expected.values()) == {"Cost: 1 credit.", "Free."}, expected
     for name in TOOL_NAMES:
-        if name != "get_regulatory_coverage":
-            assert tools[name] == f"{DESCRIPTIONS[name]} Cost: 1 credit.", name
+        line = expected.get(name)
+        want = f"{DESCRIPTIONS[name]} {line}" if line else DESCRIPTIONS[name]
+        assert tools[name] == want, name
 
 
 async def test_without_costs_the_description_is_the_hand_written_text() -> None:

@@ -52,24 +52,53 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     respx_mock.get(f"{_BASE}/external/openapi.json").mock(
         return_value=httpx.Response(200, json=_spec("US"))
     )
-    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("IN"))
-    )
     # The hosted server has no key at startup, so it uses the PUBLIC matrix.
     respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": []})
     )
 
 
+@pytest.fixture
+def _live_india(_live_api: None, respx_mock) -> None:
+    """The India spec too, for tests that build an India server DIRECTLY.
+
+    Separate from `_live_api` because respx asserts at TEARDOWN that every
+    registered route was called. India left this app's mount table on
+    2026-11-26 (`remote_main._MOUNTS`), so an app-level test never fetches the
+    India document, and a mock for it in the shared fixture fails those tests
+    in teardown while their assertions pass. India still exists; it is served
+    from `in-mcp.vaquill.ai` and is still constructed directly here.
+    """
+    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
+        return_value=httpx.Response(200, json=_spec("IN"))
+    )
+
+
+
 def test_every_jurisdiction_mounts_both_url_shapes(_live_api: None) -> None:
+    """Both URL shapes, for every jurisdiction in the table, and no others.
+
+    India was removed from this host on 2026-11-26, so the table is US alone
+    and the expected mounts are `/s` and the root. This used to expect
+    `{"/in/s", "/in", "/s", ""}`; the four-mount shape is what `in-mcp.vaquill.ai`
+    now has on its own origin, where OAuth can actually work.
+
+    The expectation is DERIVED from `_MOUNTS` rather than hard-coded, so adding
+    a jurisdiction back cannot leave this test passing while asserting the old
+    world. The membership check on `_MOUNTS` itself stays, because a derived
+    expectation alone would also accept an EMPTY table.
+    """
     from vaquill_mcp.remote_main import _MOUNTS, build_app
 
     app = build_app()
     # Starlette normalizes `Mount("/")` to the empty path, so the root
     # jurisdiction is "" rather than "/".
     mounts = {r.path for r in app.routes if isinstance(r, Mount)}
-    assert mounts == {"/in/s", "/in", "/s", ""}, sorted(mounts)
-    assert [j for j, _ in _MOUNTS] == ["IN", "US"]
+    expected = {f"{prefix}/s" for _, prefix in _MOUNTS} | {
+        prefix or "" for _, prefix in _MOUNTS
+    }
+    assert mounts == expected, sorted(mounts)
+    assert [j for j, _ in _MOUNTS] == ["US"], "India moved to in-mcp.vaquill.ai"
 
 
 def test_broader_mounts_are_routed_after_narrower_ones(_live_api: None) -> None:
@@ -81,18 +110,26 @@ def test_broader_mounts_are_routed_after_narrower_ones(_live_api: None) -> None:
     would reach the app that only knows `/mcp` and come back a bare 404, which
     reads as a dead customer URL rather than a routing bug.
     """
-    from vaquill_mcp.remote_main import build_app
+    from vaquill_mcp.remote_main import _MOUNTS, build_app
 
     app = build_app()
     paths = [r.path for r in app.routes if isinstance(r, (Route, Mount))]
     root = paths.index("")  # the US catch-all
 
     assert paths.index("/health") < root
-    assert paths.index("/in/s") < paths.index("/in") < root
     assert paths.index("/s") < root
+    # India's `/in/s` < `/in` < root chain was asserted here until 2026-11-26.
+    # The invariant it protected is general, so it is asserted generally now:
+    # every path-key mount must precede its own jurisdiction's mcp mount, and
+    # both must precede the root catch-all. With one jurisdiction at the root
+    # that is the `/s` line above; with a second it is this loop, so adding one
+    # back cannot reintroduce the silent shadowing without failing here.
+    for _, prefix in _MOUNTS:
+        if prefix:
+            assert paths.index(f"{prefix}/s") < paths.index(prefix) < root
 
 
-async def test_each_mount_serves_only_its_own_jurisdiction(_live_api: None) -> None:
+async def test_each_mount_serves_only_its_own_jurisdiction(_live_india: None) -> None:
     """The isolation the whole two-app design exists to guarantee."""
     from vaquill_mcp.remote import create_remote_server
 
@@ -109,7 +146,7 @@ async def test_each_mount_serves_only_its_own_jurisdiction(_live_api: None) -> N
 
 
 async def test_the_hosted_catalogue_matches_the_stdio_one(
-    _live_api: None, monkeypatch: pytest.MonkeyPatch, respx_mock
+    _live_india: None, monkeypatch: pytest.MonkeyPatch, respx_mock
 ) -> None:
     """Hosted and stdio must not diverge.
 
@@ -130,7 +167,7 @@ async def test_the_hosted_catalogue_matches_the_stdio_one(
         assert hosted == stdio, jurisdiction
 
 
-async def test_the_hosted_us_app_publishes_no_alert_tools(_live_api: None) -> None:
+async def test_the_hosted_us_app_publishes_no_alert_tools(_live_india: None) -> None:
     """`/mcp` and `/s/{api_key}` serve the same app, built here, and it must not
     publish the law-change alert tools any more than stdio does. India is built
     too, to prove the exclusion leaves its catalogue untouched."""
@@ -154,7 +191,7 @@ async def test_the_hosted_us_app_publishes_no_alert_tools(_live_api: None) -> No
     assert len(india) == 22, sorted(india)
 
 
-async def test_every_mounted_app_sorts_and_annotates(_live_api: None) -> None:
+async def test_every_mounted_app_sorts_and_annotates(_live_india: None) -> None:
     """The two optimisations have to hold on the hosted path too, which is the
     one nearly every customer actually uses."""
     from vaquill_mcp.remote import create_remote_server
@@ -175,8 +212,14 @@ def test_each_jurisdiction_asks_for_its_own_prices(_live_api: None, respx_mock) 
     caller, and the India server then read the US route with `?region=IN`, so a
     customer saw India prices on a US tool (and the reverse) in Claude before we
     did. The backend now serves only one country's rows per route.
+
+    The expected routes are DERIVED from `_MOUNTS`, not listed: India left this
+    host on 2026-11-26 and a hardcoded pair would have had to be edited to the
+    new world, which is the edit that quietly turns a cross-country assertion
+    into a single-country one. Derived, it keeps its full force for whatever the
+    table holds, and `assert asked` keeps an EMPTY table from passing vacuously.
     """
-    from vaquill_mcp.remote_main import build_app
+    from vaquill_mcp.remote_main import _MOUNTS, build_app
 
     build_app()
 
@@ -186,10 +229,11 @@ def test_each_jurisdiction_asks_for_its_own_prices(_live_api: None, respx_mock) 
         if "api-credits/pricing" in call.request.url.path
     ]
     assert asked, "no pricing fetch was made at startup"
-    assert {path for path, _ in asked} == {
-        "/api/v1/api-credits/pricing",
-        "/api/v1/in/api-credits/pricing",
-    }, f"pricing fetched from {asked}; each jurisdiction must ask only its own route"
+    expected = {f"/api/v1{prefix}/api-credits/pricing" for _, prefix in _MOUNTS}
+    assert {path for path, _ in asked} == expected, (
+        f"pricing fetched from {asked}; each jurisdiction must ask only its own "
+        f"route (expected {sorted(expected)})"
+    )
     assert all(query == b"" for _, query in asked), "a cross-country region was sent"
 
 

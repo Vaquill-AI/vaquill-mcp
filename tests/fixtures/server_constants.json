@@ -1,0 +1,120 @@
+{
+  "_ACKNOWLEDGED_WRITE_POSTS": [],
+  "_FUNC_OVERRIDES": {
+    "batch_cases": "get_us_cases_batch",
+    "batch_opinions": "get_us_opinions_batch",
+    "get_case": "get_us_case",
+    "get_committee_record": "get_rulemaking_committee_record",
+    "get_docket": "get_us_docket",
+    "get_judge": "get_us_judge",
+    "get_opinion": "get_us_opinion",
+    "get_rin_agenda_history": "list_rin_agenda",
+    "get_rulemaking_by_rin": "get_rulemaking_rin",
+    "get_section": "get_us_statute_section",
+    "get_section_body": "get_us_statute_section_text",
+    "list_cases": "list_us_cases",
+    "list_committee_records": "list_rulemaking_committee_records",
+    "list_courts": "list_us_courts",
+    "list_dockets": "list_us_dockets",
+    "list_judges": "list_us_judges",
+    "list_rulemaking_documents": "list_docket_documents",
+    "resolve_citations": "resolve_case_citations",
+    "search_cases": "search_us_cases",
+    "search_statutes": "search_us_statutes"
+  },
+  "_HIDDEN_PARAMS": {
+    "get_case_citations": [
+      "category",
+      "treatment"
+    ],
+    "get_opinion_citations": [
+      "category",
+      "treatment"
+    ],
+    "resolve_case_citations": [
+      "includeStatus"
+    ]
+  },
+  "_READ_ONLY_POSTS": [
+    "/in/acts/resolve",
+    "/in/acts/search",
+    "/us/cases/batch",
+    "/us/cases/resolve",
+    "/us/cases/search",
+    "/us/opinions/batch",
+    "/us/session-laws/batch",
+    "/us/session-laws/search",
+    "/us/statutes/count",
+    "/us/statutes/extract-citations",
+    "/us/statutes/resolve",
+    "/us/statutes/search",
+    "/us/statutes/sections"
+  ],
+  "_ROUTE_MAPS": [
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": ".*/ask/stream$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/boards/?$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/watches(?:/.*)?$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/us/courts/[^/]+$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/us/(?:cases/changes|dockets/[^/]+/entries|docket-entries/[^/]+/documents|files/[^/]+|oral-arguments(?:/.+)?|judges/[^/]+/disclosures|disclosures/[^/]+)$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/agent/(?:signup|verify|token|x402/credits)$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/in/translation(?:/.*)?$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/in/reg(?:/.*)?$",
+      "tags": []
+    }
+  ],
+  "_SPEC_PATHS": {
+    "IN": "/in/openapi.json",
+    "US": "/external/openapi.json"
+  },
+  "ignoredSegments": [
+    "api",
+    "v1",
+    "us"
+  ]
+}

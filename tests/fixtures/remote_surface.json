@@ -1,0 +1,140 @@
+{
+  "IN": {
+    "healthBody": {
+      "jurisdiction": "IN",
+      "service": "vaquill-mcp",
+      "status": "ok",
+      "version": "<vaquill_mcp.__version__>"
+    },
+    "healthStatus": 200,
+    "icons": [
+      {
+        "mimeType": "image/png",
+        "sizes": [],
+        "src": "https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png"
+      },
+      {
+        "mimeType": "image/png",
+        "sizes": [
+          "128x128"
+        ],
+        "src": "https://mcp.vaquill.ai/icon.png"
+      }
+    ],
+    "pricedDescriptions": {
+      "get_act_section_body": "The publisher's full text for one provision, taken directly from the act document without synthesized search headers. Use when reading, quoting or citing the provision's wording rather than its metadata. Amendments are not applied to this text. Check get_section_history for recorded changes before treating the wording as current law.  Cost: 1 credit (first 10 sections), 3 credits (full act).",
+      "get_coverage": "India corpus counts for acts and provisions, broken down by jurisdiction, regulator and status, plus coverage depth. Use when checking whether the corpus supports a question before searching or interpreting an empty result. The depth block distinguishes text coverage from much thinner parsed amendment coverage. actsClaimingAmendmentsWithoutEvents marks missing records, not an absence of amendments.  Free.",
+      "get_india_credit_balance": "The account-wide spendable credit balance shared by the India and United States APIs. Use for pre-flight checks or low-balance alerts from an India workflow. This returns the same balance as get_credit_balance, not a separate India allowance. Check bySource before assuming credits will last. Subscription credits expire at the period end.  Free.",
+      "search_acts": "Search Indian legislation down to the individual section: Central and State Acts plus the instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, TRAI, DGFT). Use for any 'what does Indian law say' question. Supports boolean and phrase queries; filters by category, state, year and status. Returns sections with title, chapter and a sourceUrl pointing at the publisher's own document. The returned actId (e.g. 'IND_central_2065') feeds every acts tool. Cost: 2 credits."
+    },
+    "pricingPathsRequested": [
+      "/api/v1/in/api-credits/pricing"
+    ],
+    "serverName": "Vaquill Legal Research (IN)",
+    "toolsWithoutACostLine": [
+      "fetch",
+      "get_act_amendments",
+      "get_act_section",
+      "get_act_status",
+      "get_act_structure",
+      "get_act_text",
+      "get_corresponding_provisions",
+      "get_pricing_in",
+      "get_section_history",
+      "india_act_cited_by",
+      "india_act_definitions",
+      "india_act_subordinate",
+      "india_section_references",
+      "list_act_filters",
+      "list_acts",
+      "resolve_india_citation",
+      "resolve_india_citations_batch",
+      "search"
+    ],
+    "websiteUrl": "https://www.vaquill.ai"
+  },
+  "US": {
+    "healthBody": {
+      "jurisdiction": "US",
+      "service": "vaquill-mcp",
+      "status": "ok",
+      "version": "<vaquill_mcp.__version__>"
+    },
+    "healthStatus": 200,
+    "icons": [
+      {
+        "mimeType": "image/png",
+        "sizes": [],
+        "src": "https://www.vaquill.ai/brand/lockup/vaquill-lockup-color-512w.png"
+      },
+      {
+        "mimeType": "image/png",
+        "sizes": [
+          "128x128"
+        ],
+        "src": "https://mcp.vaquill.ai/icon.png"
+      }
+    ],
+    "pricedDescriptions": {
+      "get_us_statute_section_text": "The full text of a US statute, regulation or rule section by act_id. Returns styled HTML (with cross-references and paragraph numbering as officially published) and plain text. Use when you need the actual statutory language to quote, draft against, or analyze rather than just cite. A section the publisher prints as images answers `bodyUnavailable: true` with `image_only_source` and no text, and is not charged. Cost: 1 credit.",
+      "list_statutes_coverage": "Coverage matrix: every corpusType we hold and its per-jurisdiction section counts, split by recorded status in `statusBreakdown`. Use before answering a jurisdiction question. A corpusType missing from `corpora` means no documents of that type are held for it yet; counts show what is held, not completeness. Pass state (a two-letter code, or federal) to read one jurisdiction; the full matrix is about a megabyte. Free.",
+      "resolve_statute_citation": "Resolve a Bluebook citation string ('42 U.S.C. 1983', '16 C.F.R. 444.1', 'Cal. Code Regs. tit. 22, 76227') to the exact section, confirmed, with an official source link and the act_id. Use this whenever the user gives you a citation rather than a question -- it is far more reliable than searching for the citation text. Case cites: resolve_case_citations. `matchLevel` means `section` is NOT the exact unit cited. A shared acronym (`G.S. 52-577`) is resolved: false until you pass `state`. Cost: 0.5 credits.",
+      "resolve_statute_citations_batch": "Resolve up to 50 Bluebook citations in one call, returning the same confirmed section, official source link and act_id as the single-citation tool. Use when a document or answer cites several provisions: one call instead of a loop. Priced per citation, the same as one at a time, so it buys latency, not a discount. Cost: 0.5 credits.",
+      "search_us_cases": "Full-text keyword search over the opinions of US federal and state courts, best match first: one result per case, with the opinion that matched and a snippet. Use to find decisions by topic, phrase, party or judge. Narrow with courtIds (ids from list_us_courts), state, dateFrom/dateTo, publicationStatus, judgeId. For a known citation use resolve_case_citations; for statutes use search_us_statutes. Page with limit and offset while hasMore; an empty page is charged. Cost: 2 credits (1-20 results), 4 credits (21-50 results).",
+      "search_us_statutes": "Search US federal and state statutes, regulations, constitutions and court rules. Default ranks by meaning; matchType `boolean` returns only sections satisfying a terms-and-connectors expression, pageable to the end. A result's act_id feeds the other statute tools; never hand-build one. For a citation, use resolve_statute_citation. `citationOutsideFilters`: the cited section exists outside your filters. 422: change the request, never resend it unchanged. 503: retry with backoff. Cost: 2 credits."
+    },
+    "pricingPathsRequested": [
+      "/api/v1/api-credits/pricing"
+    ],
+    "serverName": "Vaquill Legal Research",
+    "toolsWithoutACostLine": [
+      "count_statute_sections",
+      "extract_statute_citations",
+      "fetch",
+      "get_case_citations",
+      "get_case_parentheticals",
+      "get_credit_balance",
+      "get_opinion_citations",
+      "get_part_rulemaking",
+      "get_pricing",
+      "get_rulemaking_committee_record",
+      "get_rulemaking_coverage",
+      "get_rulemaking_docket",
+      "get_rulemaking_rin",
+      "get_section_changes",
+      "get_section_cited_by",
+      "get_section_cross_state",
+      "get_section_definitions",
+      "get_section_enactments",
+      "get_section_neighbors",
+      "get_section_rulemaking",
+      "get_sections_batch",
+      "get_session_law",
+      "get_session_law_body",
+      "get_session_law_changes",
+      "get_session_law_versions",
+      "get_session_laws_batch",
+      "get_us_case",
+      "get_us_cases_batch",
+      "get_us_docket",
+      "get_us_judge",
+      "get_us_opinion",
+      "get_us_opinions_batch",
+      "get_us_statute_section",
+      "list_docket_documents",
+      "list_rin_agenda",
+      "list_rulemaking_committee_records",
+      "list_rulemaking_dockets",
+      "list_session_laws",
+      "list_statute_divisions",
+      "list_us_cases",
+      "list_us_courts",
+      "list_us_dockets",
+      "list_us_judges",
+      "resolve_case_citations",
+      "search",
+      "search_session_laws"
+    ],
+    "websiteUrl": "https://www.vaquill.ai"
+  }
+}

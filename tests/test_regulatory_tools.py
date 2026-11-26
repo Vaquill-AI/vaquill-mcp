@@ -1,9 +1,14 @@
-"""The five Indian-regulatory tools (`vaquill_mcp.regulatory`).
+"""The Indian-regulatory tools (`vaquill_mcp.regulatory`).
 
 What is pinned here, and the failure each pin exists for:
 
-* the catalogue is EXACTLY five tools. The tool count is the endpoint count and
-  a sixth tool costs every firm context in every turn, so it fails the build;
+* the catalogue is EXACTLY `TOOL_NAMES`, counted from the table rather than
+  written out here. The tool count is the endpoint count and an extra tool
+  costs every firm context in every turn, so an undeclared one fails the
+  build. The count was spelled `5` in three places until 2026-11-26, when
+  two account tools landed and all three had to be found and edited by hand;
+  deriving it means the next addition cannot leave a stale number behind,
+  and the floor below keeps that derivation from passing on an empty table;
 * every string a model reads is snapshotted, so a wording change is a reviewed
   change and not a drive-by edit;
 * a list filter stays a REPEATED key, never a comma join, and a comma INSIDE a
@@ -105,12 +110,14 @@ async def _fails(server: FastMCP, tool: str, args: dict) -> RegulatoryToolError:
 # ---------------------------------------------------------------------------
 
 
-async def test_the_catalogue_is_exactly_the_five_tools() -> None:
-    """No sixth tool, and none missing. The count is the endpoint count."""
+async def test_the_catalogue_is_exactly_the_declared_tools() -> None:
+    """No undeclared tool, and none missing. The count is the endpoint count."""
     names = [t.name for t in await _server().list_tools()]
     assert names == sorted(names), "tools/list must be deterministic"
     assert set(names) == set(TOOL_NAMES)
-    assert len(names) == 5, names
+    # Anti-vacuous: derived from TOOL_NAMES, so an emptied table would make the
+    # line above pass on a server publishing nothing.
+    assert len(names) == len(TOOL_NAMES) >= 7, names
 
 
 @pytest.mark.parametrize("tool", TOOL_NAMES)
@@ -128,7 +135,7 @@ async def test_every_tool_has_a_title_a_description_and_all_three_hints(tool: st
     assert mcp_tool.title == TOOL_TITLES[tool]
     assert mcp_tool.annotations is not None
     assert mcp_tool.annotations.title == mcp_tool.title
-    # All five are reads. A missing or null hint is a submission blocker.
+    # Every one is a read. A missing or null hint is a submission blocker.
     assert mcp_tool.annotations.read_only_hint is True
     assert mcp_tool.annotations.destructive_hint is False
     assert mcp_tool.annotations.open_world_hint is False
@@ -240,9 +247,23 @@ async def test_the_text_a_model_reads_matches_the_snapshot() -> None:
 
 
 def test_the_snapshot_is_not_empty() -> None:
+    """A snapshot of nothing would make the comparison above pass on anything.
+
+    Every tool must carry description text. A SCHEMA is required only of the
+    tools that take arguments: the two account tools take none, so `{}` is their
+    correct snapshot rather than a flattening that lost their parameters. Split
+    by `_SHARED_WITH_INDIA` instead of allowing an empty schema everywhere,
+    because "some tools have no schema" would also pass if a corpus tool's
+    parameters vanished, which is the defect this line is here for.
+    """
     golden = json.loads(_GOLDEN.read_text())
-    assert len(golden["tools"]) == 5 and golden["instructions"]
-    assert all(t["description"] and t["schema"] for t in golden["tools"].values())
+    assert len(golden["tools"]) == len(TOOL_NAMES) >= 7 and golden["instructions"]
+    assert all(t["description"] for t in golden["tools"].values())
+    for name, tool in golden["tools"].items():
+        if name in _SHARED_WITH_INDIA:
+            assert tool["schema"] == {}, f"{name} takes no parameters upstream"
+        else:
+            assert tool["schema"], f"{name} lost its parameters"
 
 
 def test_the_regulatory_server_tells_clients_what_it_serves() -> None:
@@ -262,12 +283,36 @@ def test_the_regulatory_server_tells_clients_what_it_serves() -> None:
 # ---------------------------------------------------------------------------
 
 
+#: The two tools this server deliberately shares a NAME with the India server
+#: (2026-11-26). They answer the same two account questions off the same two
+#: routes, and a third name for one number is the drift `search_` versus
+#: `list_regulatory_documents` already cost us. Nothing can serve both
+#: catalogues at once: `create_regulatory_server` is reached only through the
+#: `regulatory` origin, which has its own process and its own hostname.
+_SHARED_WITH_INDIA = frozenset({"get_india_credit_balance", "get_pricing_in"})
+
+
 async def test_no_tool_or_parameter_name_collides_with_the_global_registries() -> None:
     """`_FUNC_OVERRIDES` is keyed by name across jurisdictions, and
     `PARAM_DESCRIPTIONS` is a bare-parameter-name fallback. Both are global."""
     assert not (set(TOOL_NAMES) & set(_FUNC_OVERRIDES)), "a tool would be silently renamed"
     assert not (set(TOOL_NAMES) & set(_FUNC_OVERRIDES.values()))
-    assert not (set(TOOL_NAMES) & {tool for tool, _param in PARAM_DESCRIPTIONS_BY_TOOL})
+
+    # `PARAM_DESCRIPTIONS_BY_TOOL` is keyed `(tool, param)` globally, so a
+    # shared tool NAME is only a hazard for a shared PARAMETER name under it.
+    # The two account tools take no parameters at all, so there is nothing for
+    # India's `(get_pricing_in, "region")` entry to attach to. Asserted on the
+    # PAIRS rather than the names, which is the level the table is keyed at:
+    # give either tool a parameter India also documents and this fails.
+    published = {t.name: t for t in await _server().list_tools()}
+    for tool in _SHARED_WITH_INDIA:
+        assert not published[tool].parameters.get("properties"), (
+            f"{tool} now takes a parameter, so it can inherit India's "
+            "PARAM_DESCRIPTIONS_BY_TOOL text; either rename the tool or give "
+            "it its own entry"
+        )
+    colliding = {t for t, _p in PARAM_DESCRIPTIONS_BY_TOOL} & set(TOOL_NAMES)
+    assert colliding <= _SHARED_WITH_INDIA, colliding
 
     params: set[str] = set()
     for tool in await _server().list_tools():
@@ -279,10 +324,22 @@ async def test_no_tool_or_parameter_name_collides_with_the_global_registries() -
 
 
 def test_the_names_are_not_taken_by_a_derived_tool() -> None:
-    """`test_catalogues_do_not_overlap` for a catalogue no OpenAPI document produces."""
+    """`test_catalogues_do_not_overlap` for a catalogue no OpenAPI document produces.
+
+    The hazard that test names is handing a user the WRONG jurisdiction's tool,
+    which needs one `tools/list` to carry both names. The two account tools are
+    the deliberate exception: they are the same question over the same route, on
+    a server that cannot also publish the India catalogue. Everything else must
+    still be unique, and `search`/`fetch` are reserved on every origin.
+    """
     from tests.test_derived_catalogue import IN, US
 
-    assert not (set(TOOL_NAMES) & (US | IN | {"search", "fetch"}))
+    overlap = set(TOOL_NAMES) & (US | IN | {"search", "fetch"})
+    assert overlap == set(_SHARED_WITH_INDIA & IN), overlap
+    # Anti-vacuous, both ways: the exception is only safe while it IS India's
+    # own pair, so prove the names exist there and are NOT in the US catalogue.
+    assert _SHARED_WITH_INDIA <= IN, _SHARED_WITH_INDIA - IN
+    assert not (_SHARED_WITH_INDIA & US), _SHARED_WITH_INDIA & US
 
 
 # ---------------------------------------------------------------------------
@@ -300,10 +357,10 @@ def test_the_names_are_not_taken_by_a_derived_tool() -> None:
         f"{_P}/sources",
     ],
 )
-def test_the_five_routes_are_gets_so_read_only_posts_does_not_apply(path: str) -> None:
+def test_the_corpus_routes_are_gets_so_read_only_posts_does_not_apply(path: str) -> None:
     """The hazard is a POST-as-query. The batch POST was cut (08 section 2), so all
-    five are GETs and read-only by verb, with no `_READ_ONLY_POSTS` entry needed.
-    If one ever becomes a POST, this and the list below fail together."""
+    of them are GETs and read-only by verb, with no `_READ_ONLY_POSTS` entry
+    needed. If one ever becomes a POST, this and the list below fail together."""
     route = HTTPRoute(method="GET", path=path, operation_id="op", responses={})
     assert _is_read_only(route)
     assert not [p for p in _READ_ONLY_POSTS if "/in/reg" in p]

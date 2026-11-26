@@ -48,9 +48,15 @@ async def _post(app, path: str) -> httpx2.Response:
 
 
 @pytest.mark.usefixtures("_live_api")
+# `/in/s/{api_key}` was the second case here until 2026-11-26, when India left
+# this host for `in-mcp.vaquill.ai` (`remote_main._MOUNTS`). The India path-key
+# URL still EXISTS, on that origin, built from the same shared app shape in
+# `origin.py`; it is simply not this app's route any more. The deprecation
+# behaviour itself is per-mount and unchanged, which `key_prefix` below still
+# proves on an `/in/s/...` string.
 @pytest.mark.parametrize(
     ("path", "mount"),
-    [(f"/s/{_KEY}", "/s"), (f"/in/s/{_KEY}", "/in/s")],
+    [(f"/s/{_KEY}", "/s")],
 )
 async def test_path_key_mounts_still_work_and_are_marked_deprecated(
     path: str, mount: str, caplog: pytest.LogCaptureFixture

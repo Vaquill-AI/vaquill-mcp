@@ -1,0 +1,158 @@
+{
+  "https://mcp.vaquill.ai": {
+    "authorizationServer": {
+      "authorization_endpoint": "https://mcp.vaquill.ai/authorize",
+      "authorization_response_iss_parameter_supported": true,
+      "client_id_metadata_document_supported": true,
+      "code_challenge_methods_supported": [
+        "S256"
+      ],
+      "grant_types_supported": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "issuer": "https://mcp.vaquill.ai/",
+      "registration_endpoint": "https://mcp.vaquill.ai/register",
+      "response_types_supported": [
+        "code"
+      ],
+      "revocation_endpoint": "https://mcp.vaquill.ai/revoke",
+      "revocation_endpoint_auth_methods_supported": [
+        "client_secret_post",
+        "client_secret_basic"
+      ],
+      "scopes_supported": [
+        "offline_access"
+      ],
+      "token_endpoint": "https://mcp.vaquill.ai/token",
+      "token_endpoint_auth_methods_supported": [
+        "none",
+        "private_key_jwt"
+      ]
+    },
+    "challenge": {
+      "status": 401,
+      "wwwAuthenticate": "Bearer resource_metadata=\"https://mcp.vaquill.ai/.well-known/oauth-protected-resource/mcp\""
+    },
+    "protectedResource": {
+      "authorization_servers": [
+        "https://mcp.vaquill.ai/"
+      ],
+      "bearer_methods_supported": [
+        "header"
+      ],
+      "resource": "https://mcp.vaquill.ai/mcp",
+      "scopes_supported": [
+        "offline_access"
+      ]
+    }
+  },
+  "https://mcp.vaquill.ai/in/mcp": {
+    "challenge": {
+      "status": 404
+    },
+    "wellKnownStatus": {
+      "/.well-known/oauth-authorization-server/in": 404,
+      "/.well-known/oauth-protected-resource/in/mcp": 404,
+      "/in/.well-known/oauth-authorization-server": 404,
+      "/in/.well-known/oauth-protected-resource": 404,
+      "/in/mcp/.well-known/oauth-protected-resource": 404
+    }
+  },
+  "https://reg-mcp.vaquill.ai": {
+    "authorizationServer": {
+      "authorization_endpoint": "https://reg-mcp.vaquill.ai/authorize",
+      "authorization_response_iss_parameter_supported": true,
+      "client_id_metadata_document_supported": true,
+      "code_challenge_methods_supported": [
+        "S256"
+      ],
+      "grant_types_supported": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "issuer": "https://reg-mcp.vaquill.ai/",
+      "registration_endpoint": "https://reg-mcp.vaquill.ai/register",
+      "response_types_supported": [
+        "code"
+      ],
+      "revocation_endpoint": "https://reg-mcp.vaquill.ai/revoke",
+      "revocation_endpoint_auth_methods_supported": [
+        "client_secret_post",
+        "client_secret_basic"
+      ],
+      "scopes_supported": [
+        "offline_access"
+      ],
+      "token_endpoint": "https://reg-mcp.vaquill.ai/token",
+      "token_endpoint_auth_methods_supported": [
+        "none",
+        "private_key_jwt"
+      ]
+    },
+    "challenge": {
+      "status": 401,
+      "wwwAuthenticate": "Bearer resource_metadata=\"https://reg-mcp.vaquill.ai/.well-known/oauth-protected-resource/mcp\""
+    },
+    "protectedResource": {
+      "authorization_servers": [
+        "https://reg-mcp.vaquill.ai/"
+      ],
+      "bearer_methods_supported": [
+        "header"
+      ],
+      "resource": "https://reg-mcp.vaquill.ai/mcp",
+      "scopes_supported": [
+        "offline_access"
+      ]
+    }
+  },
+  "https://tribunals-mcp.vaquill.ai": {
+    "authorizationServer": {
+      "authorization_endpoint": "https://tribunals-mcp.vaquill.ai/authorize",
+      "authorization_response_iss_parameter_supported": true,
+      "client_id_metadata_document_supported": true,
+      "code_challenge_methods_supported": [
+        "S256"
+      ],
+      "grant_types_supported": [
+        "authorization_code",
+        "refresh_token"
+      ],
+      "issuer": "https://tribunals-mcp.vaquill.ai/",
+      "registration_endpoint": "https://tribunals-mcp.vaquill.ai/register",
+      "response_types_supported": [
+        "code"
+      ],
+      "revocation_endpoint": "https://tribunals-mcp.vaquill.ai/revoke",
+      "revocation_endpoint_auth_methods_supported": [
+        "client_secret_post",
+        "client_secret_basic"
+      ],
+      "scopes_supported": [
+        "offline_access"
+      ],
+      "token_endpoint": "https://tribunals-mcp.vaquill.ai/token",
+      "token_endpoint_auth_methods_supported": [
+        "none",
+        "private_key_jwt"
+      ]
+    },
+    "challenge": {
+      "status": 401,
+      "wwwAuthenticate": "Bearer resource_metadata=\"https://tribunals-mcp.vaquill.ai/.well-known/oauth-protected-resource/mcp\""
+    },
+    "protectedResource": {
+      "authorization_servers": [
+        "https://tribunals-mcp.vaquill.ai/"
+      ],
+      "bearer_methods_supported": [
+        "header"
+      ],
+      "resource": "https://tribunals-mcp.vaquill.ai/mcp",
+      "scopes_supported": [
+        "offline_access"
+      ]
+    }
+  }
+}

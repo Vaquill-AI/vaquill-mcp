@@ -24,11 +24,11 @@
     },
     {
       "type": "streamable-http",
-      "url": "https://mcp.vaquill.ai/in/mcp",
+      "url": "https://in-mcp.vaquill.ai/mcp",
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer token using a Vaquill API key. Format: 'Bearer vq_key_...'. Get a key at https://www.vaquill.ai/legal-api.",
+          "description": "Required. Send 'Bearer vq_key_...'. Get a key at https://www.vaquill.ai/legal-api. Account sign-in over OAuth is not configured on this host yet, so a key is the only credential it accepts.",
           "isRequired": true,
           "isSecret": true,
           "format": "string"
@@ -41,8 +41,8 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Optional. Leave unset to sign in with your Vaquill account over OAuth 2.1 (recommended; the server advertises discovery metadata). To use an API key instead, send 'Bearer vq_key_...'; the key needs the reg:read permission. Get a key at https://www.vaquill.ai/legal-api.",
-          "isRequired": false,
+          "description": "Required. Send 'Bearer vq_key_...'; the key needs the reg:read permission. Get a key at https://www.vaquill.ai/legal-api. Account sign-in over OAuth is not configured on this host yet, so a key is the only credential it accepts.",
+          "isRequired": true,
           "isSecret": true,
           "format": "string"
         }

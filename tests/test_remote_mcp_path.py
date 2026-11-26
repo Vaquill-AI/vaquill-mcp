@@ -61,11 +61,14 @@ def _live_us(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
 
 
 @pytest.fixture
-def _live_api(_live_us: None, respx_mock) -> None:
-    """Mock the startup fetches every mounted app makes."""
-    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("IN"))
-    )
+def _live_api(_live_us: None) -> None:
+    """Mock the startup fetches every mounted app makes.
+
+    Since India left this host on 2026-11-26 (`remote_main._MOUNTS`) the US
+    mocks in `_live_us` are all of them. The fixture stays rather than being
+    inlined at every call site: it is the seam a second jurisdiction would be
+    added back through, and `_live_us` alone would not say so.
+    """
 
 
 @contextlib.asynccontextmanager
@@ -123,9 +126,22 @@ def _captured_key(respx_mock) -> list[str | None]:
 
 
 async def test_every_url_shape_completes_the_handshake(_live_api: None) -> None:
-    """All four, including the two customers already depend on."""
+    """Every shape this host serves, including the one customers depend on.
+
+    Was four paths when India lived here; two since 2026-11-26. Derived from
+    `_MOUNTS` so the list cannot fall out of step with the mount table, and so
+    a jurisdiction added back is covered without an edit here. The `assert
+    shapes` line stops an empty table from passing this vacuously, which a
+    bare loop over nothing would.
+    """
+    from vaquill_mcp.remote_main import _MOUNTS
+
+    shapes = [f"{prefix}/mcp" for _, prefix in _MOUNTS] + [
+        f"{prefix}/s/vq_key_test" for _, prefix in _MOUNTS
+    ]
+    assert shapes, "no URL shapes to check; _MOUNTS is empty"
     async with _serving() as app:
-        for path in ("/mcp", "/in/mcp", "/s/vq_key_test", "/in/s/vq_key_test"):
+        for path in shapes:
             async with _client(app, path) as client:
                 assert await client.list_tools(), path
 
@@ -143,7 +159,13 @@ async def test_mcp_path_answers_without_a_redirect(_live_api: None) -> None:
         async with httpx2.AsyncClient(
             transport=transport, base_url="http://mcp.vaquill.ai"
         ) as raw:
-            for path in ("/mcp", "/in/mcp"):
+            # Derived from the mount table, not listed: India left this host
+            # on 2026-11-26 and a hardcoded pair would need editing, which is
+            # exactly how a two-jurisdiction assertion silently becomes a
+            # one-jurisdiction one.
+            from vaquill_mcp.remote_main import _MOUNTS
+
+            for path in [f"{prefix}/mcp" for _, prefix in _MOUNTS]:
                 response = await raw.post(
                     path,
                     json={
@@ -165,21 +187,34 @@ async def test_mcp_path_answers_without_a_redirect(_live_api: None) -> None:
                 assert response.headers.get("mcp-session-id"), path
 
 
-async def test_each_url_shape_serves_only_its_own_jurisdiction(
+async def test_this_host_serves_only_us_tools(
     _live_api: None,
 ) -> None:
-    """The isolation the two-app design exists for, on the new shape too."""
+    """One jurisdiction on this host, and NO India tool reachable on it.
+
+    This was `test_each_url_shape_serves_only_its_own_jurisdiction` and compared
+    the `/mcp` and `/in/mcp` catalogues, which was the isolation the two-app
+    design existed for. India left on 2026-11-26 (`remote_main._MOUNTS`), so
+    there is no second catalogue here to compare against and the surviving
+    half of that invariant is what is asserted: the US catalogue must contain
+    no India tool.
+
+    Checking a NAMED India tool rather than only a count, because a count
+    passes just as happily when the India app is mounted and empty, and the
+    failure that would hide is an India tool appearing in a US listing: the
+    exact thing the original test was written to catch. Cross-origin isolation
+    itself now lives in `test_origin_registry.py`, where the origins are built.
+    """
     async with _serving() as app:
         async with _client(app, "/mcp") as client:
             us = {t.name for t in await client.list_tools()}
-        async with _client(app, "/in/mcp") as client:
-            india = {t.name for t in await client.list_tools()}
 
-    assert "search_us_statutes" in us and "search_acts" not in us
-    assert "search_acts" in india and "search_us_statutes" not in india
-    # `search` and `fetch` are published by both, and are the one deliberate
-    # overlap: each is bound to its own app's client and document.
-    assert (us & india) == {"search", "fetch"}
+    assert "search_us_statutes" in us
+    for india_only in ("search_acts", "search_india_cases", "list_acts"):
+        assert india_only not in us, f"{india_only} is an India tool on a US host"
+    # `search` and `fetch` are the connector aliases and belong to every
+    # jurisdiction's own app, so they stay.
+    assert {"search", "fetch"} <= us
 
 
 async def test_both_url_shapes_publish_the_same_catalogue(_live_api: None) -> None:
@@ -416,15 +451,26 @@ async def test_the_discovery_documents_meet_claudes_stated_conditions(
     assert server["code_challenge_methods_supported"] == ["S256"]
 
 
-async def test_india_is_left_alone_by_oauth(_live_api: None, _oauth_on: None) -> None:
-    """A FastMCP app knows its own `path` and nothing about the Mount above it.
+async def test_india_is_gone_from_this_host_entirely(
+    _live_api: None, _oauth_on: None
+) -> None:
+    """Nothing under `/in` answers here any more, and that is the whole point.
 
-    Under `/in` that means it would advertise `resource:
-    https://mcp.vaquill.ai/mcp` -- the US URL -- and serve its document at
-    `/in/.well-known/...` where discovery never looks, while
-    `/.well-known/oauth-protected-resource/in/mcp` 404s. Both measured. An
-    India OAuth connect would fail discovery in a way that reads as "couldn't
-    reach the MCP server", so India stays on the credential shapes that work.
+    THE REASON INDIA MOVED, kept because it is the measurement that forced it:
+    a FastMCP app knows its own `path` and nothing about the Mount above it, so
+    under `/in` it advertised `resource: https://mcp.vaquill.ai/mcp` (the US
+    URL) and served its document at `/in/.well-known/...` where discovery never
+    looks, while `/.well-known/oauth-protected-resource/in/mcp` 404d. An India
+    OAuth connect therefore failed discovery in a way that read as "couldn't
+    reach the MCP server". OAuth became a product requirement, so on 2026-11-26
+    India moved to `in-mcp.vaquill.ai`, an origin root, where it works.
+
+    This test used to assert `/in/mcp` answered 200 WITHOUT a challenge. It now
+    asserts the mount is absent. A 404 is the honest answer for a URL this host
+    no longer serves, and asserting it matters more than it looks: a PARTIAL
+    removal (routes gone, well-known still published, or the reverse) is the
+    state that leaves a client retrying against a half-server, and only probing
+    both shapes can tell that apart from a clean removal.
     """
     async with _serving() as app:
         transport = httpx2.ASGITransport(app=app)
@@ -439,11 +485,22 @@ async def test_india_is_left_alone_by_oauth(_live_api: None, _oauth_on: None) ->
                     "Content-Type": "application/json",
                 },
             )
-            # And no misleading half-document is published for it.
+            key_shape = await raw.post(
+                "/in/s/vq_key_test",
+                json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+                headers={
+                    "Accept": "application/json, text/event-stream",
+                    "Content-Type": "application/json",
+                },
+            )
             stray = await raw.get("/.well-known/oauth-protected-resource/in/mcp")
 
-    assert init.status_code == 200
+    # Not 200-without-a-challenge any more: not served at all.
+    assert init.status_code == 404, "the /in/mcp mount is still bound"
+    assert key_shape.status_code == 404, "the /in/s path-key mount is still bound"
     assert stray.status_code == 404
+    # The US root must be unaffected by the removal.
+    assert "/in" not in {r.path for r in app.routes}
 
 
 async def test_offline_access_is_advertised_so_refresh_is_possible(

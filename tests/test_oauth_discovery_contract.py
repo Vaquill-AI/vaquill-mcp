@@ -107,7 +107,14 @@ async def test_authorization_server_metadata(_documents) -> None:
 
 @pytest.mark.usefixtures("_live_api", "_oauth_on")
 async def test_india_publishes_no_discovery_documents() -> None:
-    """`/in` stays key-only: no PRM at the location a client would derive."""
+    """No PRM at the location a client would derive for `/in/mcp`.
+
+    This held for a different reason before 2026-11-26: `/in` was a path mount
+    and a path mount cannot publish discovery. India now has its own origin
+    (`in-mcp.vaquill.ai`) and the mount is gone from this host entirely, so the
+    absence is total rather than partial. Still asserted, because a stale
+    document left behind would send clients at a URL this host no longer serves.
+    """
     async with _serving() as app:
         transport = httpx2.ASGITransport(app=app)
         async with httpx2.AsyncClient(transport=transport, base_url=_ORIGIN) as raw:

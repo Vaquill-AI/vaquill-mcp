@@ -1,0 +1,936 @@
+{
+  "IN": {
+    "aliasInputSchemas": {
+      "fetch": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "search": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      }
+    },
+    "serverName": "Vaquill Legal Research (IN)",
+    "tools": [
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "fetch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": []
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_act_amendments",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_act_section",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_act_section_body",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_act_status",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_act_structure",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_act_text",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_corresponding_provisions",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_coverage",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_india_credit_balance",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "India Credits",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_pricing_in",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "India Pricing",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_history",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "india_act_cited_by",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "india_act_definitions",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "india_act_subordinate",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "india_section_references",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_act_filters",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_acts",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_india_citation",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_india_citations_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": []
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search_acts",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      }
+    ]
+  },
+  "US": {
+    "aliasInputSchemas": {
+      "fetch": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "search": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      }
+    },
+    "serverName": "Vaquill Legal Research",
+    "tools": [
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "count_statute_sections",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "extract_statute_citations",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "fetch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": []
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_case_citations",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_case_parentheticals",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_credit_balance",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Credits",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_opinion_citations",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_part_rulemaking",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_pricing",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Pricing",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_rulemaking_committee_record",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_rulemaking_coverage",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_rulemaking_docket",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_rulemaking_rin",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_changes",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_cited_by",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_cross_state",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_definitions",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_enactments",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_neighbors",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_section_rulemaking",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_sections_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_session_law",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_session_law_body",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_session_law_changes",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_session_law_versions",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_session_laws_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_case",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_cases_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_docket",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_judge",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_opinion",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_opinions_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_statute_section",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_us_statute_section_text",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_docket_documents",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_rin_agenda",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_rulemaking_committee_records",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_rulemaking_dockets",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Rulemaking",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_session_laws",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_statute_divisions",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_statutes_coverage",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_us_cases",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_us_courts",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_us_dockets",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_us_judges",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_case_citations",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_statute_citation",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_statute_citations_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": []
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search_session_laws",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Session Laws",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search_us_cases",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search_us_statutes",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "US Statutes",
+          "legal-research",
+          "vaquill"
+        ]
+      }
+    ]
+  }
+}

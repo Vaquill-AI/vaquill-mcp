@@ -44,6 +44,11 @@ vaquill-mcp = "vaquill_mcp.__main__:main"
 vaquill-mcp-remote = "vaquill_mcp.remote_main:main"
 vaquill-mcp-regulatory = "vaquill_mcp.regulatory_main:main"
 vaquill-mcp-tribunals = "vaquill_mcp.tribunals_main:main"
+# One generic entry point for every origin in `vaquill_mcp.origin.ORIGINS`,
+# selected by VAQUILL_ORIGIN. A new jurisdiction needs a registry row and a
+# deployment, not a new console script. The named scripts above stay because
+# the live deployments and the tests name them.
+vaquill-mcp-origin = "vaquill_mcp.origin:main"
 
 [project.urls]
 Homepage = "https://www.vaquill.ai"

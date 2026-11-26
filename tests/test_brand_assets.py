@@ -34,11 +34,28 @@ def _live_api(monkeypatch: pytest.MonkeyPatch, respx_mock) -> None:
     respx_mock.get(f"{_BASE}/external/openapi.json").mock(
         return_value=httpx.Response(200, json=_spec("US"))
     )
-    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
-        return_value=httpx.Response(200, json=_spec("IN"))
-    )
     respx_mock.get(url__regex=rf"{_BASE}/api/v1(/in)?/api-credits/pricing$").mock(
         return_value=httpx.Response(200, json={"costs": []})
+    )
+
+
+@pytest.fixture
+def _live_india(_live_api: None, respx_mock) -> None:
+    """The India spec too, for a test that builds an India server DIRECTLY.
+
+    Separate from `_live_api` rather than folded into it, because respx asserts
+    at TEARDOWN that every registered route was called. India left this app's
+    mount table on 2026-11-26 (`remote_main._MOUNTS`), so an app-level test
+    never fetches the India document and a mock for it in the shared fixture
+    fails those tests in teardown while their assertions pass: the shape that
+    turned this removal into 44 errors across suites that never mention India.
+
+    India itself is unchanged and still built per jurisdiction here, now served
+    from `in-mcp.vaquill.ai`. A mount table and a direct construction are
+    different things, and only the first one lost India.
+    """
+    respx_mock.get(f"{_BASE}/in/openapi.json").mock(
+        return_value=httpx.Response(200, json=_spec("IN"))
     )
 
 
@@ -98,7 +115,7 @@ def test_assets_are_routed_before_the_root_mount(_live_api: None) -> None:
 
 
 async def test_lockup_stays_first_and_the_square_icon_follows(
-    _live_api: None, monkeypatch: pytest.MonkeyPatch
+    _live_india: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The consent screen renders icons[0] only, sized for the wide lockup."""
     monkeypatch.setenv("VAQUILL_PUBLIC_URL", "https://mcp.example.test")

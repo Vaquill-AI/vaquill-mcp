@@ -39,120 +39,48 @@ Environment variables (a subset of `remote_main`'s, with the same meaning):
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import os
-from collections.abc import AsyncIterator
 
-import httpx2
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse
-from starlette.routing import Mount, Route
 
 from vaquill_mcp.log_redaction import install_key_redaction
+from vaquill_mcp.origin import ORIGINS
+from vaquill_mcp.origin import build_app as _build_origin_app
 
 logger = logging.getLogger(__name__)
+
+#: This origin's registry row. The app's shape, its mount ORDER and its OAuth
+#: wiring live in `vaquill_mcp.origin`, shared by every single-corpus origin,
+#: because this module and `tribunals_main` were the same 180 lines twice and
+#: Australia, Canada and further jurisdictions are each another copy. This
+#: module stays so the console script `vaquill-mcp-tribunals`, the import path and
+#: the golden-file tests keep naming what the deployments already name.
+ORIGIN = ORIGINS["tribunals"]
 
 
 def build_app() -> Starlette:
     """Compose the ASGI app for the tribunals origin."""
-    from starlette.middleware import Middleware
-
-    from vaquill_mcp import __version__
-    from vaquill_mcp.brand_assets import asset_routes
-    from vaquill_mcp.client_identity import make_client_stamp
-    from vaquill_mcp.config import get_base_url, get_timeout
-    from vaquill_mcp.oauth import (
-        BrandSkinMiddleware,
-        build_auth_provider,
-        build_connector_key_resolver,
-    )
-    from vaquill_mcp.registration_guard import RegistrationRateLimit
-    from vaquill_mcp.remote import _PerRequestBearerAuth
-    from vaquill_mcp.tribunals import create_tribunals_server, fetch_tribunals_costs
-
-    auth = build_auth_provider()
-    resolver = build_connector_key_resolver()
-    if auth is None:
-        logger.info("OAuth is not configured; /mcp accepts vq_key_ bearer tokens only")
-
-    base_url = get_base_url()
-    # ONE client for both servers, owned and closed HERE: `create_tribunals_server`
-    # builds none when it is handed one. The caller's key is read per request by
-    # `_PerRequestBearerAuth` and is never held on the client, which serves
-    # everybody. The OAuth token is never forwarded; it is resolved to a
-    # `vq_key_` first (see `remote._PerRequestBearerAuth`).
-    user_agent = f"vaquill-mcp-remote/{__version__}"
-    client = httpx2.AsyncClient(
-        base_url=base_url,
-        auth=_PerRequestBearerAuth(resolver),
-        headers={"User-Agent": user_agent, "Accept": "application/json"},
-        event_hooks={"request": [make_client_stamp(user_agent)]},
-        timeout=httpx2.Timeout(get_timeout(), connect=10.0),
-    )
-    costs = fetch_tribunals_costs(base_url)
-
-    # Both built from the same function, so the two URL shapes cannot present
-    # different catalogues.
-    key_server = create_tribunals_server(client, costs=costs)
-    mcp_server = create_tribunals_server(client, auth=auth, costs=costs)
-
-    # Each app's `path` is relative to its mount. `/mcp` is a ROUTE inside the
-    # app mounted at the root, never a Mount prefix of its own: mounting at
-    # "/mcp" with an inner "/" makes the bare "/mcp" a 307 to "/mcp/", and a
-    # redirect on this path is how the Authorization header gets dropped.
-    key_app = key_server.http_app(path="/{api_key}", transport="streamable-http")
-    # The brand skin and the registration limiter go on the `/mcp` app only:
-    # it is the one that serves the consent screen and the OAuth routes.
-    mcp_app = mcp_server.http_app(
-        path="/mcp",
-        transport="streamable-http",
-        middleware=[Middleware(RegistrationRateLimit), Middleware(BrandSkinMiddleware)],
-    )
-    sub_apps = (key_app, mcp_app)
-
-    async def health(_request):
-        """Health endpoint for Docker/load balancer probes."""
-        return JSONResponse(
-            {
-                "status": "ok",
-                "service": "vaquill-mcp",
-                "version": __version__,
-                "corpus": "tribunals",
-            }
-        )
-
-    @contextlib.asynccontextmanager
-    async def lifespan(_app: Starlette) -> AsyncIterator[None]:
-        """Run both mounted apps' lifespans, then close the shared client.
-
-        Starlette does NOT start a mounted app's lifespan for it. The client is
-        pushed FIRST so it is closed LAST, after every app that could still be
-        using it has unwound.
-        """
-        async with contextlib.AsyncExitStack() as stack:
-            stack.push_async_callback(client.aclose)
-            for app in sub_apps:
-                await stack.enter_async_context(app.lifespan(app))
-            yield
-
-    # Order is load-bearing: Mount("/") matches everything and Starlette hands a
-    # request to the FIRST matching Mount without falling through. So the probe,
-    # the icon routes and "/s" all precede the root catch-all, or `/s/{key}`
-    # would reach the app that only knows `/mcp` and come back a bare 404.
-    return Starlette(
-        routes=[
-            Route("/health", health),
-            *asset_routes(),
-            Mount("/s", app=key_app),
-            Mount("/", app=mcp_app),
-        ],
-        lifespan=lifespan,
-    )
+    return _build_origin_app(ORIGIN)
 
 
 def main() -> None:
     """Start the tribunals MCP server on Streamable HTTP transport."""
+    # This entry point IS the tribunals origin, so it does not require the
+    # deployment to say so a second time. A DISAGREEING value is refused rather
+    # than ignored: `VAQUILL_ORIGIN` reaches `origin.get_origin()` from
+    # anywhere else in the process, so a container running this script with
+    # another origin's slug set would be one import away from serving the wrong
+    # corpus under this host name, with every log line naming this one.
+    current = os.environ.get("VAQUILL_ORIGIN", "").strip().lower()
+    if current and current != ORIGIN.slug:
+        raise ValueError(
+            f"vaquill-mcp-tribunals serves the {ORIGIN.slug!r} origin, but "
+            f"VAQUILL_ORIGIN is {current!r}. Unset it, or run "
+            f"`vaquill-mcp-origin` instead."
+        )
+    os.environ["VAQUILL_ORIGIN"] = ORIGIN.slug
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -161,6 +89,11 @@ def main() -> None:
     # customer's key in the URL and uvicorn's access log prints the URL. This
     # also holds the httpx2/httpcore2 loggers at WARNING (their INFO line is the
     # full upstream URL, `?q=` included).
+    #
+    # Kept HERE rather than deferred to `origin.main`, and the ordering test
+    # patches this module's name: the guarantee is "this entry point redacts
+    # before it serves", so each entry point must be able to fail that test on
+    # its own. A shared `main` would make one test stand for every origin.
     install_key_redaction()
 
     import uvicorn

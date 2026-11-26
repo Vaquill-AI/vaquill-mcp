@@ -1,16 +1,18 @@
 """Entry point for the remote Vaquill MCP server.
 
-Serves BOTH jurisdictions from one process, over Streamable HTTP, at TWO URL
-shapes each:
+Serves US primary law over Streamable HTTP, at TWO URL shapes:
 
     https://mcp.vaquill.ai/mcp                US primary law
-    https://mcp.vaquill.ai/in/mcp             Indian legislation
     https://mcp.vaquill.ai/s/{api_key}        US primary law, key in the path
-    https://mcp.vaquill.ai/in/s/{api_key}     Indian legislation, key in the path
 
-The `/mcp` pair takes the key as `Authorization: Bearer`. The `/s/{api_key}`
-pair takes it in the path, for the Claude.ai authless integration that cannot
+The `/mcp` form takes the key as `Authorization: Bearer`. The `/s/{api_key}`
+form takes it in the path, for the Claude.ai authless integration that cannot
 send a header, and stays live because customers already use those URLs.
+
+India was served here at `/in/mcp` and `/in/s/{api_key}` until 2026-11-26. It
+moved to its own origin, `in-mcp.vaquill.ai`, because OAuth cannot work from a
+path mount; see `_MOUNTS` for the measurement and `origin.py` for the registry
+that builds it. This host is US-only.
 
 WHY `/mcp` EXISTS AS WELL
 =========================
@@ -85,12 +87,33 @@ from vaquill_mcp.log_redaction import install_key_redaction
 
 logger = logging.getLogger(__name__)
 
-# Mount prefix per jurisdiction. US is at the root so the URL customers already
-# use keeps working unchanged; India is additive.
-_MOUNTS: tuple[tuple[str, str], ...] = (
-    ("IN", "/in"),
-    ("US", ""),
-)
+# Mount prefix per jurisdiction. US sits at the root, which is the URL customers
+# already use.
+#
+# INDIA WAS REMOVED FROM THIS HOST ON 2026-11-26, and this table is the whole
+# removal: one row drove all four India routes (`/in/mcp`, `/in/s/{api_key}`,
+# and both of their apps' lifespans).
+#
+# It is not a tidying. India was mounted at `/in`, and a path mount CANNOT do
+# OAuth: `mount_auth` below is `None` for any non-root prefix because RFC 9728
+# discovery is served from the ORIGIN's `/.well-known/*`, while a FastMCP app
+# knows only its own `path` and nothing of the Mount above it. So the app under
+# `/in` advertised `resource: https://mcp.vaquill.ai/mcp` (the wrong URL) and
+# served its document at `/in/.well-known/oauth-protected-resource/mcp` (the
+# wrong location). Both were MEASURED. India therefore could never be an OAuth
+# connector while it lived here, and OAuth is a product requirement.
+#
+# India now has its OWN ORIGIN, `in-mcp.vaquill.ai`, built from `origin.py`'s
+# registry, where it mounts at "/" and the problem does not arise. That origin
+# serves a SUPERSET of what `/in` served here: acts, case law, tribunals AND
+# regulatory, 45 tools, verified by catalogue diff on 2026-11-26.
+#
+# Keeping this table a tuple of one is deliberate. The loop below, the lifespan
+# and the mount ordering all still work for N jurisdictions, and this host keeps
+# the shape that would let a second one be added back. What must NOT happen is a
+# new jurisdiction being added HERE as a path: it would silently be key-only
+# again. Give it an `ORIGINS` row and a subdomain instead.
+_MOUNTS: tuple[tuple[str, str], ...] = (("US", ""),)
 
 
 def build_app() -> Starlette:

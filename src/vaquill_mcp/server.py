@@ -235,6 +235,57 @@ _ROUTE_MAPS: list[RouteMap] = [
         pattern=r"^/api/v1/agent/(?:signup|verify|token|x402/credits)$",
         mcp_type=MCPType.EXCLUDE,
     ),
+    # Translation is a REST product, not a tool, a product decision of 2026-11-26.
+    # It is a different product sharing a context window with legal research: billed
+    # in PAGES in INR rather than credits, with no bearing on what the law says. Its
+    # eight tools were MEASURED at ~3,848 tokens of definition, 33% of the India
+    # catalogue's ~11,720, because their descriptions are really API documentation
+    # (status tables, page arithmetic, auth scopes). `create_document` alone cost
+    # ~872, more than the whole acts-citation group.
+    #
+    # Anthropic's tool guidance is the test applied here, not a tool count: "make
+    # sure each tool you build has a clear, distinct purpose", and overlapping or
+    # off-purpose tools "distract agents from pursuing efficient strategies". The
+    # same one-corpus-per-connection argument is in `tribunals_main`'s docstring.
+    #
+    # The REST routes stay live and documented; only the catalogue a model chooses
+    # from shrinks. One prefix covers all eight (balance, documents, documents/{id},
+    # documents/{id}/content, files, languages, packs, translations), so a new
+    # translation route is excluded by default rather than silently published.
+    RouteMap(
+        pattern=r"^/api/v1/in/translation(?:/.*)?$",
+        mcp_type=MCPType.EXCLUDE,
+    ),
+    # Regulatory publications belong to `reg-mcp.vaquill.ai`, an owner decision
+    # of 2026-11-26 taken when India moved off `mcp.vaquill.ai` to its own
+    # origin. The India origin carries PRIMARY LAW: acts, case law and tribunal
+    # matters. Circulars, orders, notices and press releases from regulators are
+    # a different kind of document (persuasive and administrative, not binding
+    # authority), they are the corpus the regulatory tracker feeds, and they
+    # already have a server of their own.
+    #
+    # This removes a genuine DUPLICATE rather than a capability. Measured
+    # 2026-11-26 by catalogue diff: `reg-mcp` served 5 tools, 4 of them byte-for
+    # byte the same names India published, and the 5th
+    # (`search_regulatory_documents`) was `list_regulatory_documents` renamed.
+    # The same operation under two names on two origins is what makes client
+    # code and docs rot, so one of them had to go.
+    #
+    # `reg-mcp` is NOT affected by this map, and that is worth stating because
+    # the two servers read the SAME India OpenAPI document. `create_regulatory_
+    # server` HAND-WRITES its five tools instead of generating them from the
+    # spec, so no RouteMap of ours can reach them. Verified before this was
+    # added. If regulatory is ever converted to spec generation, this exclusion
+    # becomes load-bearing for it too, and that conversion must re-check it.
+    #
+    # All five routes sit under one prefix (changes, documents,
+    # documents/{id}/detail, documents/{id}/file, sources), so a sixth
+    # regulatory route is excluded by default rather than silently published on
+    # the wrong origin.
+    RouteMap(
+        pattern=r"^/api/v1/in/reg(?:/.*)?$",
+        mcp_type=MCPType.EXCLUDE,
+    ),
 ]
 
 _HTTP_METHODS = frozenset({"get", "put", "post", "delete", "patch", "head", "options", "trace"})
