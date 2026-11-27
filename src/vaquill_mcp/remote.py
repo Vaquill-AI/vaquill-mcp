@@ -97,6 +97,7 @@ from vaquill_mcp.server import (
     _fetch_public_costs,
     _make_customize_component,
     published_tool_names,
+    without_deprecated_operations,
 )
 
 logger = logging.getLogger(__name__)
@@ -243,7 +244,8 @@ def create_remote_server(
             f"jurisdiction must be one of {sorted(_SPEC_PATHS)}, got {jurisdiction!r}"
         )
 
-    openapi_spec = _fetch_openapi_spec(base_url, jurisdiction)
+    # Same pruning as `create_server`: a deprecated alias is never a tool.
+    openapi_spec = without_deprecated_operations(_fetch_openapi_spec(base_url, jurisdiction))
     # No API key at startup, so the public matrix is used. See
     # `_fetch_public_costs` for why that is complete rather than a compromise,
     # and why the jurisdiction has to be passed through to it explicitly.

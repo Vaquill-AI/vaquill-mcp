@@ -200,5 +200,9 @@ async def test_prompts_do_not_inflate_the_tool_budget(
     # 52 since 2026-11-22: 37, plus the fifteen US case-law tools listed in
     # `test_us_case_law_tools.CASE_TOOLS`. Several case-law routes are deliberately
     # not tools (see `_ROUTE_MAPS`).
-    expected = 52 if jurisdiction == "US" else 22
+    # India: 37 since 2026-11-27, once the committed fixture matched the live document
+    # (see test_remote_dual_mount for the arithmetic).
+    # India: 33 once five deprecated operations left and india_act_record joined (see
+    # test_remote_dual_mount for the arithmetic).
+    expected = 52 if jurisdiction == "US" else 33
     assert len(await server.list_tools()) == expected

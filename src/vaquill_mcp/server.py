@@ -256,6 +256,22 @@ _ROUTE_MAPS: list[RouteMap] = [
         pattern=r"^/api/v1/in/translation(?:/.*)?$",
         mcp_type=MCPType.EXCLUDE,
     ),
+    # The three India file routes return application/pdf, and the generated tool path is
+    # JSON-only: fastmcp's OpenAPITool calls `response.json()` and catches only
+    # `json.JSONDecodeError`, so a PDF body raises UnicodeDecodeError (a tool error, after the
+    # route has already charged) or, if it happened to decode, puts bytes into the model's
+    # context as text. The US catalogue excludes `files/*` for the same reason. The tribunal
+    # matter file is a tool on `tribunals-mcp`, which hand-writes it and returns a resource.
+    # `hasFile` stays on the record tools; the REST routes stay live. One alternative per route,
+    # anchored at both ends, so a new sibling is published by default rather than swallowed.
+    RouteMap(
+        pattern=(
+            r"^/api/v1/in/(?:cases/[^/]+/file"
+            r"|tribunals/matters/[^/]+/[^/]+/file"
+            r"|tribunals/matters/[^/]+/[^/]+/orders/[^/]+/file)$"
+        ),
+        mcp_type=MCPType.EXCLUDE,
+    ),
     # Regulatory publications belong to `reg-mcp.vaquill.ai`, an owner decision
     # of 2026-11-26 taken when India moved off `mcp.vaquill.ai` to its own
     # origin. The India origin carries PRIMARY LAW: acts, case law and tribunal
@@ -313,6 +329,55 @@ def is_excluded_route(method: str, path: str) -> bool:
     return False
 
 
+def is_deprecated_operation(op: dict) -> bool:
+    """Whether the API marks this operation `deprecated: true` in its document.
+
+    A deprecated operation is a REST alias kept so existing callers do not
+    break, and it is never published as a tool. The backend sets the flag with
+    FastAPI's `deprecated=True` on the route decorator, so retiring a tool is a
+    backend change and needs no edit here. The India acts consolidation of
+    2026-11-27 relies on this: `/acts/{id}/status` and `/acts/{id}/text` became
+    `GET /acts/{id}`, the section `history` and `references` routes became
+    `include=` on the section route, `/acts/filters` became
+    `coverage?include=filters`, and each old route stayed in the API as a
+    deprecated alias that the MCP catalogue drops.
+
+    Only the literal boolean `true` counts, so a malformed document does not
+    silently remove tools.
+    """
+    return op.get("deprecated") is True
+
+
+def without_deprecated_operations(spec: dict) -> dict:
+    """A copy of the OpenAPI document with every deprecated operation removed.
+
+    The provider is handed this copy rather than the fetched document, because
+    `HTTPRoute` does not carry the `deprecated` flag and no `RouteMap` can match
+    on it. `_published_operations` applies the same predicate, so the names,
+    costs and alias helpers agree with the provider even when they are given the
+    raw document (as the committed-fixture tests do). A path left with no
+    operation is dropped too. Components are untouched: removing an operation
+    never breaks a `$ref` another operation holds.
+    """
+    paths: dict = {}
+    for path, item in (spec.get("paths") or {}).items():
+        if not isinstance(item, dict):
+            paths[path] = item
+            continue
+        kept = {
+            key: value
+            for key, value in item.items()
+            if not (
+                key.lower() in _HTTP_METHODS
+                and isinstance(value, dict)
+                and is_deprecated_operation(value)
+            )
+        }
+        if any(key.lower() in _HTTP_METHODS for key in kept):
+            paths[path] = kept
+    return {**spec, "paths": paths}
+
+
 def _published_operations(spec: dict) -> Iterator[tuple[str, str, dict]]:
     """(path, method, operation) for every operation the provider publishes."""
     for path, item in (spec.get("paths") or {}).items():
@@ -321,7 +386,7 @@ def _published_operations(spec: dict) -> Iterator[tuple[str, str, dict]]:
         for method, op in item.items():
             if method.lower() not in _HTTP_METHODS or not isinstance(op, dict):
                 continue
-            if is_excluded_route(method, path):
+            if is_excluded_route(method, path) or is_deprecated_operation(op):
                 continue
             yield path, method, op
 
@@ -627,6 +692,10 @@ _READ_ONLY_POSTS: frozenset[str] = frozenset(
         "/in/acts/search",
         # POST-as-query: resolves a batch of citations and writes nothing.
         "/in/acts/resolve",
+        # POST-as-query: the batch form of the case resolver. Absent here it fell to the
+        # write default and shipped readOnlyHint false, because the fixture the guard
+        # reads predated it.
+        "/in/cases/resolve",
     }
 )
 
@@ -725,6 +794,11 @@ def _annotations_for(route: HTTPRoute, name: str | None = None) -> ToolAnnotatio
 # is correct before and after the backend stops publishing them. Restore an entry's parameters by
 # deleting it when the feature is switched on.
 _HIDDEN_PARAMS: dict[str, frozenset[str]] = {
+    # `limit` is a DEPRECATED alias of `pageSize` on these three, kept working for old clients.
+    # Publishing both makes a model choose, and the API says to send one or the other.
+    "india_act_cited_by": frozenset({"limit"}),
+    "india_act_subordinate": frozenset({"limit"}),
+    "india_act_definitions": frozenset({"limit"}),
     "resolve_case_citations": frozenset({"includeStatus"}),
     "get_case_citations": frozenset({"category", "treatment"}),
     "get_opinion_citations": frozenset({"category", "treatment"}),
@@ -881,7 +955,9 @@ def create_server(jurisdiction: str | None = None) -> FastMCP:
     # An explicit argument (the `--jurisdiction` flag) beats the environment,
     # so a client config can select India without setting env vars at all.
     jurisdiction = jurisdiction or get_jurisdiction()
-    openapi_spec = _fetch_openapi_spec(base_url, jurisdiction)
+    # Deprecated aliases are dropped before anything reads the document, so the
+    # provider, the names, the costs and the alias stand-down all see one list.
+    openapi_spec = without_deprecated_operations(_fetch_openapi_spec(base_url, jurisdiction))
 
     # Fetch the live credit-cost matrix so each tool description carries an
     # accurate, never-drifting cost line (best-effort; empty on failure).

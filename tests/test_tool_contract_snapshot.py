@@ -36,6 +36,7 @@ from vaquill_mcp.server import (
     _ROUTE_MAPS,
     _derive_mcp_names,
     _make_customize_component,
+    without_deprecated_operations,
 )
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
@@ -65,7 +66,11 @@ def _contract_only(node):
 
 
 async def _published_contract(jurisdiction: str) -> dict:
-    spec = json.loads((_FIXTURES / f"openapi_{jurisdiction.lower()}.json").read_text())
+    # Pruned the way create_server prunes it: a deprecated operation is not a tool, and a golden
+    # that pinned one would record a surface nobody is served (under an auto-generated name).
+    spec = without_deprecated_operations(
+        json.loads((_FIXTURES / f"openapi_{jurisdiction.lower()}.json").read_text())
+    )
     provider = OpenAPIProvider(
         openapi_spec=spec,
         client=httpx2.AsyncClient(base_url="https://api.vaquill.ai"),

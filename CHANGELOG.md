@@ -5,6 +5,25 @@ All notable changes to `vaquill-mcp` are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.7.2] - 2026-11-27
+### Added
+- **India case law and tribunal tools are curated like the act tools.** Fifteen tools that were published with generated text now have written descriptions, titles and annotations, and the server instructions cover case law and tribunals. The case-citation resolver is marked read-only.
+- **Regulatory search takes `firstSeenFrom` and `hasBody`.** `list_regulatory_changes` takes `direction`: call once with `since` and `direction` set to `forward`, then send the last item's `cursor`. Without `direction` the feed reads backwards into the past.
+
+### Changed
+- **India act tools consolidated, 37 tools to 33.** `india_act_record` returns one act's whole record: standing (`publisherStatus`, `servedStatus` and `repealClaim` stay separate statements), links to its text, PDF and HTML, and counts. It replaces `get_act_status` and `get_act_text`.
+- `get_act_section` takes `include` (`history`, `references`), replacing `get_section_history` and `india_section_references`. `get_coverage` takes `include` set to `filters`, replacing `list_act_filters`.
+- `get_changes` takes `actId` for one act's change events. `get_corresponding_provisions` takes `section` and `newSection` to return one row instead of the whole table.
+
+### Removed
+- `get_act_status`, `get_act_text`, `get_section_history`, `india_section_references` and `list_act_filters`. The backend deprecated their routes, and the server no longer publishes any deprecated operation.
+
+### Fixed
+- **Regulatory errors say what to do.** A `422` (an unknown publisher, source or document type) is `invalid_request` with a hint to call `get_regulatory_coverage`, not "corpus unreachable, retry". Other `4xx` answers are `request_refused` and not retryable, and a `502` `upstream_response_too_large` is not retryable either.
+- **Source PDFs are not tools on the India server**, because a tool result cannot carry a PDF. Records say `hasFile`, and the REST `/file` routes return the document.
+
 ## [0.7.1] - 2026-11-26
 ### Added
 - **The MCP Registry listing now names the PyPI package**, not only the three hosted URLs. A client that discovers servers through the Registry can install it locally with `uvx vaquill-mcp`, set `VAQUILL_API_KEY`, and choose the corpus with `VAQUILL_JURISDICTION` (`US`, the default, or `IN` for Indian primary law). Indian regulatory publications remain hosted only, at `https://reg-mcp.vaquill.ai/mcp`.

@@ -308,7 +308,7 @@ def _register_in(mcp: FastMCP, client: httpx2.AsyncClient, base_url: str) -> Non
             "URL or a bare path. NOTE: the India corpus serves an enactment as "
             "publisher links rather than inline text, so `text` carries the title "
             "and `metadata` carries the PDF, HTML and plain-text URLs to read. "
-            "Prefer `get_act_text` if you can call it."
+            "Prefer `india_act_record` if you can call it."
         ),
         annotations={
             "readOnlyHint": True,

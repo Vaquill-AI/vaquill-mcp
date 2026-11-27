@@ -33,7 +33,7 @@ from vaquill_mcp.schema_slim import (
     slim_input_schema,
     uncurated_overruns,
 )
-from vaquill_mcp.server import _derive_mcp_names, is_excluded_route
+from vaquill_mcp.server import _derive_mcp_names, is_deprecated_operation, is_excluded_route
 
 _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 
@@ -47,8 +47,8 @@ def _tool_schemas(jurisdiction: str) -> dict[str, dict]:
 
     Built from the raw document rather than from a live provider so the guard
     keeps working with no network and no FastMCP internals in the way. Routes
-    `_ROUTE_MAPS` excludes are skipped: they are never published, so their
-    parameters cost no caller anything.
+    `_ROUTE_MAPS` excludes and deprecated aliases are skipped: they are never
+    published, so their parameters cost no caller anything.
     """
     spec = _spec(jurisdiction)
     names = _derive_mcp_names(spec)
@@ -56,7 +56,11 @@ def _tool_schemas(jurisdiction: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for path, item in spec["paths"].items():
         for method, op in item.items():
-            if not isinstance(op, dict) or is_excluded_route(method, path):
+            if (
+                not isinstance(op, dict)
+                or is_excluded_route(method, path)
+                or is_deprecated_operation(op)
+            ):
                 continue
             op_id = op.get("operationId")
             if not op_id:

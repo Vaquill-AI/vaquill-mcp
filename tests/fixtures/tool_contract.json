@@ -3,6 +3,22 @@
     "get_act_amendments": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_state_20326"
@@ -81,6 +97,22 @@
     "get_act_section": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_state_20326"
@@ -90,6 +122,22 @@
             "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
           },
+          "include": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "history,references"
+            ]
+          },
           "section_number": {
             "examples": [
               "23"
@@ -98,6 +146,20 @@
             "minLength": 1,
             "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
             "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "20261109-1f3a9c2b"
+            ]
           }
         },
         "required": [
@@ -112,6 +174,22 @@
     "get_act_section_body": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_state_20326"
@@ -129,6 +207,20 @@
             "minLength": 1,
             "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
             "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "20261109-1f3a9c2b"
+            ]
           }
         },
         "required": [
@@ -140,30 +232,25 @@
       "method": "GET",
       "path": "/api/v1/in/acts/{act_id}/sections/{section_number}/body"
     },
-    "get_act_status": {
-      "inputSchema": {
-        "properties": {
-          "act_id": {
-            "examples": [
-              "IND_state_20326"
-            ],
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
-            "type": "string"
-          }
-        },
-        "required": [
-          "act_id"
-        ],
-        "type": "object"
-      },
-      "method": "GET",
-      "path": "/api/v1/in/acts/{act_id}/status"
-    },
     "get_act_structure": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_state_20326"
@@ -182,9 +269,25 @@
       "method": "GET",
       "path": "/api/v1/in/acts/{act_id}/structure"
     },
-    "get_act_text": {
+    "get_act_versions": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_state_20326"
@@ -201,11 +304,106 @@
         "type": "object"
       },
       "method": "GET",
-      "path": "/api/v1/in/acts/{act_id}/text"
+      "path": "/api/v1/in/acts/{act_id}/versions"
+    },
+    "get_changes": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "actId": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "^[^/\\\\\\x00-\\x1f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "IND_state_20326"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "eyJyIjoiMjAyNjExMDlUMDIwMDAwWiIsImkiOjUwfQ"
+            ]
+          },
+          "limit": {
+            "default": 100,
+            "examples": [
+              100
+            ],
+            "maximum": 500.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2026-11-01"
+            ],
+            "format": "date"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/changes"
     },
     "get_corresponding_provisions": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_code": {
             "enum": [
               "ipc",
@@ -220,6 +418,36 @@
             ],
             "pattern": "^(?i:ipc|crpc|iea|bns|bnss|bsa)$",
             "type": "string"
+          },
+          "newSection": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "103"
+            ]
+          },
+          "section": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "302"
+            ]
           }
         },
         "required": [
@@ -232,12 +460,114 @@
     },
     "get_coverage": {
       "inputSchema": {
-        "properties": {},
+        "properties": {
+          "include": {
+            "anyOf": [
+              {
+                "enum": [
+                  "filters"
+                ],
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "filters"
+            ]
+          }
+        },
         "required": [],
         "type": "object"
       },
       "method": "GET",
       "path": "/api/v1/in/acts/coverage"
+    },
+    "get_india_case_body": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseId": {
+            "examples": [
+              "2020_INSC_548"
+            ],
+            "maxLength": 64,
+            "type": "string"
+          },
+          "include": {
+            "anyOf": [
+              {
+                "const": "segments",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "segments"
+            ]
+          }
+        },
+        "required": [
+          "caseId"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/cases/{caseId}/body"
+    },
+    "get_india_case_detail": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseId": {
+            "examples": [
+              "2020_INSC_548"
+            ],
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "caseId"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/cases/{caseId}/detail"
     },
     "get_india_credit_balance": {
       "inputSchema": {
@@ -248,16 +578,159 @@
       "method": "GET",
       "path": "/api/v1/in/credits/balance"
     },
+    "get_india_similar_cases": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseId": {
+            "examples": [
+              "2020_INSC_548"
+            ],
+            "maxLength": 64,
+            "type": "string"
+          },
+          "court": {
+            "examples": [
+              [
+                "supreme-court"
+              ]
+            ],
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          "courtType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "supreme_court",
+                  "high_court"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "high_court"
+            ]
+          },
+          "decidedFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2015-01-01"
+            ]
+          },
+          "decidedTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-12-31"
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "examples": [
+              5
+            ],
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "caseId"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/cases/{caseId}/similar"
+    },
+    "get_india_tribunal_matter": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseId": {
+            "examples": [
+              "CAT_CIS_OA7962024_5dd99505"
+            ],
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "tribunal": {
+            "examples": [
+              "cat_cis"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "tribunal",
+          "caseId"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/tribunals/matters/{tribunal}/{caseId}/detail"
+    },
     "get_pricing_in": {
       "inputSchema": {
         "properties": {
           "region": {
             "anyOf": [
               {
-                "enum": [
-                  "US",
-                  "IN"
-                ],
+                "const": "IN",
                 "type": "string"
               },
               {
@@ -272,21 +745,15 @@
       "method": "GET",
       "path": "/api/v1/in/api-credits/pricing"
     },
-    "get_section_history": {
+    "india_act_cited_by": {
       "inputSchema": {
         "properties": {
-          "act_id": {
-            "examples": [
-              "IND_state_20326"
-            ],
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
-            "type": "string"
-          },
-          "asOf": {
+          "Idempotency-Key": {
             "anyOf": [
               {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
                 "type": "string"
               },
               {
@@ -294,49 +761,9 @@
               }
             ],
             "examples": [
-              "2019-03-12"
-            ],
-            "format": "date"
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
           },
-          "limit": {
-            "default": 100,
-            "examples": [
-              50
-            ],
-            "maximum": 500.0,
-            "minimum": 1.0,
-            "type": "integer"
-          },
-          "offset": {
-            "default": 0,
-            "examples": [
-              0
-            ],
-            "minimum": 0.0,
-            "type": "integer"
-          },
-          "section_number": {
-            "examples": [
-              "23"
-            ],
-            "maxLength": 40,
-            "minLength": 1,
-            "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
-            "type": "string"
-          }
-        },
-        "required": [
-          "act_id",
-          "section_number"
-        ],
-        "type": "object"
-      },
-      "method": "GET",
-      "path": "/api/v1/in/acts/{act_id}/sections/{section_number}/history"
-    },
-    "india_act_cited_by": {
-      "inputSchema": {
-        "properties": {
           "act_id": {
             "examples": [
               "IND_state_17068"
@@ -345,21 +772,6 @@
             "minLength": 1,
             "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "maximum": 100.0,
-                "minimum": 1.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              25
-            ]
           },
           "page": {
             "default": 1,
@@ -396,6 +808,22 @@
     "india_act_definitions": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_central_2114"
@@ -404,21 +832,6 @@
             "minLength": 1,
             "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "maximum": 100.0,
-                "minimum": 1.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              25
-            ]
           },
           "page": {
             "default": 1,
@@ -452,9 +865,62 @@
       "method": "GET",
       "path": "/api/v1/in/acts/{act_id}/definitions"
     },
+    "india_act_record": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "act_id": {
+            "examples": [
+              "IND_state_20326"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "act_id"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/acts/{act_id}"
+    },
     "india_act_subordinate": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "act_id": {
             "examples": [
               "IND_state_17068"
@@ -463,21 +929,6 @@
             "minLength": 1,
             "pattern": "^[^/\\\\\\x00-\\x1f]+$",
             "type": "string"
-          },
-          "limit": {
-            "anyOf": [
-              {
-                "maximum": 100.0,
-                "minimum": 1.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "examples": [
-              25
-            ]
           },
           "page": {
             "default": 1,
@@ -511,49 +962,25 @@
       "method": "GET",
       "path": "/api/v1/in/acts/{act_id}/subordinate"
     },
-    "india_section_references": {
-      "inputSchema": {
-        "properties": {
-          "act_id": {
-            "examples": [
-              "IND_state_17068"
-            ],
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^[^/\\\\\\x00-\\x1f]+$",
-            "type": "string"
-          },
-          "section_number": {
-            "examples": [
-              "79"
-            ],
-            "maxLength": 40,
-            "minLength": 1,
-            "pattern": "^[^/\\\\\\x00-\\x1f]{1,40}$",
-            "type": "string"
-          }
-        },
-        "required": [
-          "act_id",
-          "section_number"
-        ],
-        "type": "object"
-      },
-      "method": "GET",
-      "path": "/api/v1/in/acts/{act_id}/sections/{section_number}/references"
-    },
-    "list_act_filters": {
-      "inputSchema": {
-        "properties": {},
-        "required": [],
-        "type": "object"
-      },
-      "method": "GET",
-      "path": "/api/v1/in/acts/filters"
-    },
     "list_acts": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "category": {
             "anyOf": [
               {
@@ -711,6 +1138,7 @@
             "anyOf": [
               {
                 "maximum": 2100.0,
+                "minimum": 0.0,
                 "type": "integer"
               },
               {
@@ -725,6 +1153,7 @@
             "anyOf": [
               {
                 "maximum": 2100.0,
+                "minimum": 0.0,
                 "type": "integer"
               },
               {
@@ -742,9 +1171,510 @@
       "method": "GET",
       "path": "/api/v1/in/acts/list"
     },
+    "list_india_cases": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "court": {
+            "examples": [
+              [
+                "supreme-court"
+              ]
+            ],
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          "courtType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "supreme_court",
+                  "high_court"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "high_court"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decidedFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2015-01-01"
+            ]
+          },
+          "decidedTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-12-31"
+            ]
+          },
+          "limit": {
+            "default": 25,
+            "examples": [
+              50
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "order": {
+            "default": "decided_desc",
+            "enum": [
+              "decided_desc",
+              "decided_asc"
+            ],
+            "examples": [
+              "decided_asc"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/cases/list"
+    },
+    "list_india_courts": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/courts"
+    },
+    "list_india_tribunal_forums": {
+      "inputSchema": {
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/tribunals/forums"
+    },
+    "list_india_tribunal_matter_orders": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseId": {
+            "examples": [
+              "CAT_CIS_OA7962024_5dd99505"
+            ],
+            "maxLength": 1024,
+            "type": "string"
+          },
+          "tribunal": {
+            "examples": [
+              "cat_cis"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        "required": [
+          "tribunal",
+          "caseId"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/tribunals/matters/{tribunal}/{caseId}/orders"
+    },
+    "list_india_tribunal_matters": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "bench": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "nclt_ahmedabad"
+            ]
+          },
+          "caseNumber": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "O.A./796/2024"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 1536,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "eyJjIjoiQ0FUXzEyMyJ9"
+            ]
+          },
+          "decidedFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-01-01"
+            ]
+          },
+          "decidedTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-12-31"
+            ]
+          },
+          "isJudgment": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "limit": {
+            "default": 25,
+            "examples": [
+              50
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "tribunal": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "cat_cis"
+            ]
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1800.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              2024
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/tribunals/matters"
+    },
+    "resolve_india_case": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "caseNumber": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "citation": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "[1982] 2 S.C.R. 186"
+            ]
+          },
+          "court": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/cases/resolve"
+    },
+    "resolve_india_cases_batch": {
+      "inputSchema": {
+        "$defs": {
+          "ResolveInput": {
+            "additionalProperties": false,
+            "properties": {
+              "caseNumber": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "3729/2016"
+                ]
+              },
+              "citation": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "2020_INSC_548"
+                ]
+              },
+              "court": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "madhya-pradesh-hc"
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "inputs": {
+            "examples": [
+              [
+                {
+                  "citation": "2020_INSC_548"
+                },
+                {
+                  "caseNumber": "3729/2016",
+                  "court": "madhya-pradesh-hc"
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/$defs/ResolveInput"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "inputs"
+        ],
+        "type": "object"
+      },
+      "method": "POST",
+      "path": "/api/v1/in/cases/resolve"
+    },
     "resolve_india_citation": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "asAtDate": {
             "anyOf": [
               {
@@ -834,6 +1764,22 @@
     "resolve_india_citations_batch": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "asAtDate": {
             "anyOf": [
               {
@@ -929,6 +1875,22 @@
     "search_acts": {
       "inputSchema": {
         "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
           "actStatus": {
             "anyOf": [
               {
@@ -1268,6 +2230,7 @@
             "anyOf": [
               {
                 "maximum": 2100.0,
+                "minimum": 0.0,
                 "type": "integer"
               },
               {
@@ -1282,6 +2245,7 @@
             "anyOf": [
               {
                 "maximum": 2100.0,
+                "minimum": 0.0,
                 "type": "integer"
               },
               {
@@ -1300,6 +2264,266 @@
       },
       "method": "POST",
       "path": "/api/v1/in/acts/search"
+    },
+    "search_india_cases": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "court": {
+            "examples": [
+              [
+                "supreme-court"
+              ]
+            ],
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          "courtType": {
+            "anyOf": [
+              {
+                "enum": [
+                  "supreme_court",
+                  "high_court"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "high_court"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decidedFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2015-01-01"
+            ]
+          },
+          "decidedTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2020-12-31"
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "examples": [
+              20
+            ],
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "q": {
+            "examples": [
+              "arbitration seat and jurisdiction of courts"
+            ],
+            "maxLength": 500,
+            "minLength": 2,
+            "type": "string"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/cases/search"
+    },
+    "search_india_tribunal_matters": {
+      "inputSchema": {
+        "properties": {
+          "Idempotency-Key": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 16,
+                "pattern": "^[\\x21-\\x7e]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "3f9c2a1e-7b44-4d0a-9c1e-5a6b7c8d9e0f"
+            ]
+          },
+          "bench": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "nclt_ahmedabad"
+            ]
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "maxLength": 1536,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "eyJjIjoiQ0FUXzEyMyJ9"
+            ]
+          },
+          "decidedFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-01-01"
+            ]
+          },
+          "decidedTo": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "2024-12-31"
+            ]
+          },
+          "isJudgment": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              true
+            ]
+          },
+          "limit": {
+            "default": 10,
+            "examples": [
+              25
+            ],
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "type": "integer"
+          },
+          "q": {
+            "examples": [
+              "Union of India"
+            ],
+            "maxLength": 200,
+            "minLength": 2,
+            "type": "string"
+          },
+          "tribunal": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "cat_cis"
+            ]
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1800.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              2024
+            ]
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "type": "object"
+      },
+      "method": "GET",
+      "path": "/api/v1/in/tribunals/matters/search"
     }
   },
   "US": {

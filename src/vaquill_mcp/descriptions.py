@@ -15,8 +15,8 @@ backend. See ``server.py`` (``_pricing_endpoint_for_route`` + ``_format_cost``).
 SCOPE: both jurisdictions. US (52 published tools: statutes, regulations,
 constitutions, court rules, agency guidance, state session laws, rulemaking, citation
 extraction and 15 case-law tools) and
-India (22 published tools: Central and State Acts plus regulator
-instruments). Both counts include the
+India (33 published tools: Central and State Acts, case law and
+tribunal matters; regulator publications are on reg-mcp). Both counts include the
 `search` / `fetch` aliases, which are titled here but described in aliases.py.
 The law-change alert tools (boards and watches) were removed from the MCP
 catalogue on 2026-09-29 and have no entries here. India was retired on
@@ -51,27 +51,34 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "may indicate a wrong filter. "
     ),
     "get_act_section": (
-        "Metadata for one provision, including its citation, position in the "
-        "act, structural features and references. Use when identifying or "
-        "inspecting a provision without fetching its wording. Text is not "
-        "included. Use get_act_section_body to read it. wordCount covers all "
-        "passages, and actsReferenced normalizes whitespace before "
-        "deduplication so publisher line breaks do not create duplicate acts. "
+        "Metadata for one provision: citation, position in the act, "
+        "structural features and references, but no text (use "
+        "get_act_section_body). Pass include (history, references) to add "
+        "section.history, the first 100 amendment events, and "
+        "section.references at no extra charge; not with version. Pass "
+        "version (a versionId from get_act_versions) for an earlier corpus "
+        "state; version dates are when the corpus observed the text, not "
+        "legal effective dates. wordCount covers all passages. "
     ),
     "get_act_section_body": (
         "The publisher's full text for one provision, taken directly from the "
         "act document without synthesized search headers. Use when reading, "
         "quoting or citing the provision's wording rather than its metadata. "
-        "Amendments are not applied to this text. Check get_section_history "
-        "for recorded changes before treating the wording as current law. "
+        "Amendments are not applied to this text: check get_act_section with "
+        "include history for recorded changes before treating the wording as "
+        "current law. For "
+        "earlier wording pass version (a versionId from get_act_versions); its "
+        "dates are corpus observation dates, not legal effective dates. "
     ),
-    "get_act_status": (
-        "An act's standing in three separate fields, publisherStatus for "
-        "India Code's label, servedStatus for API availability and "
-        "repealClaim for the publisher's sourced repeal record. Use when "
-        "assessing whether an act remains law or why it is unavailable. These "
-        "are not one verdict. A repealClaim does not verify that the "
-        "repealing instrument was brought into force. "
+    "india_act_record": (
+        "One act's record: title, standing, links to its text, PDF and HTML, "
+        "and counts. Use to assess whether an act remains law. "
+        "publisherStatus (India Code's label), servedStatus (API "
+        "availability) and repealClaim (the publisher's sourced repeal "
+        "record) are separate statements, not one verdict; repealClaim does "
+        "not verify the repealing instrument was brought into force. counts "
+        "holds sectionCount, passageCount and subordinateCount (null when "
+        "uncounted, never 0). A retired act: links and counts null. "
     ),
     "get_act_structure": (
         "An act's table of contents, with chapters and parts where the "
@@ -82,13 +89,14 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "suffixes attached. "
     ),
     "get_coverage": (
-        "India corpus counts for acts and provisions, broken down by "
-        "jurisdiction, regulator and status, plus coverage depth. Use when "
-        "checking whether the corpus supports a question before searching or "
-        "interpreting an empty result. The depth block distinguishes text "
-        "coverage from much thinner parsed amendment coverage. "
-        "actsClaimingAmendmentsWithoutEvents marks missing records, not an "
-        "absence of amendments. "
+        "India corpus counts for acts and provisions by jurisdiction, "
+        "regulator and status, plus coverage depth. Use to check whether the "
+        "corpus supports a question before searching, or to read an empty "
+        "result. The depth block separates text coverage from much thinner "
+        "parsed amendment coverage; actsClaimingAmendmentsWithoutEvents marks "
+        "missing records, not an absence of amendments. Pass include filters "
+        "for data.filters, the category, state and department values "
+        "search_acts and list_acts accept. "
     ),
     "get_credit_balance": (
         "The credits this API key can spend now, calculated from live credit "
@@ -106,19 +114,11 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "the period end. "
     ),
     "get_pricing_in": (
-        "Credit-to-price conversion and per-endpoint costs for the India "
-        "legislation API, billed in US dollars. Use when estimating a "
-        "workflow or comparing endpoint charges. This tool prices only the "
-        "India surface's endpoints. Both surfaces use the same API "
-        "key and account-wide credit balance. No authentication is required. "
-    ),
-    "get_section_history": (
-        "Recorded amendments to one provision, including the changing Act and "
-        "section, effective dates and replaced wording where published. Use "
-        "when tracing changes or checking whether published text reflects "
-        "later amendments. An empty history can mean no changes or no parsed "
-        "records, as coverage explains. Read appliedStatus on every event. "
-        "Amendments are not applied to served text. "
+        "Credit-to-price conversion and per-endpoint costs for the India API "
+        "(acts, case law and tribunals), billed in US dollars. Use when "
+        "estimating a workflow or comparing endpoint charges. Both the India "
+        "and US APIs use the same API key and account-wide credit balance. No "
+        "authentication is required. "
     ),
     "india_act_cited_by": (
         "Paged inbound citations from provisions elsewhere in the corpus that "
@@ -145,21 +145,14 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "distinct instruments across all pages, while returned counts rows on "
         "this page. "
     ),
-    "india_section_references": (
-        "Outbound citations from a provision to other enactments and sections "
-        "of its own act. Use when following references outwards, not finding "
-        "citations to the act. actId identifies served targets, while "
-        "resolved false marks coverage gaps rather than parse failures. "
-        "Results are not paged. totalActs and totalSections give full counts, "
-        "so check truncated before treating returned references as complete. "
-    ),
     "resolve_india_citation": (
         "The provision named by an Indian legal citation, accepting common "
         "abbreviations and flexible element order. Use when a user provides a "
         "citation rather than a research topic, such as s.302 IPC, O. 39 R. 1 "
-        "CPC or Art. 21 of the Constitution. Subsection and clause references "
-        "are supported. Malformed citations are rejected rather than reported "
-        "as not found. "
+        "CPC or Art. 21 of the Constitution. Pass asAtDate (YYYY-MM-DD, when "
+        "the conduct occurred) to pick a side of the 2023 recodification: "
+        "without it a criminal section number resolves to both the old code and "
+        "its replacement. Malformed citations are rejected. "
     ),
     "resolve_india_citations_batch": (
         "Provision resolutions for a list of Indian legal citations, using "
@@ -426,12 +419,14 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
     # vocabulary BOTH jurisdictions key on, and splitting it per jurisdiction
     # would give the drift it exists to prevent somewhere new to hide.
     "search_acts": (
-        "Search Indian legislation down to the individual section: Central and State "
-        "Acts plus the instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, "
-        "TRAI, DGFT). Use for any 'what does Indian law say' question. Supports boolean "
-        "and phrase queries; filters by category, state, year and status. Returns "
-        "sections with title, chapter and a sourceUrl pointing at the publisher's own "
-        "document. The returned actId (e.g. 'IND_central_2065') feeds every acts tool."
+        "Search Indian legislation down to the individual section: Central and "
+        "State Acts and the statutory instruments made under them, including "
+        "those of regulators such as SEBI and RBI. Circulars, orders and press "
+        "releases are a separate corpus and are not searched here. Supports "
+        "boolean and phrase queries; filters by category, state, year and "
+        "status. pageSize is at most 50 and page times pageSize at most 100: "
+        "narrow with filters to go deeper. The returned actId feeds every acts "
+        "tool. "
     ),
     "list_acts": (
         "Browse and filter enactments rather than searching their text: by jurisdiction "
@@ -439,23 +434,14 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "wants to know WHAT exists in an area before asking what it says, or to confirm "
         "an Act's exact title before citing it."
     ),
-    "list_act_filters": (
-        "Self-describing filter vocabulary: every category, state, department and status "
-        "the acts corpus actually holds, with counts. Call this before filtering, so a "
-        "query uses a value that exists instead of returning empty because the spelling "
-        "was wrong."
-    ),
-    "get_act_text": (
-        "Source links for one enactment: the plain-text, PDF and HTML renderings, plus "
-        "how many sections it holds. Use when the user wants to read or cite the Act "
-        "itself rather than a matched section."
-    ),
     "get_corresponding_provisions": (
-        "Map a repealed Indian criminal code to the 2023 code that replaced it, section "
-        "by section: IPC to BNS and CrPC to BNSS, in force from 1 July 2024. Pass either "
-        "side ('ipc' or 'bns' both work). Use whenever a source, a pleading or the user "
-        "cites an old section number, so you answer under the provision actually in force "
-        "rather than the repealed one. 'iea'/'bsa' return 404 until that mapping lands."
+        "Map a repealed Indian criminal code to the 2023 code that replaced "
+        "it, section by section: IPC to BNS and CrPC to BNSS, in force from 1 "
+        "July 2024. Pass either side ('ipc' or 'bns' both work). Use whenever "
+        "a source or the user cites an old section number, so you answer "
+        "under the provision in force. Pass section (repealed code, e.g. 302) "
+        "and/or newSection (successor, e.g. 103) for one row, not the whole "
+        "table. 'iea'/'bsa' return 404 until that mapping lands."
     ),
     "get_act_amendments": (
         "The amendment history recorded against one enactment: substitutions, insertions "
@@ -463,6 +449,143 @@ TOOL_DESCRIPTIONS: dict[str, str] = {
         "(e.g. 'Subs. by Act 22 of 2023, s. 44 (w.e.f. 13-11-2025)'). Use to check "
         "whether a provision still reads as enacted before relying on its text. An empty "
         "list means no amendment was recorded, NOT that the Act was never amended."
+    ),
+    # --- India: case law and tribunals; acts versions and feed ---------------
+    "get_act_versions": (
+        "Every recorded state of an act's text, oldest first, with the one "
+        "served today marked isCurrent. Use for the wording as it stood "
+        "earlier: pass a versionId as version to get_act_section or "
+        "get_act_section_body. observedFrom and observedTo are when the "
+        "weekly corpus sync observed the text, NOT legal effective dates; use "
+        "get_act_amendments for those. For change events use get_changes with "
+        "actId. An act with no recorded history returns one version with "
+        "source initial. "
+    ),
+    "get_changes": (
+        "The act-level change feed of the weekly corpus sync, oldest first: "
+        "acts newly loaded, text replaced, or amendment record updated, each "
+        "with its versionId after the change. Use to see what moved since a "
+        "date (since, YYYY-MM-DD) or to keep a copy current: pass the last "
+        "nextCursor back unchanged. Pass actId for one act's events (its "
+        "stored versions are get_act_versions). Dates are when the sync "
+        "observed the change, not legal effective dates. Acts only: no case "
+        "law or tribunal changes. "
+    ),
+    "search_india_cases": (
+        "Search Supreme Court and High Court judgments by meaning and by words. "
+        "Use for a legal point, a statute or an issue, narrowed by court, "
+        "courtType and decision dates; for a known citation use "
+        "resolve_india_case instead. Each result is one judgment with its "
+        "best-matching passage as snippet: read it with get_india_case_body. "
+        "The query is matched as given, with no mapping between old and new "
+        "statute names, so try both (IPC and BNS). One query pages to at most "
+        "200 results. "
+    ),
+    "list_india_cases": (
+        "Browse judgments by court and decision date with no query, newest "
+        "first (order decided_asc for oldest first). Use to see what a court "
+        "decided in a window, or to walk a court's judgments. Only judgments "
+        "with full text and a known court and decision date are listed. Paged "
+        "by cursor with no total: follow meta.nextCursor while meta.hasMore is "
+        "true. For a topic use search_india_cases; for one known case use "
+        "resolve_india_case. "
+    ),
+    "resolve_india_case": (
+        "Turn a case id (2020_INSC_548), a Supreme Court neutral citation (2020 "
+        "INSC 548), an SCR citation ([1982] 2 S.C.R. 186) or a case number "
+        "within a court into the judgment it names. Exact matches only. SCC, "
+        "AIR and SCC OnLine citations are refused, not searched: use "
+        "search_india_cases for those. Give either citation or caseNumber with "
+        "court. Read status before case: found, ambiguous (case numbers repeat "
+        "across case types, so choose from candidates) or not_found. "
+    ),
+    "resolve_india_cases_batch": (
+        "Resolve up to 100 distinct case citations or case numbers in one call, "
+        "by the same rules as resolve_india_case. Use instead of looping. Each "
+        "input is {citation} or {caseNumber, court}. An unsupported or invalid "
+        "input is answered in its own slot without failing the others, and "
+        "repeats are folded into one. Read each result's status: found, "
+        "ambiguous or not_found. "
+    ),
+    "get_india_case_detail": (
+        "The case-level record of one judgment: title, court, decision date, "
+        "case number, reporter citations, bench, disposition and parties. Use "
+        "after search_india_cases or resolve_india_case to confirm which "
+        "judgment you hold before reading it with get_india_case_body. "
+        "decisionDate is null when the stored date is missing or implausible: "
+        "read dateQuality. reportedYear is the year of the reporter volume and "
+        "can differ from the decision year. The archived source file is not "
+        "served by this server. "
+    ),
+    "get_india_case_body": (
+        "The judgment's full text, stitched from its stored passages with the "
+        "overlap between passages shown once. Use when reading, quoting or "
+        "analysing a judgment found through search_india_cases, "
+        "list_india_cases or resolve_india_case. Check complete: when false the "
+        "text is returned with missingChunkIndexes listing the gaps. "
+        "include=segments adds the offset of each passage in text. Judgments "
+        "can be very long. "
+    ),
+    "get_india_similar_cases": (
+        "Judgments whose text is semantically closest to a given judgment, best "
+        "first, never including itself. Use to extend research from one good "
+        "judgment to its neighbours, narrowed by court, courtType and decision "
+        "dates. Similarity is of meaning only: it does not say that one "
+        "judgment relies on, follows or departs from another, and this is not a "
+        "citator. meta.partial true means one source failed and the list may be "
+        "missing judgments. "
+    ),
+    "list_india_courts": (
+        "The court registry: every courtId you can pass as court, with its "
+        "name, type (supreme_court or high_court), state, the raw court strings "
+        "that mean it (aliases) and its judgment count. Free. Call it before "
+        "filtering case law by court, so a query uses an id that exists. A "
+        "court with no count has not been measured, which is not the same as "
+        "holding nothing. "
+    ),
+    "list_india_tribunal_forums": (
+        "The fifteen forums whose matters are held (NCLT, ITAT, CAT, DRT, APTEL "
+        "and others), each with its record count and document coverage. Free. "
+        "Call it first: it carries the code every other tribunal tool takes. "
+        "Four of the fifteen are regulators or boards, not tribunals: forumType "
+        "says which. hasOrderList says whether a forum keeps an order list. "
+        "files is per forum because document coverage differs widely. "
+    ),
+    "list_india_tribunal_matters": (
+        "Browse tribunal, regulator and board matters by forum, bench, year, "
+        "decision date or exact case number, newest decision first, with no "
+        "search term. Use when you hold a case number or want one forum's "
+        "matters; to find a matter by party or title use "
+        "search_india_tribunal_matters. These are case records: the corpus "
+        "holds no judgment text. Paged by cursor with no total. decisionDate "
+        "can be withheld: read dateQuality. "
+    ),
+    "search_india_tribunal_matters": (
+        "Find matters whose title, petitioner or respondent contains a term, "
+        "with the same filters as list_india_tribunal_matters. This searches "
+        "metadata, NOT judgment text: a miss does not show that a document is "
+        "silent on your point, and searchScope and searchedFields in the "
+        "response state what was matched. The case number is not searched: use "
+        "list_india_tribunal_matters with caseNumber for an exact number. Paged "
+        "by cursor. "
+    ),
+    "get_india_tribunal_matter": (
+        "Everything held about one matter, identified by the pair (tribunal, "
+        "caseId) exactly as a list or search returned them: title, parties, "
+        "bench, members, case number, decision date and its quality, document "
+        "availability and the order list where the forum has one. This is the "
+        "authority on decisionDate, which can differ from a list row's: read "
+        "dateQuality and dateBasis. A record of what a forum published, not a "
+        "citator: it says nothing about whether the matter is still good law. "
+    ),
+    "list_india_tribunal_matter_orders": (
+        "The individual orders a forum recorded against one matter, newest "
+        "first. Only a few forums keep an order list (hasOrderList in "
+        "list_india_tribunal_forums says which); for the rest status is "
+        "not_applicable with an empty list, which is an answer, not an error. "
+        "Read status before orders: listed (the list, possibly empty), "
+        "not_applicable, or unjoinable (the key to find orders is missing, so "
+        "whether orders exist is unknown, never none). "
     ),
     # --- US: batch citation resolution ---------------------------------------
     "resolve_statute_citations_batch": (
@@ -694,7 +817,7 @@ _US_ACT_ID = (
 )
 _IN_ACT_ID = (
     "India act identifier, e.g. `IND_central_20062` (the Bharatiya Nyaya Sanhita, "
-    "2023). Take it from search, /acts/list or /acts/resolve. An act name or "
+    "2023). Take it from search_acts, list_acts or resolve_india_citation. An act name or "
     "citation (`IPC`, `The Companies Act, 2013`) is not an id: it returns 404 with "
     "`suggestedRequest`, the call that finds the id."
 )
@@ -713,19 +836,102 @@ IN_ACT_ID_TOOLS: tuple[str, ...] = (
     "get_act_amendments",
     "get_act_section",
     "get_act_section_body",
-    "get_act_status",
     "get_act_structure",
-    "get_act_text",
-    "get_section_history",
+    "get_act_versions",
     "india_act_cited_by",
     "india_act_definitions",
+    "india_act_record",
     "india_act_subordinate",
-    "india_section_references",
 )
 
 PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     **{(tool, "act_id"): _US_ACT_ID for tool in US_ACT_ID_TOOLS},
     **{(tool, "act_id"): _IN_ACT_ID for tool in IN_ACT_ID_TOOLS},
+    # --- India case law and tribunals: parameter text in tool names, not REST routes ---
+    **{
+        (tool, "version"): (
+            "A versionId from get_act_versions, to read this provision as it stood in that "
+            "stored version. Omit for the current text. The response carries a `version` "
+            "block whose dates are when the corpus sync observed the text, not legal "
+            "effective dates."
+        )
+        for tool in ("get_act_section", "get_act_section_body")
+    },
+    **{
+        (tool, "court"): (
+            "Restrict to one or more courts by courtId, repeated as `court=a&court=b`, at "
+            "most 10. Take ids from list_india_courts. An unknown id is refused with a 422 "
+            "and is not charged."
+        )
+        for tool in ("list_india_cases", "search_india_cases", "get_india_similar_cases")
+    },
+    **{
+        (tool, "caseId"): (
+            "The judgment's corpus id, e.g. `2020_INSC_548`, as search_india_cases, "
+            "list_india_cases or resolve_india_case returns it."
+        )
+        for tool in ("get_india_case_body", "get_india_case_detail", "get_india_similar_cases")
+    },
+    **{
+        (tool, "tribunal"): "The forum's `code`, from list_india_tribunal_forums."
+        for tool in ("get_india_tribunal_matter", "list_india_tribunal_matter_orders")
+    },
+    **{
+        (tool, "caseId"): (
+            "The matter's id within its forum, exactly as a list or search returned it, "
+            "prefix included. The prefix is never parsed to infer the forum: pass "
+            "`tribunal` separately."
+        )
+        for tool in ("get_india_tribunal_matter", "list_india_tribunal_matter_orders")
+    },
+    # `tribunal` became REQUIRED on search (and on list whenever caseNumber is sent) in the
+    # 2026-11-27 audit: unscoped, both queries timed out or 503'd, so the backend refuses them
+    # up front with a free 400. Say so here, or a model omits it and spends a turn on the 400.
+    ("list_india_tribunal_matters", "tribunal"): (
+        "Narrow to one forum by its `code` from list_india_tribunal_forums. Required "
+        "whenever caseNumber is sent: an unscoped case-number lookup is refused, free. An "
+        "unknown code is refused and is not charged."
+    ),
+    ("search_india_tribunal_matters", "tribunal"): (
+        "REQUIRED. The forum to search, by its `code` from list_india_tribunal_forums: a "
+        "search across every forum is refused, free. To cover several forums, search each. "
+        "An unknown code is refused and is not charged."
+    ),
+    **{
+        (tool, "year"): (
+            "The decision year as stored. Some matters carry a year but no decisionDate "
+            "(mostly APTEL and CAT), so a year filter can return rows with no date: read "
+            "dateQuality on each matter."
+        )
+        for tool in ("list_india_tribunal_matters", "search_india_tribunal_matters")
+    },
+    **{
+        (tool, "bench"): (
+            "The bench or seat, matched exactly as the forum spells it, usually a slug such "
+            "as `nclt_ahmedabad` or `cat_cis_guwahati` (DRT and DRAT use `DRAT Allahabad`). "
+            "Copy the value from a matter's `bench`: there is no list of benches and a "
+            "composed name matches nothing. On NCLT the stored bench often names a different "
+            "city from the one in caseNumber: check caseNumber before relying on it."
+        )
+        for tool in ("list_india_tribunal_matters", "search_india_tribunal_matters")
+    },
+    **{
+        (tool, "isJudgment"): (
+            "Narrow to judgments (`true`) or to everything else (`false`). Read per forum: "
+            "`false` is a case listing with no document in some forums and an order sheet "
+            "in others (see `files` in list_india_tribunal_forums)."
+        )
+        for tool in ("list_india_tribunal_matters", "search_india_tribunal_matters")
+    },
+    ("list_india_tribunal_matters", "caseNumber"): (
+        "The forum's own case number, matched exactly. Copy it from a matter rather than "
+        "retyping: forums punctuate differently (`O.A./796/2024`, `C.P. (IB)/46/BEN/2019`, "
+        "`ITA 1073/DEL/2014`). Not a text search: use search_india_tribunal_matters for words."
+    ),
+    ("search_india_tribunal_matters", "q"): (
+        "The term to match against title, petitioner and respondent only. The corpus holds "
+        "no judgment text, so a miss does not show that a document is silent on it."
+    ),
     # US case law, added 2026-11-21. Only the parameters whose inherited text says too
     # little for a model to use them well; the rest keep the API's own short prose.
     ("search_us_cases", "query"): (
@@ -836,7 +1042,9 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ("list_acts", "department"): (
         "Accepts both regulator slugs such as `sebi` and `rbi` and "
         "free-text state department names such as `Law Department`. Values "
-        "are not limited to a fixed enum or a uniform slug format."
+        "are not limited to a fixed enum or a uniform slug format. "
+        "get_coverage with include filters lists the values with the most data "
+        "behind them."
     ),
     ("list_statute_divisions", "excludeRepealed"): (
         "Only sections with an affirmatively dead status, including "
@@ -853,7 +1061,9 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ("search_acts", "department"): (
         "Accepts both regulator slugs such as `sebi` and `rbi` and "
         "free-text state department names such as `Law Department`. Values "
-        "are not limited to a fixed enum or a uniform slug format."
+        "are not limited to a fixed enum or a uniform slug format. "
+        "get_coverage with include filters lists the values with the most data "
+        "behind them."
     ),
     ("search_acts", "legalSubject"): (
         "Accepts one value or a list, matched against subject "
@@ -866,6 +1076,59 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
         "filters first when you need exhaustive phrase results. Defaults to "
         "`any`."
     ),
+    # --- Added 2026-11-27, with the India act-record consolidation -------------
+    # The backend folded five routes into the ones below (the old routes are
+    # deprecated and are not tools), and rewrote several descriptions past the
+    # 260-character budget. Tool names, never routes: a model calls tools.
+    ("get_act_section", "include"): (
+        "`history`, `references` or both, comma-separated. Adds "
+        "`section.history` (the first 100 recorded amendment events, with an "
+        "exact `total` and `hasMore`) and `section.references` (acts and "
+        "sections cited), at no extra charge. Not allowed with `version`."
+    ),
+    ("get_changes", "actId"): (
+        "Only this act's change events, from an id returned as `actId` on a "
+        "row or by resolve_india_citation. Order and paging are unchanged and "
+        "`withdrawnCandidates` is empty. An id with no row in the window gives "
+        "an empty page and a `note`, not an error."
+    ),
+    ("get_coverage", "include"): (
+        "`filters` adds `data.filters`: the category, state and department "
+        "values (with counts) that search_acts and list_acts accept, with "
+        "`truncated` naming any partial list. Comma-separated. Omit for the "
+        "census alone."
+    ),
+    ("get_corresponding_provisions", "newSection"): (
+        "A section of the SUCCESSOR code, e.g. `103` for the BNS or `482` for "
+        "the BNSS. An unbracketed value also matches its sub-provisions (`103` "
+        "returns `103(1)` and `103(2)`); `103(1)` returns only itself. Combine "
+        "with `section` to require both. A filter that matches nothing "
+        "returns an empty list with a note, not a 404."
+    ),
+    **{
+        (tool, "state"): (
+            "Jurisdiction slug. `central` means Union legislation: every act "
+            "whose category is `central` plus the regulator instruments filed "
+            "under state `central`, so the union of the two, not a subset. "
+            "Counts per jurisdiction: get_coverage."
+        )
+        for tool in ("list_acts", "search_acts")
+    },
+    ("list_acts", "sort"): (
+        "`year_desc`, `year_asc`, `title_asc` or `title_desc`. `popular` is "
+        "deprecated and behaves as `year_desc`. Acts whose publisher year is "
+        "implausible (before 1700) sort last in either year order."
+    ),
+    **{
+        (tool, "asAtDate"): (
+            "YYYY-MM-DD the conduct or document belongs to; it picks a side of "
+            "the 2023 recodification. Without it a criminal section number "
+            "resolves to both the old code and its replacement. Before "
+            "2024-07-01 the old code answers (IPC, CrPC, Evidence Act); from "
+            "that date the new one (BNS, BNSS, BSA)."
+        )
+        for tool in ("resolve_india_citation", "resolve_india_citations_batch")
+    },
     # Three parameters the API added in early September 2026 that had no curated
     # entry, found 2026-09-03 when the OpenAPI fixtures were regenerated: their
     # inherited prose was 865 + 656 + 1,147 = 2,668 characters riding in every
@@ -997,8 +1260,6 @@ PARAM_DESCRIPTIONS_BY_TOOL: dict[tuple[str, str], str] = {
     ),
     ("get_act_section", "section_number"): _IN_SECTION_NUMBER,
     ("get_act_section_body", "section_number"): _IN_SECTION_NUMBER,
-    ("get_section_history", "section_number"): _IN_SECTION_NUMBER,
-    ("india_section_references", "section_number"): _IN_SECTION_NUMBER,
     ("search_us_statutes", "includeBody"): (
         "Return each hit's full text inline on `body`, instead of one "
         "`/section/{actId}/body` call per hit. Buys latency, not a discount: the "
@@ -1504,8 +1765,6 @@ TOOL_TITLES: dict[str, str] = {
     "fetch_in": "Fetch Indian Enactment",
     "search_acts": "Search Indian Acts",
     "list_acts": "Browse Indian Acts",
-    "list_act_filters": "Act Filter Values",
-    "get_act_text": "Act Text",
     "get_act_amendments": "Act Amendment History",
     "get_corresponding_provisions": "IPC/CrPC to BNS/BNSS Mapping",
     "get_coverage": "India Corpus Coverage",
@@ -1514,14 +1773,27 @@ TOOL_TITLES: dict[str, str] = {
     "get_act_structure": "Act Table of Contents",
     "get_act_section": "Act Section Metadata",
     "get_act_section_body": "Act Section Text",
-    "get_act_status": "Act Status and Repeal Record",
-    "get_section_history": "Section Amendment History",
-    "india_section_references": "Citations From a Section",
+    "india_act_record": "Act Record and Status",
     "india_act_cited_by": "Acts Citing This One",
     "india_act_definitions": "Defined Terms in an Act",
     "india_act_subordinate": "Rules Made Under an Act",
     "resolve_india_citation": "Resolve Indian Citation",
     "resolve_india_citations_batch": "Resolve Indian Citations (Batch)",
+    "get_act_versions": "Act Version History",
+    "get_changes": "Act Change Feed",
+    "search_india_cases": "Search Indian Case Law",
+    "list_india_cases": "Browse Indian Judgments",
+    "resolve_india_case": "Resolve Indian Case Citation",
+    "resolve_india_cases_batch": "Resolve Indian Case Citations (Batch)",
+    "get_india_case_detail": "Judgment Record",
+    "get_india_case_body": "Judgment Text",
+    "get_india_similar_cases": "Similar Judgments",
+    "list_india_courts": "Indian Courts",
+    "list_india_tribunal_forums": "Tribunal Forums",
+    "list_india_tribunal_matters": "Browse Tribunal Matters",
+    "search_india_tribunal_matters": "Search Tribunal Matters",
+    "get_india_tribunal_matter": "Tribunal Matter Record",
+    "list_india_tribunal_matter_orders": "Tribunal Matter Orders",
     # --- India: regulatory publications (regulatory.py) ----------------------
     # Titled here like the aliases, DESCRIBED in regulatory.py, because these
     # five are declared rather than derived from an OpenAPI document and

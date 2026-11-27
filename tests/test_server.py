@@ -352,10 +352,43 @@ class TestRouteExclusion:
         ):
             assert not is_excluded_route("GET", path), path
 
-    def test_no_india_route_is_excluded(self) -> None:
+    def test_only_the_deliberate_india_routes_are_excluded(self) -> None:
+        """Translation and regulatory publications are not on the India origin, and the
+        three file routes return application/pdf through a JSON-only tool path. Nothing
+        else in the India document may be dropped, which is what this used to assert
+        for the whole document before those exclusions existed."""
         routes = self._routes("IN")
         assert routes
-        assert not {r for r in routes if is_excluded_route(*r)}
+        excluded = {r for r in routes if is_excluded_route(*r)}
+        deliberate = {
+            r
+            for r in routes
+            if r[1].startswith(("/api/v1/in/translation", "/api/v1/in/reg"))
+            or r[1].endswith("/file")
+        }
+        assert excluded == deliberate, sorted(excluded ^ deliberate)
+        # Anti-vacuous: the live document is what makes these non-empty.
+        files = {p for _, p in excluded if p.endswith("/file") and "/in/reg/" not in p}
+        assert files == {
+            "/api/v1/in/cases/{caseId}/file",
+            "/api/v1/in/tribunals/matters/{tribunal}/{caseId}/file",
+            "/api/v1/in/tribunals/matters/{tribunal}/{caseId}/orders/{index}/file",
+        }, sorted(files)
+        assert any(p.startswith("/api/v1/in/translation") for _, p in excluded)
+        assert any(p.startswith("/api/v1/in/reg") for _, p in excluded)
+
+    def test_the_india_file_routes_are_not_tools_and_their_neighbours_are(self) -> None:
+        """A PDF body through fastmcp's OpenAPITool raises UnicodeDecodeError, which its
+        `except json.JSONDecodeError` does not catch, after the route has charged."""
+        names = _india_tool_names()
+        for gone in (
+            "get_india_case_file",
+            "get_india_tribunal_matter_file",
+            "get_india_tribunal_order_file",
+        ):
+            assert gone not in names, gone
+        for kept in ("get_india_case_body", "get_india_case_detail", "list_india_tribunal_matter_orders"):
+            assert kept in names, kept
 
     def test_exclusions_are_anchored(self) -> None:
         """A route that merely contains the word must survive."""

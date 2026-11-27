@@ -293,13 +293,14 @@ If no mapping exists, say so rather than assuming the numbering carried over."""
         return f"""\
 Answer this question against the Vaquill India corpus: **{question}**
 
-1. Read `vaquill://in/filters` (or call `list_act_filters`) before using any
-   category, state or department filter. A plausible value that is not in the
+1. Read `vaquill://in/filters` (or call `get_coverage` with `include` set to
+   `filters`) before using any category, state or department filter. A plausible value that is not in the
    vocabulary returns empty, which reads like a corpus gap.
-2. `search_acts` for the provision. Use `phrase` matching for a defined term.
+2. `search_acts` for the provision. Use `phrase` matching for a defined term,
+   and `get_act_section_body` for the exact wording to quote.
 3. `get_act_amendments` on the enactment behind your best hit, to check the
    provision still reads as enacted.
-4. `get_act_text` for the publisher's own PDF/HTML links to cite.
+4. `india_act_record` for the publisher's own PDF/HTML links to cite.
 
 If the question touches criminal law and any source cites IPC or CrPC section
 numbers, run `get_corresponding_provisions` first and answer under the BNS/BNSS
@@ -307,6 +308,41 @@ provision in force since 1 July 2024.
 
 State that an empty amendment list means none was RECORDED, not that the Act was
 never amended. Cite the section and the publisher's `sourceUrl`."""
+
+    @mcp.prompt(
+        name="indian_case_law_research",
+        description=(
+            "Research Indian case law on a point, read the judgments and say what "
+            "the corpus can and cannot show."
+        ),
+    )
+    def indian_case_law_research(question: str) -> str:
+        question = _line("question", question, limit=600)
+        return f"""\
+Research this against the Vaquill India case-law corpus: **{question}**
+
+1. If the user names a case, resolve it first: `resolve_india_case` takes a case
+   id, a Supreme Court neutral citation (`2020 INSC 548`), an SCR citation or a
+   case number with its court. SCC, AIR and SCC OnLine citations are refused, so
+   search for those instead.
+2. Otherwise `search_india_cases`, narrowed with `court`, `courtType` and decision
+   dates (`list_india_courts` gives the court ids). Matching is by meaning and
+   words with no mapping between old and new statute names, so search both
+   (IPC and BNS) when a criminal provision is involved.
+3. `get_india_case_detail` to confirm which judgment each hit is, then
+   `get_india_case_body` for the text (check `complete`). Quote from the text,
+   not from the search snippet.
+4. `get_india_similar_cases` to widen from the best judgment. Similarity is of
+   meaning only, so do not describe a neighbour as following or overruling it.
+
+For a matter before a tribunal, regulator or board use
+`list_india_tribunal_forums` for the forum `code`, then
+`search_india_tribunal_matters` or `list_india_tribunal_matters`. Those are
+records of matters with no judgment text, and search covers title and party
+names only.
+
+This corpus is not a citator: say so rather than calling a judgment good law.
+Cite the court, decision date and case id."""
 
 
 _REGISTRARS = {"US": _register_us, "IN": _register_in}

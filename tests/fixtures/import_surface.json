@@ -312,7 +312,8 @@
       "register_aliases",
       "register_prompts",
       "register_resources",
-      "square_icon"
+      "square_icon",
+      "without_deprecated_operations"
     ]
   },
   "remote_main": {
@@ -423,6 +424,7 @@
       "get_timeout",
       "httpx2",
       "instructions_for",
+      "is_deprecated_operation",
       "is_excluded_route",
       "logger",
       "logging",
@@ -433,7 +435,8 @@
       "register_prompts",
       "register_resources",
       "slim_input_schema",
-      "time"
+      "time",
+      "without_deprecated_operations"
     ]
   }
 }

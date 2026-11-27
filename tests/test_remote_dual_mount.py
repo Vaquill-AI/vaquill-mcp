@@ -185,7 +185,15 @@ async def test_the_hosted_us_app_publishes_no_alert_tools(_live_india: None) -> 
     # `test_us_case_law_tools.CASE_TOOLS`. Several case-law routes are deliberately
     # not tools (see `_ROUTE_MAPS`).
     assert len(us) == 52, sorted(us)
-    assert len(india) == 22, sorted(india)
+    # 37 since 2026-11-27: 22, plus the fifteen case-law, tribunal and act-version tools the
+    # committed India fixture predated (it was 19 paths from 2026-11-10 against 49 live), less
+    # the three file routes, which return PDF through a JSON-only tool path. Translation and
+    # regulatory routes are in the live document and excluded.
+    # 33 since 2026-11-27 (later the same day): 37, less five operations the backend deprecated
+    # (act status, act text, act filters, section history, section references: dropped by
+    # `without_deprecated_operations`), plus `india_act_record`, the one route that replaced the
+    # first two, with the other three folded into `get_act_section` and `get_coverage` params.
+    assert len(india) == 33, sorted(india)
 
 
 async def test_every_mounted_app_sorts_and_annotates(_live_india: None) -> None:

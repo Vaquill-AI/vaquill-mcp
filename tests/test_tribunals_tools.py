@@ -161,7 +161,19 @@ async def test_every_parameter_publishes_a_description() -> None:
 async def test_no_tool_or_parameter_name_collides_with_the_global_registries() -> None:
     """`PARAM_DESCRIPTIONS` is a bare-parameter-name fallback and is global, so a collision
     would silently give a tribunals parameter another corpus's text."""
-    assert not (set(TOOL_NAMES) & {tool for tool, _param in PARAM_DESCRIPTIONS_BY_TOOL})
+    # The India origin publishes four of these tools from the OpenAPI document and curates their
+    # parameters in PARAM_DESCRIPTIONS_BY_TOOL under the same names. That is harmless only because
+    # `schema_slim` is applied to OpenAPI-derived tools alone: this hand-declared server never
+    # imports it, so no India text can reach a parameter declared here.
+    from tests.test_derived_catalogue import IN
+
+    shared = set(TOOL_NAMES) & {tool for tool, _param in PARAM_DESCRIPTIONS_BY_TOOL}
+    assert shared <= IN, sorted(shared - IN)
+    import inspect
+
+    import vaquill_mcp.tribunals as tribunals_module
+
+    assert "schema_slim" not in inspect.getsource(tribunals_module)
     params: set[str] = set()
     for tool in await _server().list_tools():
         params |= set(tool.parameters.get("properties", {}))
@@ -175,7 +187,15 @@ def test_the_names_are_not_taken_by_another_catalogue() -> None:
     from tests.test_derived_catalogue import IN, US
     from vaquill_mcp.regulatory import TOOL_NAMES as REG
 
-    assert not (set(TOOL_NAMES) & (US | IN | {"search", "fetch"}))
+    assert not (set(TOOL_NAMES) & (US | {"search", "fetch"}))
+    # The India origin serves tribunal matters too (origin.py: "Indian legislation, case law
+    # and tribunals"), derived from the same document, so four of these six names are ALSO
+    # published there for the same routes. That is the same operation under the same name, not
+    # a collision; what must not happen is the same name for a different operation, or the
+    # overlap growing beyond the tribunal tools.
+    shared = set(TOOL_NAMES) & IN
+    assert shared <= {n for n in IN if "_tribunal_" in n}, sorted(shared)
+    assert shared, "no overlap at all: the India origin dropped its tribunal tools"
     assert not (set(TOOL_NAMES) & set(REG))
 
 

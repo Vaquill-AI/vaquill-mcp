@@ -20,6 +20,7 @@ from vaquill_mcp.server import (
     _annotations_for,
     _is_read_only,
     _pricing_endpoint_for_route,
+    is_deprecated_operation,
     is_excluded_route,
 )
 
@@ -29,8 +30,9 @@ _FIXTURES = pathlib.Path(__file__).resolve().parent / "fixtures"
 def _routes(jurisdiction: str) -> list[tuple[str, str, set[str]]]:
     """(method, path, response codes) for every operation the server PUBLISHES.
 
-    Routes `_ROUTE_MAPS` excludes (the law-change alert routes) are in the
-    document but never become tools, so they have nothing to classify.
+    Routes `_ROUTE_MAPS` excludes (the law-change alert routes) and deprecated
+    aliases are in the document but never become tools, so they have nothing to
+    classify.
     """
     spec = json.loads((_FIXTURES / f"openapi_{jurisdiction.lower()}.json").read_text())
     out = []
@@ -40,6 +42,7 @@ def _routes(jurisdiction: str) -> list[tuple[str, str, set[str]]]:
                 isinstance(op, dict)
                 and op.get("operationId")
                 and not is_excluded_route(method, path)
+                and not is_deprecated_operation(op)
             ):
                 out.append((method.upper(), path, set(op.get("responses") or {})))
     return sorted(out)

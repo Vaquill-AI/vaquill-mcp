@@ -75,18 +75,6 @@
       {
         "destructiveHint": false,
         "idempotentHint": null,
-        "name": "get_act_status",
-        "openWorldHint": false,
-        "readOnlyHint": true,
-        "tags": [
-          "Indian Acts and Legislation",
-          "legal-research",
-          "vaquill"
-        ]
-      },
-      {
-        "destructiveHint": false,
-        "idempotentHint": null,
         "name": "get_act_structure",
         "openWorldHint": false,
         "readOnlyHint": true,
@@ -99,7 +87,19 @@
       {
         "destructiveHint": false,
         "idempotentHint": null,
-        "name": "get_act_text",
+        "name": "get_act_versions",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_changes",
         "openWorldHint": false,
         "readOnlyHint": true,
         "tags": [
@@ -135,6 +135,30 @@
       {
         "destructiveHint": false,
         "idempotentHint": null,
+        "name": "get_india_case_body",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_india_case_detail",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
         "name": "get_india_credit_balance",
         "openWorldHint": false,
         "readOnlyHint": true,
@@ -147,11 +171,11 @@
       {
         "destructiveHint": false,
         "idempotentHint": null,
-        "name": "get_pricing_in",
+        "name": "get_india_similar_cases",
         "openWorldHint": false,
         "readOnlyHint": true,
         "tags": [
-          "India Pricing",
+          "Indian Case Law",
           "legal-research",
           "vaquill"
         ]
@@ -159,11 +183,23 @@
       {
         "destructiveHint": false,
         "idempotentHint": null,
-        "name": "get_section_history",
+        "name": "get_india_tribunal_matter",
         "openWorldHint": false,
         "readOnlyHint": true,
         "tags": [
-          "Indian Acts and Legislation",
+          "Indian Tribunal Matters",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "get_pricing_in",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "India Pricing",
           "legal-research",
           "vaquill"
         ]
@@ -195,31 +231,19 @@
       {
         "destructiveHint": false,
         "idempotentHint": null,
+        "name": "india_act_record",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
         "name": "india_act_subordinate",
-        "openWorldHint": false,
-        "readOnlyHint": true,
-        "tags": [
-          "Indian Acts and Legislation",
-          "legal-research",
-          "vaquill"
-        ]
-      },
-      {
-        "destructiveHint": false,
-        "idempotentHint": null,
-        "name": "india_section_references",
-        "openWorldHint": false,
-        "readOnlyHint": true,
-        "tags": [
-          "Indian Acts and Legislation",
-          "legal-research",
-          "vaquill"
-        ]
-      },
-      {
-        "destructiveHint": false,
-        "idempotentHint": null,
-        "name": "list_act_filters",
         "openWorldHint": false,
         "readOnlyHint": true,
         "tags": [
@@ -236,6 +260,90 @@
         "readOnlyHint": true,
         "tags": [
           "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_india_cases",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_india_courts",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_india_tribunal_forums",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Tribunal Matters",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_india_tribunal_matter_orders",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Tribunal Matters",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "list_india_tribunal_matters",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Tribunal Matters",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_india_case",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "resolve_india_cases_batch",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
           "legal-research",
           "vaquill"
         ]
@@ -280,6 +388,30 @@
         "readOnlyHint": true,
         "tags": [
           "Indian Acts and Legislation",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search_india_cases",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Case Law",
+          "legal-research",
+          "vaquill"
+        ]
+      },
+      {
+        "destructiveHint": false,
+        "idempotentHint": null,
+        "name": "search_india_tribunal_matters",
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "tags": [
+          "Indian Tribunal Matters",
           "legal-research",
           "vaquill"
         ]

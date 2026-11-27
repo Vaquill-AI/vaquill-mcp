@@ -154,17 +154,19 @@ DESCRIPTIONS: dict[str, str] = {
     "search_regulatory_documents": (
         "Search Indian regulatory publications: circulars, orders, notices and "
         "press releases from named government regulators. Not case law, statute "
-        "text or commentary. Capture began 2026-08-23, so an empty result for "
-        "an earlier date does not mean nothing was published. Not an in-force "
-        "view. Filters are lists. Pass nextCursor back unchanged while hasMore "
-        "is true. total null means not measured; 0 means none."
+        "text or commentary. Capture began 2026-08-23. Not an in-force view. q "
+        "also matches reference numbers. With q the default order is relevance, "
+        "which returns one page only; to walk every match set sort to published "
+        "or first_seen and pass nextCursor back while hasMore is true. total "
+        "null means not measured; 0 means none."
     ),
     "get_regulatory_document": (
         "One regulatory document by id. Take the id from a search or change "
         "result, never guess one. include body for the extracted text (cheaper "
-        "than the file), diff for what changed between the two most recent "
-        "captures, versions for every capture. Check fileAvailability before "
-        "asking for the file."
+        "than the file; a long filing can run to hundreds of pages), versions "
+        "for every capture, diff for line counts added and removed between the "
+        "two most recent captures and whether the title changed: counts, not "
+        "the changed text. Check fileAvailability before asking for the file."
     ),
     "get_regulatory_document_file": (
         "The archived original of one document, returned as a file, not text; "
@@ -174,11 +176,13 @@ DESCRIPTIONS: dict[str, str] = {
         "retry later. Neither means the regulator did not publish it."
     ),
     "list_regulatory_changes": (
-        "What is new, changed or retracted since a time or cursor. Use it to "
-        "answer what moved since I last looked. The feed follows our capture "
-        "order, not publishedAt, so an older document can appear after a newer "
-        "one: that is correct, do not re-sort. Pass nextCursor back unchanged "
-        "while hasMore is true."
+        "What is new, changed or retracted. Ordered by our capture, not "
+        "publishedAt, so an older document can appear after a newer one: do not "
+        "re-sort. To follow the feed, call once with since and direction "
+        "forward, then send the cursor of the last item you handled with "
+        "direction forward; nextCursor is null at the newest change, so keep "
+        "that item cursor. Without direction the feed reads backwards into "
+        "history. Never combine since with cursor."
     ),
     "get_regulatory_coverage": (
         "What the corpus covers and how fresh each source is. Use it before "
@@ -206,19 +210,22 @@ DESCRIPTIONS: dict[str, str] = {
 }
 
 _PUBLISHER = (
-    "Publisher ids, e.g. ['sebi', 'rbi']. A list of separate values, never "
-    "one comma-joined string."
+    "Publisher ids, lower case, e.g. ['sebi', 'rbi'], as get_regulatory_coverage "
+    "lists them. A list of separate values, never one comma-joined string."
 )
 _SOURCE = (
     "Source ids (a publisher's sub-sources, as get_regulatory_coverage lists "
     "them). A list of separate values, never comma-joined."
 )
-_DOC_TYPE = "Document types as returned in results. A list of separate values."
+_DOC_TYPE = (
+    "Document types as returned in results, or listed by a search with facets "
+    "true. A list of separate values."
+)
 _CURSOR = (
     "Opaque. Pass back exactly the nextCursor of the previous page. Do not "
     "parse, edit or construct one."
 )
-_LIMIT = "Page size, 1 to 100. Omit to use the default."
+_LIMIT = "Page size, 1 to 100. Omit for the default of 25."
 _DATE = "ISO date, YYYY-MM-DD, as the publisher dated it."
 
 _Items = Annotated[str, Field(min_length=1, max_length=64)]
@@ -355,14 +362,18 @@ def classify_failure(
     ref = _request_id(response, body)
     incident = f" Incident reference: {ref}." if ref else ""
 
-    if status == 400:
+    if status in (400, 422):
+        # 422 is the backend's answer to a publisherId or sourceId it does not
+        # know ("SEBI" for "sebi"). Read as a fault it told the model the corpus
+        # was down and invited a retry of the same wrong id.
         shown = _safe_message(response, message)
+        hint = " Valid ids come from get_regulatory_coverage." if status == 422 else ""
         return RegulatoryToolError(
             "invalid_request",
-            f"{shown} Fix the parameter and call again."
+            f"{shown} Fix the parameter and call again.{hint}"
             if shown
-            else "The request was not accepted. Check the parameters and call again.",
-            status=400,
+            else f"The request was not accepted. Check the parameters and call again.{hint}",
+            status=status,
         )
     if status == 404:
         if is_file and code == "content_not_archived":
@@ -419,12 +430,30 @@ def classify_failure(
             status=502,
             retryable=True,
         )
+    if status == 502 and code == "upstream_response_too_large":
+        # The same document is too large on every attempt, so a retry only
+        # spends another credit.
+        return RegulatoryToolError(
+            "response_too_large",
+            "This response is larger than the service relays. Do not retry. For a "
+            "file, give the user the document's publisherFileUrl instead.",
+            status=502,
+        )
     if status == 502:
         return RegulatoryToolError(
             "bad_upstream_response",
             f"The corpus returned an unusable response. {_DO_NOT_ANSWER}{incident}",
             status=502,
             retryable=True,
+        )
+    if 400 <= status < 500 and status not in (408, 425):
+        # Any other 4xx is the request, not the service: retrying it unchanged
+        # cannot change the answer.
+        return RegulatoryToolError(
+            "request_refused",
+            f"The service refused this request (HTTP {status}). Do not retry it "
+            f"unchanged. {_DO_NOT_ANSWER}{incident}",
+            status=status,
         )
     return RegulatoryToolError(
         "upstream_unavailable",
@@ -703,9 +732,27 @@ def register_regulatory_tools(
         ] = None,
         publishedFrom: Annotated[_Day | None, Field(description=_DATE)] = None,
         publishedTo: Annotated[_Day | None, Field(description=_DATE)] = None,
+        firstSeenFrom: Annotated[
+            _Day | None,
+            Field(
+                description=(
+                    "ISO date, YYYY-MM-DD: only documents that entered our corpus on "
+                    "or after it. Use this, not publishedFrom, for what is new to us."
+                )
+            ),
+        ] = None,
+        hasBody: Annotated[
+            bool | None,
+            Field(description="True for documents with extracted text, false for those without."),
+        ] = None,
         sort: Annotated[
             Literal["relevance", "published", "first_seen"] | None,
-            Field(description="Order of results. Omit for the default."),
+            Field(
+                description=(
+                    "Order of results. Default: relevance when q is given (one page, "
+                    "no cursor), published otherwise. relevance requires q."
+                )
+            ),
         ] = None,
         facets: Annotated[
             bool | None,
@@ -728,6 +775,8 @@ def register_regulatory_tools(
                 id=id,
                 publishedFrom=publishedFrom,
                 publishedTo=publishedTo,
+                firstSeenFrom=firstSeenFrom,
+                hasBody=hasBody,
                 sort=sort,
                 facets=facets,
                 limit=limit,
@@ -794,7 +843,18 @@ def register_regulatory_tools(
             Field(
                 min_length=1,
                 max_length=40,
-                description="ISO date or timestamp. Omit to continue from a cursor.",
+                description=(
+                    "ISO date or timestamp, for a first call only. Never combine with cursor."
+                ),
+            ),
+        ] = None,
+        direction: Annotated[
+            Literal["forward", "backward"] | None,
+            Field(
+                description=(
+                    "forward reads from the cursor or since toward the newest change; "
+                    "backward (the default) reads into history. Use forward to follow the feed."
+                )
             ),
         ] = None,
         publisherId: Annotated[list[_Items] | None, Field(description=_PUBLISHER)] = None,
@@ -819,6 +879,7 @@ def register_regulatory_tools(
                 sourceId=sourceId,
                 docType=docType,
                 changeKind=changeKind,
+                direction=direction,
                 limit=limit,
                 cursor=cursor,
             ),

@@ -662,6 +662,10 @@ _ROWS = [
     (502, {"x-request-id": "req-abc123"}, _envelope("bad_upstream_response"), "bad_upstream_response", True, "Incident reference: req-abc123"),
     (500, {}, "<html>boom</html>", "upstream_unavailable", True, "do not answer from memory"),
     (302, {"location": f"https://tracker-web.internal/{_STORAGE_KEY}"}, "", "upstream_unavailable", True, "temporarily unreachable"),
+    # The backend's answer to an unknown publisherId: the request, not the service.
+    (422, {}, _envelope("invalid_request", 'publisherId: "SEBI" is not a known publisher. GET /sources lists every valid value.'), "invalid_request", False, "Valid ids come from get_regulatory_coverage"),
+    (405, {}, _envelope("method_not_allowed"), "request_refused", False, "Do not retry it unchanged"),
+    (502, {}, _envelope("upstream_response_too_large"), "response_too_large", False, "publisherFileUrl"),
 ]
 
 
@@ -915,3 +919,18 @@ def test_the_flattener_is_what_makes_that_true_on_310() -> None:
     # Already flat: nothing to do, and it must say so rather than re-wrap.
     flat = {"properties": {"p": {"anyOf": [{"type": "string"}, {"type": "null"}], "description": "D"}}}
     assert regulatory._flatten_optional(flat) is False
+
+
+async def test_first_seen_has_body_and_direction_reach_the_wire(respx_mock) -> None:
+    """The three parameters a law-firm workflow needs most ("new to us since",
+    "only with text", "follow the feed") were missing; pin that they are sent."""
+    docs = _route(respx_mock, "/documents", httpx.Response(200, json={"items": []}))
+    await _server().call_tool(
+        "search_regulatory_documents", {"firstSeenFrom": "2026-11-20", "hasBody": False}
+    )
+    assert ("firstSeenFrom", "2026-11-20") in _pairs(docs)
+    assert ("hasBody", "false") in _pairs(docs)
+
+    feed = _route(respx_mock, "/changes", httpx.Response(200, json={"items": []}))
+    await _server().call_tool("list_regulatory_changes", {"cursor": "abc", "direction": "forward"})
+    assert ("direction", "forward") in _pairs(feed)

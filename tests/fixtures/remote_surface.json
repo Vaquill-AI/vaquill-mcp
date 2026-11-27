@@ -22,10 +22,10 @@
       }
     ],
     "pricedDescriptions": {
-      "get_act_section_body": "The publisher's full text for one provision, taken directly from the act document without synthesized search headers. Use when reading, quoting or citing the provision's wording rather than its metadata. Amendments are not applied to this text. Check get_section_history for recorded changes before treating the wording as current law.  Cost: 1 credit (first 10 sections), 3 credits (full act).",
-      "get_coverage": "India corpus counts for acts and provisions, broken down by jurisdiction, regulator and status, plus coverage depth. Use when checking whether the corpus supports a question before searching or interpreting an empty result. The depth block distinguishes text coverage from much thinner parsed amendment coverage. actsClaimingAmendmentsWithoutEvents marks missing records, not an absence of amendments.  Free.",
+      "get_act_section_body": "The publisher's full text for one provision, taken directly from the act document without synthesized search headers. Use when reading, quoting or citing the provision's wording rather than its metadata. Amendments are not applied to this text: check get_act_section with include history for recorded changes before treating the wording as current law. For earlier wording pass version (a versionId from get_act_versions); its dates are corpus observation dates, not legal effective dates.  Cost: 1 credit (first 10 sections), 3 credits (full act).",
+      "get_coverage": "India corpus counts for acts and provisions by jurisdiction, regulator and status, plus coverage depth. Use to check whether the corpus supports a question before searching, or to read an empty result. The depth block separates text coverage from much thinner parsed amendment coverage; actsClaimingAmendmentsWithoutEvents marks missing records, not an absence of amendments. Pass include filters for data.filters, the category, state and department values search_acts and list_acts accept.  Free.",
       "get_india_credit_balance": "The account-wide spendable credit balance shared by the India and United States APIs. Use for pre-flight checks or low-balance alerts from an India workflow. This returns the same balance as get_credit_balance, not a separate India allowance. Check bySource before assuming credits will last. Subscription credits expire at the period end.  Free.",
-      "search_acts": "Search Indian legislation down to the individual section: Central and State Acts plus the instruments of the principal regulators (SEBI, RBI, MCA, IRDAI, TRAI, DGFT). Use for any 'what does Indian law say' question. Supports boolean and phrase queries; filters by category, state, year and status. Returns sections with title, chapter and a sourceUrl pointing at the publisher's own document. The returned actId (e.g. 'IND_central_2065') feeds every acts tool. Cost: 2 credits."
+      "search_acts": "Search Indian legislation down to the individual section: Central and State Acts and the statutory instruments made under them, including those of regulators such as SEBI and RBI. Circulars, orders and press releases are a separate corpus and are not searched here. Supports boolean and phrase queries; filters by category, state, year and status. pageSize is at most 50 and page times pageSize at most 100: narrow with filters to go deeper. The returned actId feeds every acts tool.  Cost: 2 credits."
     },
     "pricingPathsRequested": [
       "/api/v1/in/api-credits/pricing"
@@ -35,21 +35,32 @@
       "fetch",
       "get_act_amendments",
       "get_act_section",
-      "get_act_status",
       "get_act_structure",
-      "get_act_text",
+      "get_act_versions",
+      "get_changes",
       "get_corresponding_provisions",
+      "get_india_case_body",
+      "get_india_case_detail",
+      "get_india_similar_cases",
+      "get_india_tribunal_matter",
       "get_pricing_in",
-      "get_section_history",
       "india_act_cited_by",
       "india_act_definitions",
+      "india_act_record",
       "india_act_subordinate",
-      "india_section_references",
-      "list_act_filters",
       "list_acts",
+      "list_india_cases",
+      "list_india_courts",
+      "list_india_tribunal_forums",
+      "list_india_tribunal_matter_orders",
+      "list_india_tribunal_matters",
+      "resolve_india_case",
+      "resolve_india_cases_batch",
       "resolve_india_citation",
       "resolve_india_citations_batch",
-      "search"
+      "search",
+      "search_india_cases",
+      "search_india_tribunal_matters"
     ],
     "websiteUrl": "https://www.vaquill.ai"
   },

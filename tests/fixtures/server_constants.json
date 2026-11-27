@@ -31,6 +31,15 @@
       "category",
       "treatment"
     ],
+    "india_act_cited_by": [
+      "limit"
+    ],
+    "india_act_definitions": [
+      "limit"
+    ],
+    "india_act_subordinate": [
+      "limit"
+    ],
     "resolve_case_citations": [
       "includeStatus"
     ]
@@ -38,6 +47,7 @@
   "_READ_ONLY_POSTS": [
     "/in/acts/resolve",
     "/in/acts/search",
+    "/in/cases/resolve",
     "/us/cases/batch",
     "/us/cases/resolve",
     "/us/cases/search",
@@ -98,6 +108,13 @@
       "mcpType": "EXCLUDE",
       "methods": "*",
       "pattern": "^/api/v1/in/translation(?:/.*)?$",
+      "tags": []
+    },
+    {
+      "mcpTags": [],
+      "mcpType": "EXCLUDE",
+      "methods": "*",
+      "pattern": "^/api/v1/in/(?:cases/[^/]+/file|tribunals/matters/[^/]+/[^/]+/file|tribunals/matters/[^/]+/[^/]+/orders/[^/]+/file)$",
       "tags": []
     },
     {

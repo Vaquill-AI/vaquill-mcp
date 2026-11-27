@@ -413,8 +413,7 @@ regulatory server below. Translation is REST only, not MCP.
 |------|-------------|
 | `search_acts` | Search Indian legislation down to the section. |
 | `list_acts` | Browse and filter enactments by jurisdiction, regulator, year, status. |
-| `list_act_filters` | The filter vocabulary the corpus actually holds, with counts. |
-| `get_act_text` | Source links (text, PDF, HTML) for one enactment. |
+| `india_act_record` | One act's record: standing, source links (text, PDF, HTML) and counts. |
 | `get_act_section_body` | The publisher's full text for one provision. |
 | `get_act_amendments` | Amendment history: what changed, by which Act, effective when. |
 | `resolve_india_citation` | The provision named by a citation, such as `s.302 IPC`. |

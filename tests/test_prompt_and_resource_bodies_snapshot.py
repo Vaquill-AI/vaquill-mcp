@@ -72,6 +72,9 @@ _PROMPT_ARGUMENTS: dict[str, dict[str, dict[str, dict[str, str]]]] = {
                 "question": "Is criminal breach of trust still punishable under the new code?"
             }
         },
+        "indian_case_law_research": {
+            "full": {"question": "Is a delay in filing an FIR fatal to the prosecution case?"}
+        },
     },
 }
 
